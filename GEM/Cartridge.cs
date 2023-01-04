@@ -208,11 +208,11 @@ namespace GEM
 
         public void SaveToFile()
         {
-            // currently called on PowerOff sequence -> not saved by closing window // TODO: save when data is written
+            // currently called on PowerOff sequence
             if (!_ram.All(item => item == 0))   // RAM not empty
             {
-                //if (!Directory.Exists("save/"))
-                //    Directory.CreateDirectory("save/");
+                if (!Directory.Exists("save/"))
+                    Directory.CreateDirectory("save/");
                 File.WriteAllBytes(_saveFile, _ram);
             }
         }
