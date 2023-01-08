@@ -8,3 +8,11 @@ Written in C# using [MonoGame](https://www.monogame.org/)
 Personal hobby and learning project inspired by [The Ultimate Game Boy Talk](https://www.youtube.com/watch?v=HyzD8pNlpwI)
 
 :warning: Early work in progress - no sound support, expect glitches and crashes :warning:
+
+![screenshot01](screenshot01.png)
+
+![screenshot02](screenshot02.png)
+
+![screenshot03](screenshot03.png)
+
+![screenshot04](screenshot04.png)
