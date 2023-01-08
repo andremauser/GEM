@@ -45,6 +45,7 @@ namespace GEM
         // Mouse
         public static int MousePosX { get; private set; }
         public static int MousePosY { get; private set; }
+        public static bool IsLeftButtonPressed { get; private set; }
 
         #endregion
 
@@ -55,36 +56,42 @@ namespace GEM
         /// </summary>
         public static void Update()
         {
+            GamePadState gamePadState = GamePad.GetState(PlayerIndex.One);
+            KeyboardState keyboardState = Keyboard.GetState();
+            MouseState mouseState = Mouse.GetState();
+
             // Emulator
-            IsButton_Color = GamePad.GetState(PlayerIndex.One).Buttons.Y == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.C);
-            IsButton_Debug = GamePad.GetState(PlayerIndex.One).Buttons.X == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.D);
-            IsButton_Pause = GamePad.GetState(PlayerIndex.One).Buttons.RightStick == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.P);
-            IsButton_Step = GamePad.GetState(PlayerIndex.One).Buttons.LeftShoulder == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.S);
-            IsButton_Frame = GamePad.GetState(PlayerIndex.One).Buttons.RightShoulder == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.F);
-            IsButton_Reset = GamePad.GetState(PlayerIndex.One).Buttons.RightStick == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.R);
-            IsButton_Quit = GamePad.GetState(PlayerIndex.One).Buttons.LeftStick == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Q);
-            IsButton_Load = Keyboard.GetState().IsKeyDown(Keys.L);
-            IsButton_1 = Keyboard.GetState().IsKeyDown(Keys.D1);
-            IsButton_2 = Keyboard.GetState().IsKeyDown(Keys.D2);
-            IsButton_3 = Keyboard.GetState().IsKeyDown(Keys.D3);
-            IsButton_4 = Keyboard.GetState().IsKeyDown(Keys.D4);
-            IsButton_5 = Keyboard.GetState().IsKeyDown(Keys.D5);
+            IsButton_Color = gamePadState.Buttons.Y == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.C);
+            IsButton_Debug = gamePadState.Buttons.X == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.D);
+            IsButton_Pause = gamePadState.Buttons.RightStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.P);
+            IsButton_Step = gamePadState.Buttons.LeftShoulder == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.S);
+            IsButton_Frame = gamePadState.Buttons.RightShoulder == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.F);
+            IsButton_Reset = gamePadState.Buttons.RightStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.R);
+            IsButton_Quit = gamePadState.Buttons.LeftStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Q);
+            
+            IsButton_Load = keyboardState.IsKeyDown(Keys.L);
+            IsButton_1 = keyboardState.IsKeyDown(Keys.D1);
+            IsButton_2 = keyboardState.IsKeyDown(Keys.D2);
+            IsButton_3 = keyboardState.IsKeyDown(Keys.D3);
+            IsButton_4 = keyboardState.IsKeyDown(Keys.D4);
+            IsButton_5 = keyboardState.IsKeyDown(Keys.D5);
 
             // D-Pad
-            IsButton_Right = GamePad.GetState(PlayerIndex.One).DPad.Right == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Right);
-            IsButton_Left = GamePad.GetState(PlayerIndex.One).DPad.Left == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Left);
-            IsButton_Up = GamePad.GetState(PlayerIndex.One).DPad.Up == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Up);
-            IsButton_Down = GamePad.GetState(PlayerIndex.One).DPad.Down == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Down);
+            IsButton_Right = gamePadState.DPad.Right == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Right);
+            IsButton_Left = gamePadState.DPad.Left == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Left);
+            IsButton_Up = gamePadState.DPad.Up == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Up);
+            IsButton_Down = gamePadState.DPad.Down == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Down);
 
             // Buttons
-            IsButton_A = GamePad.GetState(PlayerIndex.One).Buttons.B == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.X);
-            IsButton_B = GamePad.GetState(PlayerIndex.One).Buttons.A == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Y);
-            IsButton_Select = GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Back);
-            IsButton_Start = GamePad.GetState(PlayerIndex.One).Buttons.Start == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Enter);
+            IsButton_A = gamePadState.Buttons.B == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.X);
+            IsButton_B = gamePadState.Buttons.A == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Y);
+            IsButton_Select = gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Back);
+            IsButton_Start = gamePadState.Buttons.Start == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Enter);
 
             // Mouse
-            MousePosX = Mouse.GetState().X;
-            MousePosY = Mouse.GetState().Y;
+            MousePosX = mouseState.X;
+            MousePosY = mouseState.Y;
+            IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
         }
 
         #endregion

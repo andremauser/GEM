@@ -59,7 +59,7 @@ namespace GEM
 
         protected override void Update(GameTime gameTime)
         {
-            _emulator.Update();
+            _emulator.Update(GraphicsDevice.Viewport);
         }
 
         protected override void Draw(GameTime gameTime)

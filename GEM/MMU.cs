@@ -232,7 +232,7 @@ namespace GEM
 
         public void Reset()
         {
-            Cartridge.Reset();
+            //Cartridge.Reset();
             _videoRAM = new byte[0x2000];
             _workRAM = new byte[0x2000];
             _oamRAM = new byte[160];

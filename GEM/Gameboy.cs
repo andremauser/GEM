@@ -33,7 +33,9 @@ namespace GEM
             //_spu = new SPU(_mmu);
             _cycleCount = 0;
             Running = false;
+            SwitchedOn = false;
             _nullTexture = new Texture2D(graphicsDevice,1,1);
+            _nullTexture.SetData<Color>(new Color[] { Color.Black });
         }
 
         #endregion
@@ -43,38 +45,38 @@ namespace GEM
         {
             get
             {
-                return string.Format("PC  =  {0:X4} -> 0x{1:X2} \n\n" +
-                                                                    "AF  =  {3:X4} {4}{5}{6}{7}\n" +
-                                                                    "BC  =  {8:X4}\n" +
-                                                                    "DE  =  {9:X4}\n" +
-                                                                    "HL  =  {10:X4}\n" +
-                                                                    "SP  =  {11:X4}\n\n" +
-                                                                    "IME =  {12}\n" +
-                                                                    "IE  =  {13}\n" +
-                                                                    "IF  =  {14}\n" +
-                                                                    "P1  =  {15}\n\n" +
-                                                                    "   {16}           {20}\n" +
-                                                                    " {19}   {17}       {21}\n" +
-                                                                    "   {18}   {22} {23}\n",
-                                                                    _cpu.PC, _mmu.Read(_cpu.PC), null,
-                                                                    _cpu.AF, _cpu.FlagZ == 1 ? "Z" : " ", _cpu.FlagN == 1 ? "N" : " ", _cpu.FlagH == 1 ? "H" : " ", _cpu.FlagC == 1 ? "C" : " ",
-                                                                    _cpu.BC,
-                                                                    _cpu.DE,
-                                                                    _cpu.HL,
-                                                                    _cpu.SP,
-                                                                    _mmu.IME,
-                                                                    Convert.ToString(_mmu.IE, 2).PadLeft(8, '0'),
-                                                                    Convert.ToString(_mmu.IF, 2).PadLeft(8, '0'),
-                                                                    Convert.ToString(_mmu.P1, 2).PadLeft(8, '0'),
-                                                                    Input.IsButton_Up ? "U" : "-",
-                                                                    Input.IsButton_Right ? "R" : "-",
-                                                                    Input.IsButton_Down ? "D" : "-",
-                                                                    Input.IsButton_Left ? "L" : "-",
-                                                                    Input.IsButton_A ? "A" : "-",
-                                                                    Input.IsButton_B ? "B" : "-",
-                                                                    Input.IsButton_Select ? "SE" : "--",
-                                                                    Input.IsButton_Start ? "ST" : "--"
-                                                                    );
+                return string.Format("PC  =  {0:X4} 0x{1:X2} \n\n" +
+                                     "AF  =  {3:X4} {4}{5}{6}{7}\n" +
+                                     "BC  =  {8:X4}\n" +
+                                     "DE  =  {9:X4}\n" +
+                                     "HL  =  {10:X4}\n" +
+                                     "SP  =  {11:X4}\n\n" +
+                                     "IME =  {12}\n" +
+                                     "IE  =  {13}\n" +
+                                     "IF  =  {14}\n" +
+                                     "P1  =  {15}\n\n" +
+                                     "   {16}           {20}\n" +
+                                     " {19}   {17}       {21}\n" +
+                                     "   {18}   {22} {23}\n",
+                                     _cpu.PC, _mmu.Read(_cpu.PC), null,
+                                     _cpu.AF, _cpu.FlagZ == 1 ? "Z" : " ", _cpu.FlagN == 1 ? "N" : " ", _cpu.FlagH == 1 ? "H" : " ", _cpu.FlagC == 1 ? "C" : " ",
+                                     _cpu.BC,
+                                     _cpu.DE,
+                                     _cpu.HL,
+                                     _cpu.SP,
+                                     _mmu.IME,
+                                     Convert.ToString(_mmu.IE, 2).PadLeft(8, '0'),
+                                     Convert.ToString(_mmu.IF, 2).PadLeft(8, '0'),
+                                     Convert.ToString(_mmu.P1, 2).PadLeft(8, '0'),
+                                     Input.IsButton_Up ? "U" : "-",
+                                     Input.IsButton_Right ? "R" : "-",
+                                     Input.IsButton_Down ? "D" : "-",
+                                     Input.IsButton_Left ? "L" : "-",
+                                     Input.IsButton_A ? "A" : "-",
+                                     Input.IsButton_B ? "B" : "-",
+                                     Input.IsButton_Select ? "SE" : "--",
+                                     Input.IsButton_Start ? "ST" : "--"
+                                     );
             }
         }
         public string CartridgeTitle
@@ -87,6 +89,7 @@ namespace GEM
         public bool StopAfterFrame { get; set; }
         public bool StopAfterStep { get; set; }
         public bool Running { get; private set; }
+        public bool SwitchedOn { get; private set; }
 
         #endregion
 
@@ -116,6 +119,20 @@ namespace GEM
         public void PauseSwitch()
         {
             Running = !Running;
+            StopAfterFrame = false;
+            StopAfterStep = false;
+        }
+        public void PauseAfterFrame()
+        {
+            PauseSwitch();
+            StopAfterFrame = true;
+            StopAfterStep = false;
+        }
+        public void PauseAfterStep()
+        {
+            PauseSwitch();
+            StopAfterFrame = false;
+            StopAfterStep = true;
         }
 
         public Texture2D GetScreen(Color[] palette)

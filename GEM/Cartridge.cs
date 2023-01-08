@@ -30,6 +30,7 @@ namespace GEM
             _isCartridgeLoaded = false;
             _romBank = 1;
             _ramBank = 0;
+            Title = "";
         }
 
         public void Reset()
@@ -39,6 +40,7 @@ namespace GEM
             _isCartridgeLoaded = false;
             _romBank = 1;
             _ramBank = 0;
+            Title = "";
         }
 
         public void Load(string file)

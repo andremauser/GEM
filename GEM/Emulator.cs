@@ -4,7 +4,6 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace GEM
 {
@@ -44,8 +43,17 @@ namespace GEM
         bool _isHandled_3;
         bool _isHandled_4;
         bool _isHandled_5;
+        int _screenOffsetTop;
+        int _screenOffsetBottom;
+        int _screenOffsetLeft;
+        int _screenOffsetRight;
 
         List<string> _romList = new List<string>();
+        List<Control> _controls = new List<Control>();
+
+        Button _btnQuit;
+        Button _btnPause;
+        Button _btnTitle;
 
         #endregion
 
@@ -117,6 +125,13 @@ namespace GEM
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
+
+            _btnQuit = new Button("Power OFF", _gameboy.PowerOff, _pixel, _fontConsole);
+            _controls.Add(_btnQuit);
+            _btnPause = new Button("", _gameboy.PauseSwitch, _pixel, _fontConsole);
+            _controls.Add(_btnPause);
+            _btnTitle = new Button("", doNothing, _pixel, _fontConsole);
+            _controls.Add(_btnTitle);
         }
 
         public void Reset()
@@ -131,18 +146,36 @@ namespace GEM
             _gameboy.PowerOff();
         }
 
-        public void Update()
+        public void Update(Viewport viewport)
         {
             Input.Update();
 
+            /*
+            if (Input.MousePosX > 0 && Input.MousePosX < viewport.Width && Input.MousePosY > 0 && Input.MousePosY < viewport.Height)
+            {
+                DebugMode = 1;
+            }
+            else
+            {
+                DebugMode = 0;
+            }
+            */
+
+            foreach (Control control in _controls)
+            {
+                control.Update();
+            }
+
             checkInput_Color();
             checkInput_Debug();
-            checkInput_Pause();
-            checkInput_Frame();
-            checkInput_Step();
+
+            _isHandled_Pause = checkInput(Input.IsButton_Pause, _isHandled_Pause, _gameboy.PauseSwitch);
+            _isHandled_Frame = checkInput(Input.IsButton_Frame, _isHandled_Frame, _gameboy.PauseAfterFrame);
+            _isHandled_Step = checkInput(Input.IsButton_Step, _isHandled_Step, _gameboy.PauseAfterStep);
+
             checkInput_Reset();
             checkInput_Quit();
-            checkInput_Load();
+
             checkInput_1();
             checkInput_2();
             checkInput_3();
@@ -155,6 +188,7 @@ namespace GEM
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
 
             _gameboy.UpdateFrame();
+             
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
             drawEmulator(viewport, gbScreen);
 
@@ -165,15 +199,32 @@ namespace GEM
         // Private Helper Methods
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
+            // Set Border Offsets
+            if (DebugMode >= 1)
+            {
+                _screenOffsetTop = 40;
+                _screenOffsetBottom = 40;
+                _screenOffsetRight = 0;
+                _screenOffsetLeft = 0;
+            }
+            else
+            {
+                _screenOffsetTop = 0;
+                _screenOffsetBottom = 0;
+                _screenOffsetLeft = 0;
+                _screenOffsetRight = 0;
+            }
 
-            // Screen Size
-            float pixelSize = MathHelper.Min(viewport.Height / 144f, viewport.Width / 160f);
-            int left = (int)(viewport.Width - 160 * pixelSize) / 2;
-            int top = 0;
-            int width = (int)(pixelSize * 160);
-            int height = (int)(pixelSize * 144);
+            // Screen Position & Size
+            float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f, 
+                                             (viewport.Width - _screenOffsetLeft - _screenOffsetRight) / 160f);
 
-            //File Browser
+            int screenWidth = (int)(pixelSize * 160);
+            int screenHeight = (int)(pixelSize * 144); 
+            int screenLeft = _screenOffsetLeft + (int)(viewport.Width - screenWidth - _screenOffsetLeft - _screenOffsetRight) / 2;
+            int screenTop = _screenOffsetTop;
+
+            //Temporary File Browser
             string fileBrowser = "Rom browser: 'roms/' - currently max. 5 games\n\n";
             if (!Directory.Exists("roms/"))
                 Directory.CreateDirectory("roms/");
@@ -194,51 +245,85 @@ namespace GEM
                     break;
             }
 
-            // Info Text
-            string infoText = "Welcome to GEM (GB Emulator Multiplatform)\n" +
-                            "\n" +
-                            "\n" +
-                            fileBrowser +
-                            "\n\n" +
-                            "R - Reset game\n" +
-                            "Q - Quit game (not emulator)\n" +
-                            "\n" +
-                            "C - Toggle color\n" +
-                            "D - Debug mode\n" +
-                            "\n" +
-                            "P - Pause/unpause Game\n" +
-                            "F - Pause at next Frame\n" +
-                            "S - Pause at next CPU step";
-            _spriteBatch.DrawString(_fontConsole, infoText, new Vector2(left+20, top+20), Color.White);
+            // Draw Screen
+            _spriteBatch.Draw(screen, new Rectangle(screenLeft, screenTop, screenWidth, screenHeight), Color.White);
 
 
-
-            //Draw Screen
-            _spriteBatch.Draw(screen, new Rectangle(left, top, width, height), Color.White);
+            _btnQuit.Visible = false;
+            _btnPause.Visible = false;
+            _btnTitle.Visible = false;
 
             // Debug Mode
             if (DebugMode >= 1)
             {
-                printDebugInfo(left - 320, 20);
+                //printDebugInfo(screenLeft - 180, screenTop);
 
-                if (Input.MousePosX >= left &&
-                    Input.MousePosX < left + pixelSize * 160 &&
-                    Input.MousePosY >= top &&
-                    Input.MousePosY < top + pixelSize * 144)
+                // Draw Controls
+                _btnQuit.Width = 100;
+                _btnQuit.Height = _screenOffsetTop;
+                _btnQuit.Left = screenLeft + screenWidth - _btnQuit.Width;
+                _btnQuit.Top = 0;
+                _btnQuit.Visible= true;
+
+                _btnPause.Width = 100;
+                _btnPause.Height = _screenOffsetBottom;
+                _btnPause.Left = screenLeft;
+                _btnPause.Top =  screenTop + screenHeight;
+                _btnPause.Visible = true;
+                if (_gameboy.Running)
                 {
-                    drawMouseMarker(pixelSize, left, top);
-                    drawGrid(pixelSize, left, top, width, height);
+                    _btnPause.Caption = "Running";
+                    _btnPause.TextColor = Color.Green;
+                }
+                else
+                {
+                    _btnPause.Caption = "Pause";
+                    _btnPause.TextColor = Color.Red;
                 }
 
-                drawWindow(left + width + 40, 20);
-                drawBackground(left + width + 40, 296);
-                drawTileset(left + width + 40, 572);
+                _btnTitle.Width = 200;
+                _btnTitle.Height = _screenOffsetBottom;
+                _btnTitle.Left = screenLeft + (screenWidth - _btnTitle.Width)/2;
+                _btnTitle.Top = screenTop + screenHeight;
+                _btnTitle.Caption = _gameboy.CartridgeTitle;
+                _btnTitle.Enabled = false;
+                _btnTitle.Visible = true;
+
+
+
+                if (DebugMode >= 2)
+                {
+                    drawGrid(pixelSize, screenLeft, screenTop, screenWidth, screenHeight);
+                    if (Input.MousePosX >= screenLeft &&
+                        Input.MousePosX < screenLeft + screenWidth &&
+                        Input.MousePosY >= screenTop &&
+                        Input.MousePosY < screenTop + screenHeight)
+                    {
+                        drawMouseMarker(pixelSize, screenLeft, screenTop);
+                    }
+                }
+
+
+
+
+                //drawWindow      (screenLeft + screenWidth + 20, screenTop);
+                //drawBackground  (screenLeft + screenWidth + 20, screenTop + 286);
+                //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
+            }
+
+
+            foreach (Control control in _controls)
+            {
+                if (control.Visible)
+                {
+                    control.Draw(_spriteBatch);
+                }
             }
         }
 
         private void printDebugInfo(int posX, int posY)
         {
-            _spriteBatch.DrawString(_fontConsole, _gameboy.DebugInfo, new Vector2(posX, posY), _emuPalette[_emuColorIndex][0]);
+            _spriteBatch.DrawString(_fontConsole, "Debug:\n\n" + _gameboy.DebugInfo, new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
         }
 
         private void drawMouseMarker(float size, int left, int top)
@@ -300,18 +385,21 @@ namespace GEM
 
         private void drawWindow(int posX, int posY)
         {
-            _spriteBatch.DrawString(_fontConsole, "W\ni\nn\nd\no\nw", new Vector2(posX - 24, posY), _emuPalette[_emuColorIndex][0]);
-            _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY, 256, 256), Color.White);
+            float zoom = 1f;
+            _spriteBatch.DrawString(_fontConsole, "Window:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * zoom), (int)(256 * zoom)), Color.White);
         }
         private void drawBackground(int posX, int posY)
         {
-            _spriteBatch.DrawString(_fontConsole, "B\na\nc\nk\ng\nr\no\nu\nn\nd", new Vector2(posX - 24, posY), _emuPalette[_emuColorIndex][0]);
-            _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY, 256, 256), Color.White);
+            float zoom = 1f;
+            _spriteBatch.DrawString(_fontConsole, "Background:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * zoom), (int)(256 * zoom)), Color.White);
         }
         private void drawTileset(int posX, int posY)
         {
-            _spriteBatch.DrawString(_fontConsole, "T\ni\nl\ne\ns\ne\nt", new Vector2(posX - 24, posY), _emuPalette[_emuColorIndex][0]);
-            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY, 128 * 2, 192 * 2), Color.White);
+            float zoom = 2f;
+            _spriteBatch.DrawString(_fontConsole, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY+20, (int)(128 * zoom), (int)(192 * zoom)), Color.White);
         }
 
         private void checkInput_Color()
@@ -340,47 +428,27 @@ namespace GEM
                 _isHandled_Debug = false;
             }
         }
-        private void checkInput_Pause()
+
+        private bool checkInput(bool button, bool isHandled, Action action)
         {
-            if (Input.IsButton_Pause && !_isHandled_Pause)
+            // Handles Actions via Key or Button
+            if (button && !isHandled)
             {
-                _gameboy.PauseSwitch();
-                _gameboy.StopAfterFrame = false;
-                _gameboy.StopAfterStep = false;
-                _isHandled_Pause = true;
+                // button pressed and not handled yet -> perform action and disable
+                action();
+                return true;
             }
-            else if (!Input.IsButton_Pause && _isHandled_Pause)
+            else if (!button && isHandled)
             {
-                _isHandled_Pause = false;
+                // button released -> enable again
+                return false;
             }
+            // keep status
+            return isHandled;
         }
-        private void checkInput_Frame()
-        {
-            if (Input.IsButton_Frame && !_isHandled_Frame)
-            {
-                _gameboy.PauseSwitch();
-                _gameboy.StopAfterFrame = true;
-                _gameboy.StopAfterStep = false;
-                _isHandled_Frame = true;
-            }
-            else if (!Input.IsButton_Frame && _isHandled_Frame)
-            {
-                _isHandled_Frame = false;
-            }
-        }
-        private void checkInput_Step()
-        {
-            if (Input.IsButton_Step && !_isHandled_Step)
-            {
-                _gameboy.PauseSwitch();
-                _gameboy.StopAfterStep = true;
-                _isHandled_Step = true;
-            }
-            else if (!Input.IsButton_Step && _isHandled_Step)
-            {
-                _isHandled_Step = false;
-            }
-        }
+
+        private void doNothing(){ }
+
         private void checkInput_Reset()
         {
             if (Input.IsButton_Reset && !_isHandled_Reset)
@@ -403,18 +471,6 @@ namespace GEM
             else if (!Input.IsButton_Quit && _isHandled_Quit)
             {
                 _isHandled_Quit = false;
-            }
-        }
-        private void checkInput_Load()
-        {
-            if (Input.IsButton_Load && !_isHandled_Load)
-            {
-                // TODO: Open File Dialog
-                _isHandled_Load = true;
-            }
-            else if (!Input.IsButton_Load && _isHandled_Load)
-            {
-                _isHandled_Load = false;
             }
         }
         private void checkInput_1()
