@@ -37,23 +37,20 @@ namespace GEM
         bool _isHandled_Step;
         bool _isHandled_Reset;
         bool _isHandled_Quit;
-        bool _isHandled_Load;
         bool _isHandled_1;
         bool _isHandled_2;
         bool _isHandled_3;
         bool _isHandled_4;
         bool _isHandled_5;
+
         int _screenOffsetTop;
         int _screenOffsetBottom;
         int _screenOffsetLeft;
         int _screenOffsetRight;
 
         List<string> _romList = new List<string>();
-        List<Control> _controls = new List<Control>();
-
-        Button _btnQuit;
-        Button _btnPause;
-        Button _btnTitle;
+        List<CustomControl> _controls = new List<CustomControl>();
+        CustomControl _sidePanel;
 
         #endregion
 
@@ -126,12 +123,20 @@ namespace GEM
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
-            _btnQuit = new Button("Power OFF", _gameboy.PowerOff, _pixel, _fontConsole);
+
+            _sidePanel = new SidePanel(_pixel, _fontConsole, null);
+            _sidePanel.Controls[0].ClickAction = _gameboy.PowerOn;
+            _sidePanel.Controls[1].ClickAction = _gameboy.PowerOff;
+            _controls.Add(_sidePanel);
+
+            /*
+            _btnQuit = new ButtonControl("Power OFF", _gameboy.PowerOff, _pixel, _fontConsole);
             _controls.Add(_btnQuit);
-            _btnPause = new Button("", _gameboy.PauseSwitch, _pixel, _fontConsole);
+            _btnPause = new ButtonControl("", _gameboy.PauseSwitch, _pixel, _fontConsole);
             _controls.Add(_btnPause);
-            _btnTitle = new Button("", doNothing, _pixel, _fontConsole);
+            _btnTitle = new ButtonControl("", doNothing, _pixel, _fontConsole);
             _controls.Add(_btnTitle);
+            */
         }
 
         public void Reset()
@@ -161,7 +166,8 @@ namespace GEM
             }
             */
 
-            foreach (Control control in _controls)
+            _sidePanel.Height = viewport.Height;
+            foreach (CustomControl control in _controls)
             {
                 control.Update();
             }
@@ -199,6 +205,7 @@ namespace GEM
         // Private Helper Methods
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
+            /*
             // Set Border Offsets
             if (DebugMode >= 1)
             {
@@ -214,7 +221,10 @@ namespace GEM
                 _screenOffsetLeft = 0;
                 _screenOffsetRight = 0;
             }
+            */
 
+            //_screenOffsetLeft = 50;
+            //_screenOffsetRight = 50;
             // Screen Position & Size
             float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f, 
                                              (viewport.Width - _screenOffsetLeft - _screenOffsetRight) / 160f);
@@ -248,17 +258,18 @@ namespace GEM
             // Draw Screen
             _spriteBatch.Draw(screen, new Rectangle(screenLeft, screenTop, screenWidth, screenHeight), Color.White);
 
-
+            /*
             _btnQuit.Visible = false;
             _btnPause.Visible = false;
             _btnTitle.Visible = false;
-
+            */
             // Debug Mode
             if (DebugMode >= 1)
             {
                 //printDebugInfo(screenLeft - 180, screenTop);
 
                 // Draw Controls
+                /*
                 _btnQuit.Width = 100;
                 _btnQuit.Height = _screenOffsetTop;
                 _btnQuit.Left = screenLeft + screenWidth - _btnQuit.Width;
@@ -270,6 +281,7 @@ namespace GEM
                 _btnPause.Left = screenLeft;
                 _btnPause.Top =  screenTop + screenHeight;
                 _btnPause.Visible = true;
+                
                 if (_gameboy.Running)
                 {
                     _btnPause.Caption = "Running";
@@ -280,7 +292,7 @@ namespace GEM
                     _btnPause.Caption = "Pause";
                     _btnPause.TextColor = Color.Red;
                 }
-
+                
                 _btnTitle.Width = 200;
                 _btnTitle.Height = _screenOffsetBottom;
                 _btnTitle.Left = screenLeft + (screenWidth - _btnTitle.Width)/2;
@@ -288,7 +300,7 @@ namespace GEM
                 _btnTitle.Caption = _gameboy.CartridgeTitle;
                 _btnTitle.Enabled = false;
                 _btnTitle.Visible = true;
-
+                */
 
 
                 if (DebugMode >= 2)
@@ -312,12 +324,9 @@ namespace GEM
             }
 
 
-            foreach (Control control in _controls)
+            foreach (CustomControl control in _controls)
             {
-                if (control.Visible)
-                {
-                    control.Draw(_spriteBatch);
-                }
+                control.Draw(_spriteBatch);
             }
         }
 
