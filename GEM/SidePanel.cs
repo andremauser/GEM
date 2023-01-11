@@ -22,17 +22,29 @@ namespace GEM
             BackColorHover = BackColorIdle;
             ClickEnabled = false;
 
-            Controls.Add(new SidePanelButton(texture, spriteFont, this) { Left = 0, Top = 0 , BackColorHover = Color.Green });
-            Controls.Add(new SidePanelButton(texture, spriteFont, this) { Left = 0, Top = 50, BackColorHover = Color.Red });
+            SidePanelButton btnOn = new SidePanelButton(texture, spriteFont, this);
+                btnOn.Left = 0;
+                btnOn.Top = 0;
+                btnOn.BackColorHover = Color.Green;
+                btnOn.ClickAction = emulator.GameboyOn;
+            ButtonCaption capOn = new ButtonCaption(texture, spriteFont, btnOn);
+                capOn.CollapsedCaption = "ON";
+                capOn.ExpandedCaption = "Power ON";
+            Controls.Add(btnOn);
+            btnOn.Controls.Add(capOn);
 
-            Controls[0].ClickAction = emulator.GameboyOn;
-            Controls[1].ClickAction = emulator.GameboyOff;
+            SidePanelButton btnOff = new SidePanelButton(texture, spriteFont, this);
+                btnOff.Left = 0;
+                btnOff.Top = 50;
+                btnOff.BackColorHover = Color.Red;
+                btnOff.ClickAction = emulator.GameboyOff;
+            ButtonCaption capOff = new ButtonCaption(texture, spriteFont, btnOff);
+                capOff.CollapsedCaption = "OFF";
+                capOff.ExpandedCaption = "Power OFF";
+            Controls.Add(btnOff);
+            btnOff.Controls.Add(capOff);
 
-            Controls[0].Controls.Add(new ButtonCaption(texture, spriteFont, Controls[0]) { CollapsedCaption = "ON",  ExpandedCaption = "Power ON" });
-            Controls[1].Controls.Add(new ButtonCaption(texture, spriteFont, Controls[1]) { CollapsedCaption = "OFF", ExpandedCaption = "Power OFF" });
         }
-
-        public List<CustomAction> ActionList { get; set; }
 
         public override void Update()
         {
