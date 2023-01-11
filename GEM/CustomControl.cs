@@ -14,6 +14,13 @@ namespace GEM
         Collapsed,
         Expanded
     }
+
+    public enum Align
+    {
+        Left,
+        Center,
+        Right
+    }
     
     internal abstract class CustomControl
     {
@@ -26,6 +33,18 @@ namespace GEM
         bool _wasPressed;
 
         // Public
+        public int Left;
+        public int Top;
+
+        public int Width;
+        public int Height;
+
+        public bool Visible;
+        public bool Enabled;
+
+        public string Caption;
+        public Align HorizontalTextAlign;
+
         public List<CustomControl> Controls;
 
         public CustomControl Parent;
@@ -65,6 +84,7 @@ namespace GEM
 
             // Default values
             Caption = "";
+            HorizontalTextAlign = Align.Center;
             Visible = true;
             Enabled = true;
             Left = 0;
@@ -89,17 +109,6 @@ namespace GEM
 
 
         #region Properties
-
-        public int Left { get; set; }
-        public int Top { get; set; }
-
-        public int Width { get; set; }
-        public int Height { get; set; }
-
-        public bool Visible { get; set; }
-        public bool Enabled { get; set; }
-
-        public string Caption { get; set; }
 
         public Vector2 GlobalPosition
         {
@@ -198,8 +207,24 @@ namespace GEM
 
             // Caption
             Vector2 captionSize = Font.MeasureString(Caption);
-            Vector2 captionPos = new Vector2(GlobalPosition.X + (Width - captionSize.X) / 2,
+            Vector2 captionPos;
+            Switch(HorizontalTextAlign)
+            {
+                case Left:
+                    captionPos = new Vector2(GlobalPosition.X,
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
+                    break;
+                case Center:
+                    captionPos = new Vector2(GlobalPosition.X + (Width -  captionSize.X) / 2,
+                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
+                    break;
+                case Right:
+                    captionPos = new Vector2(GlobalPosition.X + Width -  captionSize.X,
+                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
+                    break
+                default:
+                    break;
+            }
             spriteBatch.DrawString(Font, Caption, captionPos, _textColor);
 
             // Draw embedded controls last (draw from bottom to top)
