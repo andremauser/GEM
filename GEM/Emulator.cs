@@ -124,19 +124,9 @@ namespace GEM
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
 
-            _sidePanel = new SidePanel(_pixel, _fontConsole, null);
-            _sidePanel.Controls[0].ClickAction = _gameboy.PowerOn;
-            _sidePanel.Controls[1].ClickAction = _gameboy.PowerOff;
+            _sidePanel = new SidePanel(_pixel, _fontConsole, null, this);
             _controls.Add(_sidePanel);
 
-            /*
-            _btnQuit = new ButtonControl("Power OFF", _gameboy.PowerOff, _pixel, _fontConsole);
-            _controls.Add(_btnQuit);
-            _btnPause = new ButtonControl("", _gameboy.PauseSwitch, _pixel, _fontConsole);
-            _controls.Add(_btnPause);
-            _btnTitle = new ButtonControl("", doNothing, _pixel, _fontConsole);
-            _controls.Add(_btnTitle);
-            */
         }
 
         public void Reset()
@@ -154,17 +144,6 @@ namespace GEM
         public void Update(Viewport viewport)
         {
             Input.Update();
-
-            /*
-            if (Input.MousePosX > 0 && Input.MousePosX < viewport.Width && Input.MousePosY > 0 && Input.MousePosY < viewport.Height)
-            {
-                DebugMode = 1;
-            }
-            else
-            {
-                DebugMode = 0;
-            }
-            */
 
             _sidePanel.Height = viewport.Height;
             foreach (CustomControl control in _controls)
@@ -205,26 +184,6 @@ namespace GEM
         // Private Helper Methods
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
-            /*
-            // Set Border Offsets
-            if (DebugMode >= 1)
-            {
-                _screenOffsetTop = 40;
-                _screenOffsetBottom = 40;
-                _screenOffsetRight = 0;
-                _screenOffsetLeft = 0;
-            }
-            else
-            {
-                _screenOffsetTop = 0;
-                _screenOffsetBottom = 0;
-                _screenOffsetLeft = 0;
-                _screenOffsetRight = 0;
-            }
-            */
-
-            //_screenOffsetLeft = 50;
-            //_screenOffsetRight = 50;
             // Screen Position & Size
             float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f, 
                                              (viewport.Width - _screenOffsetLeft - _screenOffsetRight) / 160f);
@@ -258,50 +217,10 @@ namespace GEM
             // Draw Screen
             _spriteBatch.Draw(screen, new Rectangle(screenLeft, screenTop, screenWidth, screenHeight), Color.White);
 
-            /*
-            _btnQuit.Visible = false;
-            _btnPause.Visible = false;
-            _btnTitle.Visible = false;
-            */
             // Debug Mode
             if (DebugMode >= 1)
             {
                 //printDebugInfo(screenLeft - 180, screenTop);
-
-                // Draw Controls
-                /*
-                _btnQuit.Width = 100;
-                _btnQuit.Height = _screenOffsetTop;
-                _btnQuit.Left = screenLeft + screenWidth - _btnQuit.Width;
-                _btnQuit.Top = 0;
-                _btnQuit.Visible= true;
-
-                _btnPause.Width = 100;
-                _btnPause.Height = _screenOffsetBottom;
-                _btnPause.Left = screenLeft;
-                _btnPause.Top =  screenTop + screenHeight;
-                _btnPause.Visible = true;
-                
-                if (_gameboy.Running)
-                {
-                    _btnPause.Caption = "Running";
-                    _btnPause.TextColor = Color.Green;
-                }
-                else
-                {
-                    _btnPause.Caption = "Pause";
-                    _btnPause.TextColor = Color.Red;
-                }
-                
-                _btnTitle.Width = 200;
-                _btnTitle.Height = _screenOffsetBottom;
-                _btnTitle.Left = screenLeft + (screenWidth - _btnTitle.Width)/2;
-                _btnTitle.Top = screenTop + screenHeight;
-                _btnTitle.Caption = _gameboy.CartridgeTitle;
-                _btnTitle.Enabled = false;
-                _btnTitle.Visible = true;
-                */
-
 
                 if (DebugMode >= 2)
                 {
@@ -314,9 +233,6 @@ namespace GEM
                         drawMouseMarker(pixelSize, screenLeft, screenTop);
                     }
                 }
-
-
-
 
                 //drawWindow      (screenLeft + screenWidth + 20, screenTop);
                 //drawBackground  (screenLeft + screenWidth + 20, screenTop + 286);
@@ -394,21 +310,21 @@ namespace GEM
 
         private void drawWindow(int posX, int posY)
         {
-            float zoom = 1f;
+            float scale = 1f;
             _spriteBatch.DrawString(_fontConsole, "Window:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * zoom), (int)(256 * zoom)), Color.White);
+            _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
         }
         private void drawBackground(int posX, int posY)
         {
-            float zoom = 1f;
+            float scale = 1f;
             _spriteBatch.DrawString(_fontConsole, "Background:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * zoom), (int)(256 * zoom)), Color.White);
+            _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
         }
         private void drawTileset(int posX, int posY)
         {
-            float zoom = 2f;
+            float scale = 2f;
             _spriteBatch.DrawString(_fontConsole, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY+20, (int)(128 * zoom), (int)(192 * zoom)), Color.White);
+            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY+20, (int)(128 * scale), (int)(192 * scale)), Color.White);
         }
 
         private void checkInput_Color()
@@ -551,6 +467,16 @@ namespace GEM
             {
                 _isHandled_5 = false;
             }
+        }
+
+        public void GameboyOff()
+        {
+            _gameboy.PowerOff();
+        }
+
+        public void GameboyOn() 
+        {
+            _gameboy.PowerOn();
         }
 
 #endregion

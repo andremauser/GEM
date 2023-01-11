@@ -16,7 +16,6 @@ namespace GEM
             TextColorIdle = Color.Gray;
             TextColorHover = Color.White;
             TextColorPress = Color.Black;
-
         }
 
         public override void Update()
@@ -33,6 +32,36 @@ namespace GEM
                     break;
             }
             base.Update();
+        }
+
+        internal override void customHoverAction()
+        {
+            if (Controls.Count == 0)
+            {
+                return;
+            }
+            Controls[0].TextColorIdle = TextColorHover;
+            base.customHoverAction();
+        }
+
+        internal override void customUnHoverAction()
+        {
+            if (Controls.Count == 0)
+            {
+                return;
+            }
+            Controls[0].TextColorIdle = TextColorIdle;
+            base.customUnHoverAction();
+        }
+
+        internal override void customPressAction()
+        {
+            if (Controls.Count == 0)
+            {
+                return;
+            }
+            Controls[0].TextColorIdle = TextColorPress;
+            base.customPressAction();
         }
 
     }

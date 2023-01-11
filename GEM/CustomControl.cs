@@ -31,6 +31,8 @@ namespace GEM
         Color _backColor;
         Color _textColor;
         bool _wasPressed;
+        private CustomState _customState;
+        string _caption;
 
         // Public
         public int Left;
@@ -42,7 +44,8 @@ namespace GEM
         public bool Visible;
         public bool Enabled;
 
-        public string Caption;
+        public string CollapsedCaption;
+        public string ExpandedCaption;
         public Align HorizontalTextAlign;
 
         public List<CustomControl> Controls;
@@ -68,8 +71,6 @@ namespace GEM
         public delegate void CustomAction();
         public CustomAction ClickAction;
 
-        public CustomState CustomState;
-
         #endregion
 
 
@@ -83,7 +84,6 @@ namespace GEM
             Controls = new List<CustomControl>();
 
             // Default values
-            Caption = "";
             HorizontalTextAlign = Align.Center;
             Visible = true;
             Enabled = true;
@@ -121,6 +121,22 @@ namespace GEM
                 else
                 {
                     return new Vector2(Left, Top);
+                }
+            }
+        }
+
+        public CustomState CustomState
+        {
+            get 
+            {
+                return _customState;
+            }
+            set
+            {
+                _customState = value;
+                foreach (CustomControl control in Controls)
+                {
+                    control.CustomState = _customState;
                 }
             }
         }
@@ -193,6 +209,17 @@ namespace GEM
                 customUnHoverAction();
                 _wasPressed = false;
             }
+            switch (CustomState)
+            {
+                case CustomState.Collapsed:
+                    _caption = CollapsedCaption;
+                    break;
+                case CustomState.Expanded:
+                    _caption = ExpandedCaption;
+                    break;
+                default:
+                    break;
+            }
         }
         
         public virtual void Draw(SpriteBatch spriteBatch)
@@ -206,26 +233,31 @@ namespace GEM
             spriteBatch.Draw(Texture, new Rectangle((int)GlobalPosition.X, (int)GlobalPosition.Y, Width, Height), _backColor);
 
             // Caption
-            Vector2 captionSize = Font.MeasureString(Caption);
-            Vector2 captionPos;
-            Switch(HorizontalTextAlign)
+            if (_caption == null)
             {
-                case Left:
+                _caption = "";
+            }
+            Vector2 captionSize = Font.MeasureString(_caption);
+            Vector2 captionPos;
+            switch (HorizontalTextAlign)
+            {
+                case Align.Left:
                     captionPos = new Vector2(GlobalPosition.X,
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
                     break;
-                case Center:
+                case Align.Center:
                     captionPos = new Vector2(GlobalPosition.X + (Width -  captionSize.X) / 2,
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
                     break;
-                case Right:
-                    captionPos = new Vector2(GlobalPosition.X + Width -  captionSize.X,
-                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
-                    break
+                case Align.Right:
+                captionPos = new Vector2(GlobalPosition.X + Width - captionSize.X,
+                                         GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
+                    break;
                 default:
+                    captionPos = Vector2.Zero;
                     break;
             }
-            spriteBatch.DrawString(Font, Caption, captionPos, _textColor);
+            spriteBatch.DrawString(Font, _caption, captionPos, _textColor);
 
             // Draw embedded controls last (draw from bottom to top)
             if (Controls.Count > 0)
