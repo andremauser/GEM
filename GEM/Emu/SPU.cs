@@ -1,24 +1,23 @@
-﻿using GEM;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class SPU
     {
         #region Fields
         const int SampleRate = 48000;
         const int ChannelsCount = 2;
-        const int SamplesPerBuffer = (int)(SampleRate / (4194304f / 70224)); 
+        const int SamplesPerBuffer = (int)(SampleRate / (4194304f / 70224));
         const int BytesPerSample = 2;
 
         DynamicSoundEffectInstance _instance;
         float[,] _workingBuffer;
         int _workingBufferIndex;
-        byte[] _xnaBuffer; 
+        byte[] _xnaBuffer;
 
         MMU _mmu;
         int _sampleTimer;
@@ -31,9 +30,9 @@ namespace GEM
         public SPU(MMU mmu)
         {
             _mmu = mmu;
-            _instance = new DynamicSoundEffectInstance(SampleRate, (ChannelsCount == 2) ? AudioChannels.Stereo : AudioChannels.Mono);
+            _instance = new DynamicSoundEffectInstance(SampleRate, ChannelsCount == 2 ? AudioChannels.Stereo : AudioChannels.Mono);
             _workingBuffer = new float[ChannelsCount, SamplesPerBuffer];
-            _xnaBuffer = new byte[ChannelsCount * SamplesPerBuffer * BytesPerSample]; 
+            _xnaBuffer = new byte[ChannelsCount * SamplesPerBuffer * BytesPerSample];
             //_instance.Play();
         }
         #endregion
@@ -58,9 +57,9 @@ namespace GEM
             if (_channel3Timer <= 0)
             {
                 _channel3 = _mmu.GetChannel3WaveRamValue(_channel3Pointer); // get RAM value
-                _channel3 >>=  _mmu.Channel3VolumeShift;                    // apply volume
+                _channel3 >>= _mmu.Channel3VolumeShift;                    // apply volume
                 _channel3Pointer++;                                         // move to next wave RAM position
-                _channel3Pointer %= 32;                                     
+                _channel3Pointer %= 32;
                 _channel3Timer += 4194304 / _mmu.Channel3Frequency;         // reset timer
             }
         }
@@ -70,8 +69,8 @@ namespace GEM
             _sampleTimer -= instructionCycles;
             if (_sampleTimer <= 0)
             {
-                _workingBuffer[0, _workingBufferIndex] = (((float)_channel3 / 15) - 0.5f) * 2;             // Left 
-                _workingBuffer[1, _workingBufferIndex] = (((float)_channel3 / 15) - 0.5f) * 2;          // Right 
+                _workingBuffer[0, _workingBufferIndex] = ((float)_channel3 / 15 - 0.5f) * 2;             // Left 
+                _workingBuffer[1, _workingBufferIndex] = ((float)_channel3 / 15 - 0.5f) * 2;          // Right 
                 _workingBufferIndex++;
 
                 // When buffer is full -> submit
@@ -84,7 +83,7 @@ namespace GEM
                 _sampleTimer += 4194304 / SampleRate;   // reset timer
             }
         }
-        
+
 
         private static void ConvertBuffer(float[,] source, byte[] destination)
         {

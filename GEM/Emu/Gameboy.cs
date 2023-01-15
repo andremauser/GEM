@@ -1,11 +1,10 @@
-﻿using GEM;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     /// <summary>
     /// Representation of a physical Gameboy. Receives user input and outputs a gameboy screen (and maybe sound in future)
@@ -34,8 +33,8 @@ namespace GEM
             _cycleCount = 0;
             Running = false;
             SwitchedOn = false;
-            _nullTexture = new Texture2D(graphicsDevice,1,1);
-            _nullTexture.SetData<Color>(new Color[] { Color.Black });
+            _nullTexture = new Texture2D(graphicsDevice, 1, 1);
+            _nullTexture.SetData(new Color[] { Color.Black });
         }
 
         #endregion
@@ -252,8 +251,8 @@ namespace GEM
         }
         private void checkInterrupt(int index, ushort isrAddress)
         {
-            if (_mmu.IME && 
-                _mmu.IE[index] == 1 && 
+            if (_mmu.IME &&
+                _mmu.IE[index] == 1 &&
                 _mmu.IF[index] == 1)
             {
                 _cpu.SP -= 2;                                   // save current position on stack

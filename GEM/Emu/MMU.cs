@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class MMU
     {
@@ -136,7 +136,7 @@ namespace GEM
         {
             get
             {
-                int freq =  (NR34[2] << 10) +
+                int freq = (NR34[2] << 10) +
                             (NR34[1] << 9) +
                             (NR34[0] << 8) +
                             NR33;
@@ -269,7 +269,7 @@ namespace GEM
             _divCycleCount += cycles;
             if (_divCycleCount >= 256)          // update freq = 16.384 Hz
             {
-                if (DIV == Byte.MaxValue)
+                if (DIV == byte.MaxValue)
                 {
                     DIV = 0;
                 }
@@ -298,7 +298,7 @@ namespace GEM
             }
             if (_timaCycleCount >= timaClock)
             {
-                if (TIMA == Byte.MaxValue)
+                if (TIMA == byte.MaxValue)
                 {
                     TIMA = TMA;
                     IF |= 0b00000100;           // Request TIMER Interrupt
@@ -455,7 +455,7 @@ namespace GEM
                     shiftRight = 0; // lower four bit (second)
                     break;
             }
-            return ((Read((ushort)(0xFF30 + selectByte)) >> shiftRight) & 0b1111);
+            return Read((ushort)(0xFF30 + selectByte)) >> shiftRight & 0b1111;
         }
 
         private void oamTransfer(byte source)

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class Layer
     {

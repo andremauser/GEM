@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     /// <summary>
     /// Static snapshot of user input
@@ -68,7 +68,7 @@ namespace GEM
             IsButton_Frame = gamePadState.Buttons.RightShoulder == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.F);
             IsButton_Reset = gamePadState.Buttons.RightStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.R);
             IsButton_Quit = gamePadState.Buttons.LeftStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Q);
-            
+
             IsButton_Load = keyboardState.IsKeyDown(Keys.L);
             IsButton_1 = keyboardState.IsKeyDown(Keys.D1);
             IsButton_2 = keyboardState.IsKeyDown(Keys.D2);

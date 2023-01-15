@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class GPU
     {
@@ -64,7 +64,7 @@ namespace GEM
             // Gets called after every CPU instruction
 
             // skip if LCD is off
-            if (!_mmu.IsLCDOn)  
+            if (!_mmu.IsLCDOn)
             {
                 ModeClock = 0;
                 _mmu.LCDMode = 2;
@@ -78,11 +78,11 @@ namespace GEM
             switch (_mmu.LCDMode)
             {
                 case 2: // Scanline: OAM Search
-                    if (ModeClock >= 80) 
-                        afterOAMSearch(); 
+                    if (ModeClock >= 80)
+                        afterOAMSearch();
                     break;
                 case 3: // Scanline: VRAM Read
-                    if (ModeClock >= 172) 
+                    if (ModeClock >= 172)
                         afterVRAMRead(); // <-- renderScanline()
                     break;
                 case 0: // Horizontal Blank
@@ -139,7 +139,7 @@ namespace GEM
                 _mmu.LCDMode = 1;                                           // Enter Mode 1 => VBlank
                 _mmu.IF |= 0b00000001;                                      // Request VBlank Interrupt
                 if (_mmu.Mode1IE == 1) { _mmu.IF |= 0b00000010; }           // Request LCD STAT Interrupt
-                
+
                 IsDrawTime = true;                                          // Synchronize CPU
             }
         }
@@ -188,13 +188,13 @@ namespace GEM
                 if (_mmu.IsBGEnabled)
                 {
                     // Background
-                    int posX = ((x + _mmu.SCX) & 0xFF);
-                    int posY = ((y + _mmu.SCY) & 0xFF);
+                    int posX = x + _mmu.SCX & 0xFF;
+                    int posY = y + _mmu.SCY & 0xFF;
                     int index = 256 * posY + posX;
                     bgPixelData = Background.RawData[index];
                     bgPixelPalette = Background.PaletteData[index];
                 }
-                if (_mmu.IsWindowEnabled && y >= _mmu.WY && x >= (_mmu.WX - 7))
+                if (_mmu.IsWindowEnabled && y >= _mmu.WY && x >= _mmu.WX - 7)
                 {
                     // Window overwriting Background Pixel
                     int posX = x - (_mmu.WX - 7);
@@ -213,14 +213,14 @@ namespace GEM
                 {
                     foreach (Sprite sprite in sprites)
                     {
-                        if ((sprite.PosX - 8) <= x && (sprite.PosX) > x)
+                        if (sprite.PosX - 8 <= x && sprite.PosX > x)
                         {
                             int pixelData = sprite.SpriteData[y - (sprite.PosY - 16), x - (sprite.PosX - 8)];
-                            if (pixelData != 0) 
+                            if (pixelData != 0)
                             {
                                 spritePixelData = pixelData;
                                 spriteOnPixel = sprite;
-                                break; 
+                                break;
                             }
                         }
                     }
@@ -228,7 +228,7 @@ namespace GEM
 
                 // Assign scanline pixel depending on sprite's bg-priority
                 if (spriteOnPixel != null && (spriteOnPixel.Priority == 0 ||                      // Sprite on Top
-                                             (spriteOnPixel.Priority == 1 && bgPixelData == 0)))  // Sprite in Background, but BG transparent
+                                             spriteOnPixel.Priority == 1 && bgPixelData == 0))  // Sprite in Background, but BG transparent
                 {
                     scanline.RawData[x] = spritePixelData;
                     scanline.PaletteData[x] = spriteOnPixel.PixelPalette(spritePixelData);
@@ -324,11 +324,11 @@ namespace GEM
 
                 for (int tileX = 0; tileX < 8; tileX++)
                 {
-                    int lowerBit = (lowerByte >> (7 - tileX)) & 1;
-                    int higherBit = (higherByte >> (7 - tileX)) & 1;
+                    int lowerBit = lowerByte >> 7 - tileX & 1;
+                    int higherBit = higherByte >> 7 - tileX & 1;
                     int pixelData = higherBit << 1 | lowerBit;
 
-                    refData[(top * 8 + tileY) * width + (left * 8 + tileX)] = pixelData;
+                    refData[(top * 8 + tileY) * width + left * 8 + tileX] = pixelData;
                 }
             }
         }
@@ -347,7 +347,7 @@ namespace GEM
                 int posY = _spriteList[i].PosY;
 
                 // Check if sprite on current Scanline (X position not being checked)
-                if (scanLine >= (posY - 16) && scanLine < (posY - 16 + spriteHeight))
+                if (scanLine >= posY - 16 && scanLine < posY - 16 + spriteHeight)
                 {
                     visibleSprites.Add(_spriteList[i]);
                 }

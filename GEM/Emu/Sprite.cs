@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     class Sprite
     {
@@ -76,12 +76,12 @@ namespace GEM
 
                 for (int x = 0; x < 8; x++)
                 {
-                    int lowerBit = (lowerByte >> (7 - x)) & 1;
-                    int higherBit = (higherByte >> (7 - x)) & 1;
+                    int lowerBit = lowerByte >> 7 - x & 1;
+                    int higherBit = higherByte >> 7 - x & 1;
                     int pixelData = higherBit << 1 | lowerBit;
 
                     // set pixel data and apply flip
-                    SpriteData[_flipY == 1 ? (_spriteHeight - 1) - y : y, _flipX == 1 ? 7 - x : x] = pixelData;
+                    SpriteData[_flipY == 1 ? _spriteHeight - 1 - y : y, _flipX == 1 ? 7 - x : x] = pixelData;
                 }
             }
         }

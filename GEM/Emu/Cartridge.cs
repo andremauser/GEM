@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class Cartridge
     {
@@ -45,7 +45,7 @@ namespace GEM
 
         public void Load(string file)
         {
-            if (file == null) 
+            if (file == null)
                 return;
 
             // Game file
@@ -67,7 +67,7 @@ namespace GEM
             int slashPos = file.LastIndexOf('/') + 1;
             int dotPos = file.LastIndexOf('.');
             string baseName = file.Substring(slashPos, dotPos - slashPos);
-            _saveFile = String.Format("save/{0}.sav", baseName);
+            _saveFile = string.Format("save/{0}.sav", baseName);
             if (File.Exists(_saveFile))
             {
                 _ram = File.ReadAllBytes(_saveFile);
@@ -124,10 +124,10 @@ namespace GEM
                     case 0x02:  // MBC1+RAM
                     case 0x03:  // MBC1+RAM+BATTERY
                     case 0x1B:  // MBC5+RAM+BATTERY
-                        return _data[(pos - 0x4000) + _romBank * 0x4000];
+                        return _data[pos - 0x4000 + _romBank * 0x4000];
                 }
             }
-            else  return 0xFF;
+            else return 0xFF;
         }
 
         public byte ReadRAM(ushort pos)

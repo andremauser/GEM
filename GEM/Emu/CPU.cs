@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     public class CPU
     {
@@ -65,7 +65,7 @@ namespace GEM
                 RET_NC,         POP_DE,         JP_NC_a16,      NOT_IMPL,       CALL_NC_a16,    PUSH_DE,        SUB_d8,         RST_10H,
                 RET_C,          RETI,           JP_C_a16,       NOT_IMPL,       CALL_C_a16,     NOT_IMPL,       SBC_A_d8,       RST_18H,
                 // 0xE0
-                LDH__a8__A,     POP_HL,         LD__C__A,       NOT_IMPL,       NOT_IMPL,       PUSH_HL,        AND_d8,         RST_20H, 
+                LDH__a8__A,     POP_HL,         LD__C__A,       NOT_IMPL,       NOT_IMPL,       PUSH_HL,        AND_d8,         RST_20H,
                 ADD_SP_r8,      JP_HL,          LD__a16__A,     NOT_IMPL,       NOT_IMPL,       NOT_IMPL,       XOR_d8,         RST_28H,
                 // 0xF0
                 LDH_A__a8_,     POP_AF,         LD_A__C_,       DI,             NOT_IMPL,       PUSH_AF,        OR_d8,          RST_30H,
@@ -1268,7 +1268,7 @@ namespace GEM
         {
             // 0x27
             byte correction = 0;
-                
+
             // Use Correction
             if (FlagN == 0)
             {
@@ -1739,7 +1739,7 @@ namespace GEM
         {
             // 0xCE
             ADC(d8);
-            PC ++;
+            PC++;
             InstructionCycles = 8;
         }
         private void SUB_d8()
@@ -1908,7 +1908,7 @@ namespace GEM
             FlagZ = 0;
             FlagN = 0;
             FlagH = 0;
-            int temp = ((A << 1) | (A >> 7));
+            int temp = A << 1 | A >> 7;
             A = (byte)(temp & 0xFF);
             FlagC = (byte)(temp >> 8);
             PC++;
@@ -1920,7 +1920,7 @@ namespace GEM
             FlagZ = 0;
             FlagN = 0;
             FlagH = 0;
-            int temp = ((A << 1) | FlagC);
+            int temp = A << 1 | FlagC;
             A = (byte)(temp & 0xFF);
             FlagC = (byte)(temp >> 8);
             PC++;
@@ -1933,7 +1933,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             FlagC = (byte)(A & 1);
-            A = (byte)((A >> 1) | ((A & 1) << 7));
+            A = (byte)(A >> 1 | (A & 1) << 7);
             PC++;
             InstructionCycles = 4;
         }
@@ -1944,7 +1944,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             byte newC = (byte)(A & 1);
-            A = (byte)((A >> 1) | (FlagC << 7));
+            A = (byte)(A >> 1 | FlagC << 7);
             FlagC = newC;
             PC++;
             InstructionCycles = 4;
@@ -1991,7 +1991,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             byte b = _mmu.Read(HL);
-            int temp = ((b << 1) | (b >> 7));
+            int temp = b << 1 | b >> 7;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
             FlagC = (byte)(temp >> 8);
@@ -2041,7 +2041,7 @@ namespace GEM
             FlagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
-            b = (byte)((b >> 1) | ((b & 1) << 7));
+            b = (byte)(b >> 1 | (b & 1) << 7);
             _mmu.Write(HL, b);
             FlagC = newC;
             FlagZ = flagZ(b);
@@ -2089,7 +2089,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             byte b = _mmu.Read(HL);
-            int temp = ((b << 1) | FlagC);
+            int temp = b << 1 | FlagC;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
             FlagC = (byte)(temp >> 8);
@@ -2139,7 +2139,7 @@ namespace GEM
             FlagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
-            b = (byte)((b >> 1) | (FlagC << 7));
+            b = (byte)(b >> 1 | FlagC << 7);
             _mmu.Write(HL, b);
             FlagC = newC;
             FlagZ = flagZ(b);
@@ -2187,7 +2187,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             byte b = _mmu.Read(HL);
-            int temp = (b << 1);
+            int temp = b << 1;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
             FlagC = (byte)(temp >> 8);
@@ -2237,7 +2237,7 @@ namespace GEM
             FlagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
-            b = (byte)((b >> 1) | (b & 0b10000000));
+            b = (byte)(b >> 1 | b & 0b10000000);
             _mmu.Write(HL, b);
             FlagC = newC;
             FlagZ = flagZ(b);
@@ -3050,7 +3050,7 @@ namespace GEM
         private void SET_0__HL_()
         {
             // 0xCB 0xC6
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 0))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 0)));
             InstructionCycles = 16;
         }
 
@@ -3092,7 +3092,7 @@ namespace GEM
         private void SET_1__HL_()
         {
             // 0xCB 0xCE
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 1))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 1)));
             InstructionCycles = 16;
         }
 
@@ -3134,7 +3134,7 @@ namespace GEM
         private void SET_2__HL_()
         {
             // 0xCB 0xD6
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 2))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 2)));
             InstructionCycles = 16;
         }
 
@@ -3176,7 +3176,7 @@ namespace GEM
         private void SET_3__HL_()
         {
             // 0xCB 0xDE
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 3))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 3)));
             InstructionCycles = 16;
         }
 
@@ -3218,7 +3218,7 @@ namespace GEM
         private void SET_4__HL_()
         {
             // 0xCB 0xE6
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 4))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 4)));
             InstructionCycles = 16;
         }
 
@@ -3260,7 +3260,7 @@ namespace GEM
         private void SET_5__HL_()
         {
             // 0xCB 0xEE
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 5))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 5)));
             InstructionCycles = 16;
         }
 
@@ -3302,7 +3302,7 @@ namespace GEM
         private void SET_6__HL_()
         {
             // 0xCB 0xF6
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 6))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 6)));
             InstructionCycles = 16;
         }
 
@@ -3344,7 +3344,7 @@ namespace GEM
         private void SET_7__HL_()
         {
             // 0xCB 0xFE
-            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)(Math.Pow(2, 7))));
+            _mmu.Write(HL, (byte)(_mmu.Read(HL) | (byte)Math.Pow(2, 7)));
             InstructionCycles = 16;
         }
 
@@ -3383,7 +3383,7 @@ namespace GEM
         {
             FlagN = 0;
             FlagH = flagH(HL, r);
-            FlagC = flagC((HL + r) >> 8);
+            FlagC = flagC(HL + r >> 8);
             HL += r;
             PC++;
             InstructionCycles = 8;
@@ -3393,7 +3393,7 @@ namespace GEM
             int result = A + r + FlagC;
             FlagZ = flagZ((byte)result);
             FlagN = 0;
-            FlagH = flagHCarry(A, r); 
+            FlagH = flagHCarry(A, r);
             FlagC = flagC(result);
             A = (byte)result;
             PC++;
@@ -3526,7 +3526,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             FlagC = r[7];
-            r = (byte)(((r << 1) | r[7]) & 0xFF);
+            r = (byte)((r << 1 | r[7]) & 0xFF);
             FlagZ = flagZ(r);
             InstructionCycles = 8;
         }
@@ -3536,7 +3536,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             int newC = r[0];
-            r = (byte)((r >> 1) | (r[0] << 7));
+            r = (byte)(r >> 1 | r[0] << 7);
             FlagC = newC;
             FlagZ = flagZ(r);
             InstructionCycles = 8;
@@ -3547,7 +3547,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             int newC = r[7];
-            r = (byte)(((r << 1) | FlagC) & 0xFF);
+            r = (byte)((r << 1 | FlagC) & 0xFF);
             FlagC = newC;
             FlagZ = flagZ(r);
             InstructionCycles = 8;
@@ -3558,7 +3558,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             int newC = r[0];
-            r = (byte)((r >> 1) | (FlagC << 7));
+            r = (byte)(r >> 1 | FlagC << 7);
             FlagC = newC;
             FlagZ = flagZ(r);
             InstructionCycles = 8;
@@ -3569,7 +3569,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             FlagC = r[7];
-            int temp = (r << 1);
+            int temp = r << 1;
             r = (byte)(temp & 0xFF);
             FlagZ = flagZ(r);
             InstructionCycles = 8;
@@ -3580,7 +3580,7 @@ namespace GEM
             FlagN = 0;
             FlagH = 0;
             FlagC = r[0];
-            r = (byte)((r >> 1) | (r[7] << 7));
+            r = (byte)(r >> 1 | r[7] << 7);
             FlagZ = flagZ(r);
             InstructionCycles = 8;
         }
@@ -3638,16 +3638,16 @@ namespace GEM
         private int flagH(byte a, byte b)
         {
             // mask to 4 bits then sum up and return 5th bit for flag
-            return (((a & 0xF) + (b & 0xF)) >> 4) & 1;
+            return (a & 0xF) + (b & 0xF) >> 4 & 1;
         }
         private int flagH(ushort a, ushort b)
         {
             // special version for carry on bit 11
-            return (((a & 0xFFF) + (b & 0xFFF)) >> 12) & 1;
+            return (a & 0xFFF) + (b & 0xFFF) >> 12 & 1;
         }
         private int flagHCarry(byte a, byte b)
         {
-            return (((a & 0xF) + (b & 0xF) + FlagC) >> 4) & 1;
+            return (a & 0xF) + (b & 0xF) + FlagC >> 4 & 1;
         }
         private int flagHSub(byte a, byte b)
         {
@@ -3656,14 +3656,14 @@ namespace GEM
         }
         private int flagHSubCarry(byte a, byte b)
         {
-            if ((a & 0xF) < ((b & 0xF) + FlagC)) { return 1; } else { return 0; }
+            if ((a & 0xF) < (b & 0xF) + FlagC) { return 1; } else { return 0; }
         }
 
         // C = Carry Flag
         private int flagC(int sum)
         {
             // return 9th bit
-            return (sum >> 8) & 1;
+            return sum >> 8 & 1;
         }
 
         #endregion

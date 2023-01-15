@@ -1,11 +1,12 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GEM.Ctrl;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace GEM
+namespace GEM.Emu
 {
     /// <summary>
     /// Connection between user and gameboy instance: 
@@ -49,8 +50,8 @@ namespace GEM
         int _screenOffsetRight;
 
         List<string> _romList = new List<string>();
-        List<CustomControl> _controls = new List<CustomControl>();
-        CustomControl _sidePanel;
+        List<BaseControl> _controls = new List<BaseControl>();
+        BaseControl _sidePanel;
 
         #endregion
 
@@ -60,18 +61,21 @@ namespace GEM
         {
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
+
         }
 
         #endregion
 
         #region Properties
-        public string CartridgeTitle 
-        { 
+
+        public string CartridgeTitle
+        {
             get
             {
                 return _gameboy.CartridgeTitle;
             }
         }
+
         #endregion
 
         #region Methods
@@ -82,7 +86,7 @@ namespace GEM
             _spriteBatch = new SpriteBatch(_graphicsDevice);
             _fontConsole = content.Load<SpriteFont>("Console");
             _pixel = new Texture2D(_graphicsDevice, 1, 1);
-            _pixel.SetData<Color>(new Color[] { Color.White });
+            _pixel.SetData(new Color[] { Color.White });
             _emuPalette = new Color[][]
             {
                 new Color[]
@@ -123,9 +127,16 @@ namespace GEM
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
+            CustomAction[] leftPanelActions =
+            {
+                _gameboy.PowerOn,
+                _gameboy.PowerOff,
+            };
 
-            _sidePanel = new SidePanel(_pixel, _fontConsole, null, this);
+            _sidePanel = new LeftPanel(_pixel, _fontConsole, null, leftPanelActions);
             _controls.Add(_sidePanel);
+
+
 
         }
 
@@ -146,7 +157,7 @@ namespace GEM
             Input.Update();
 
             _sidePanel.Height = viewport.Height;
-            foreach (CustomControl control in _controls)
+            foreach (BaseControl control in _controls)
             {
                 control.Update();
             }
@@ -173,7 +184,7 @@ namespace GEM
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
 
             _gameboy.UpdateFrame();
-             
+
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
             drawEmulator(viewport, gbScreen);
 
@@ -185,12 +196,12 @@ namespace GEM
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
             // Screen Position & Size
-            float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f, 
+            float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f,
                                              (viewport.Width - _screenOffsetLeft - _screenOffsetRight) / 160f);
 
             int screenWidth = (int)(pixelSize * 160);
-            int screenHeight = (int)(pixelSize * 144); 
-            int screenLeft = _screenOffsetLeft + (int)(viewport.Width - screenWidth - _screenOffsetLeft - _screenOffsetRight) / 2;
+            int screenHeight = (int)(pixelSize * 144);
+            int screenLeft = _screenOffsetLeft + (viewport.Width - screenWidth - _screenOffsetLeft - _screenOffsetRight) / 2;
             int screenTop = _screenOffsetTop;
 
             //Temporary File Browser
@@ -202,11 +213,11 @@ namespace GEM
             foreach (var file in Directory.EnumerateFiles("roms/"))
             {
                 int dotPos = file.LastIndexOf('.');
-                if (file.Substring(dotPos,file.Length-dotPos)==".gb")
+                if (file.Substring(dotPos, file.Length - dotPos) == ".gb")
                 {
                     i++;
                     int slashPos = file.LastIndexOf('/') + 1;
-                    fileBrowser += String.Format("{0} - {1}\n", i, file.Substring(slashPos,file.Length-slashPos));
+                    fileBrowser += string.Format("{0} - {1}\n", i, file.Substring(slashPos, file.Length - slashPos));
                     _romList.Add(file);
                 }
                 // Temporarily max. 5 games - TODO: Better File Browser 
@@ -240,7 +251,7 @@ namespace GEM
             }
 
 
-            foreach (CustomControl control in _controls)
+            foreach (BaseControl control in _controls)
             {
                 control.Draw(_spriteBatch);
             }
@@ -275,7 +286,7 @@ namespace GEM
             //_spriteBatch.Draw(_pixel, new Rectangle(left, pixelPosY, (int)(size * 160), pixelSize), _gridColorLight);
             //_spriteBatch.Draw(_pixel, new Rectangle(pixelPosX, top, pixelSize, (int)(size * 160)), _gridColorLight);
             _spriteBatch.Draw(_pixel, new Rectangle(pixelPosX, pixelPosY, pixelSize, pixelSize), _pixelMarkerColor);
-            _spriteBatch.DrawString(_fontConsole, string.Format("{0}",pixelX), new Vector2(pixelPosX, pixelPosY - 24), _pixelMarkerTextColor);
+            _spriteBatch.DrawString(_fontConsole, string.Format("{0}", pixelX), new Vector2(pixelPosX, pixelPosY - 24), _pixelMarkerTextColor);
             _spriteBatch.DrawString(_fontConsole, string.Format("{0,3}", pixelY), new Vector2(pixelPosX - 40, pixelPosY), _pixelMarkerTextColor);
         }
         private void drawGrid(float pixelSize, int left, int top, int width, int height)
@@ -324,7 +335,7 @@ namespace GEM
         {
             float scale = 2f;
             _spriteBatch.DrawString(_fontConsole, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY+20, (int)(128 * scale), (int)(192 * scale)), Color.White);
+            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(128 * scale), (int)(192 * scale)), Color.White);
         }
 
         private void checkInput_Color()
@@ -372,7 +383,7 @@ namespace GEM
             return isHandled;
         }
 
-        private void doNothing(){ }
+        private void doNothing() { }
 
         private void checkInput_Reset()
         {
@@ -469,16 +480,7 @@ namespace GEM
             }
         }
 
-        public void GameboyOff()
-        {
-            _gameboy.PowerOff();
-        }
 
-        public void GameboyOn() 
-        {
-            _gameboy.PowerOn();
-        }
-
-#endregion
+        #endregion
     }
 }

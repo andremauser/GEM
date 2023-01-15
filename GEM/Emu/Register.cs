@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM
+namespace GEM.Emu
 {
     public struct Register
     {
@@ -43,7 +43,7 @@ namespace GEM
             }
             set
             {
-                _value = (byte)((_value & (0xFF - (int)Math.Pow(2, index))) | (value << index));
+                _value = (byte)(_value & 0xFF - (int)Math.Pow(2, index) | value << index);
             }
         }
 
