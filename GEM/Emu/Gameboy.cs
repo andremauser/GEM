@@ -31,7 +31,8 @@ namespace GEM.Emu
             _cpu = new CPU(_mmu);
             //_spu = new SPU(_mmu);
             _cycleCount = 0;
-            Running = false;
+            IsRunning = false;
+            IsPowerOn= false;
             SwitchedOn = false;
             _nullTexture = new Texture2D(graphicsDevice, 1, 1);
             _nullTexture.SetData(new Color[] { Color.Black });
@@ -87,7 +88,8 @@ namespace GEM.Emu
         }
         public bool StopAfterFrame { get; set; }
         public bool StopAfterStep { get; set; }
-        public bool Running { get; private set; }
+        public bool IsRunning { get; private set; }
+        public bool IsPowerOn { get; private set; }
         public bool SwitchedOn { get; private set; }
 
         #endregion
@@ -98,15 +100,20 @@ namespace GEM.Emu
         {
             _mmu.Cartridge.Load(game);
         }
+        public void EjectCartridge()
+        {
+            PowerOff();
+            _mmu.Cartridge.Reset();
+        }
         public void PowerOn()
         {
             _mmu.IsLCDOn = true;
-            Running = true;
+            IsRunning = true;
         }
         public void PowerOff()
         {
             _mmu.Cartridge.SaveToFile();
-            Running = false;
+            IsRunning = false;
             _mmu.IsLCDOn = false;
             _cycleCount = 0;
             _mmu.Reset();
@@ -117,7 +124,7 @@ namespace GEM.Emu
         }
         public void PauseSwitch()
         {
-            Running = !Running;
+            IsRunning = !IsRunning;
             StopAfterFrame = false;
             StopAfterStep = false;
         }
@@ -165,7 +172,7 @@ namespace GEM.Emu
 
         public void UpdateFrame()
         {
-            if (Running)
+            if (IsRunning)
             {
                 // compute 70.224 OpCodes for 1 frame (456 T-Cycles per line @ 154 lines)
                 while (_cycleCount < 70224)
@@ -192,12 +199,12 @@ namespace GEM.Emu
                     checkInterrupts();
 
 
-                    Running &= !StopAfterStep;
-                    if (!Running) break;
+                    IsRunning &= !StopAfterStep;
+                    if (!IsRunning) break;
                 }
 
                 _cycleCount -= 70224;
-                Running &= !StopAfterFrame;
+                IsRunning &= !StopAfterFrame;
             }
         }
 

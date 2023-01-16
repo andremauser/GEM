@@ -35,7 +35,7 @@ namespace GEM.Ctrl
         protected bool _wasPressed;
         protected CustomState _customState;
         protected string _caption;
-        protected CustomAction[] _actionList;
+        protected Emulator _emulator;
 
         protected int _left;
         protected int _top;
@@ -71,13 +71,13 @@ namespace GEM.Ctrl
 
         #region Constructors
 
-        protected BaseControl(Texture2D texture, SpriteFont spriteFont, BaseControl parent, CustomAction[] actions)
+        protected BaseControl(BaseControl parent, Emulator emulator)
         {
-            _texture = texture;
-            _font = spriteFont;
+            _texture = Emulator._Pixel;
+            _font = Emulator._Font;
             _parent = parent;
             _controls = new List<BaseControl>();
-            _actionList = actions;
+            _emulator = emulator;
 
             // Default values
             _horizontalTextAlign = Align.Center;
@@ -199,6 +199,10 @@ namespace GEM.Ctrl
 
         public virtual void Update()
         {
+            if (!Visible)
+            {
+                return;
+            }
             // Update embedded controls first (click priority from top to bottom)
             if (_controls.Count > 0)
             {

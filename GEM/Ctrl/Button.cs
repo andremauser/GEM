@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GEM.Emu;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -10,32 +11,15 @@ namespace GEM.Ctrl
 {
     internal class Button : BaseControl
     {
-        public Button(Texture2D texture, SpriteFont spriteFont, BaseControl parent, CustomAction[] actions) : base(texture, spriteFont, parent, actions)
+        public Button(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
-            _backColorIdle = Color.Transparent;
-            _backColorHover = Color.Magenta;
+            _backColorIdle = Color.Black;
+            _backColorHover = Color.DarkMagenta;
             _backColorPress = Color.White;
             _textColorIdle = Color.White;
             _textColorHover = Color.White;
-            _textColorPress = Color.Black;
+            _textColorPress = Color.DarkMagenta;
         }
 
-        public override void Update()
-        {
-            switch (_customState)
-            {
-                case CustomState.Collapsed:
-                    _clickEnabled= true;
-                    _hoverEnabled= true;
-                    break;
-                case CustomState.Expanded:
-                    _clickEnabled= false;
-                    _hoverEnabled= false;
-                    break;
-                default:
-                    break;
-            }
-            base.Update();
-        }
     }
 }

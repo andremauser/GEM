@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GEM.Emu;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace GEM.Ctrl
         Orientation _orientation;
         int _padding;
 
-        public Panel(Texture2D texture, SpriteFont spriteFont, BaseControl parent, Orientation orientation, int padding, CustomAction[] actions) : base(texture, spriteFont, parent, actions)
+        public Panel(BaseControl parent, Orientation orientation, int padding, Emulator emulator) : base(parent, emulator)
         {
             _orientation = orientation;
             _padding = padding;

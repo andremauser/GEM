@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GEM.Emu;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -20,14 +21,14 @@ namespace GEM.Ctrl
     {
         protected Direction _direction;
 
-        protected Label _root;
+        protected Image _root; // add _root as _controls[0] !
 
-        public Submenu(Texture2D texture, SpriteFont spriteFont, BaseControl parent, CustomAction[] actions, Direction direction) : base(texture, spriteFont, parent, actions)
+        public Submenu(BaseControl parent, Emulator emulator, Direction direction) : base(parent, emulator)
         {
             _direction = direction;
-            _backColorIdle = Color.Black;
+            _backColorIdle = Color.Transparent;
             _backColorHover = Color.DarkMagenta;
-            _backColorPress = Color.DarkMagenta;
+            _backColorPress = Color.White;
         }
 
         public override void Update()
@@ -35,7 +36,7 @@ namespace GEM.Ctrl
             switch (_customState)
             {
                 case CustomState.Collapsed:
-                    _backColorPress = Color.Magenta;
+                    _backColorPress = Color.White;
                     break;
                 case CustomState.Expanded:
                     _backColorPress = Color.DarkMagenta;
@@ -52,7 +53,7 @@ namespace GEM.Ctrl
                     break;
                 case Direction.Right:
                     int top = 0;
-                    for (int i = 0; i < _controls.Count; i++)
+                    for (int i = 1; i < _controls.Count; i++)
                     {
                         _controls[i].Left = _root.Width;
                         _controls[i].Top = top;
@@ -68,14 +69,14 @@ namespace GEM.Ctrl
                 default:
                     break;
             }
-            _root.Update();
+            //_root.Update();
             base.Update();
         }
 
         public override void Draw(SpriteBatch spriteBatch)
         {
             base.Draw(spriteBatch);
-            _root.Draw(spriteBatch);
+            //_root.Draw(spriteBatch);
         }
 
         public override int Width 
@@ -90,7 +91,7 @@ namespace GEM.Ctrl
                         break;
                     case CustomState.Expanded:
                         int maxControlWidth = 0;
-                        for (int i = 0; i < _controls.Count; i++)
+                        for (int i = 1; i < _controls.Count; i++)
                         {
                             maxControlWidth = Math.Max(_controls[i].Width, maxControlWidth);
                         }
@@ -128,7 +129,7 @@ namespace GEM.Ctrl
                         break;
                     case CustomState.Expanded:
                         int totalHeight = 0;
-                        for (int i = 0; i < _controls.Count; i++)
+                        for (int i = 1; i < _controls.Count; i++)
                         {
                             totalHeight += _controls[i].Height;
                         }
@@ -156,21 +157,21 @@ namespace GEM.Ctrl
 
         internal override void onClick()
         {
-            for (int i = 0; i < _controls.Count; i++)
+            for (int i = 1; i < _controls.Count; i++)
             {
                 _controls[i].Visible = true;
             }
-            _customState = CustomState.Expanded;
+            CustomState = CustomState.Expanded;
             base.onClick();
         }
 
         internal override void onHoverOut()
         {
-            for (int i = 0; i < _controls.Count; i++)
+            for (int i = 1; i < _controls.Count; i++)
             {
                 _controls[i].Visible = false;
             }
-            _customState = CustomState.Collapsed;
+            CustomState = CustomState.Collapsed;
             base.onHoverOut();
         }
 

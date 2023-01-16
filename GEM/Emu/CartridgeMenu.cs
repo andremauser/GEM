@@ -1,4 +1,5 @@
 ﻿using GEM.Ctrl;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -10,16 +11,24 @@ namespace GEM.Emu
 {
     internal class CartridgeMenu : Submenu
     {
-        public CartridgeMenu(Texture2D texture, SpriteFont spriteFont, BaseControl parent, CustomAction[] actions, Direction direction) : base(texture, spriteFont, parent, actions, direction)
+        public CartridgeMenu(BaseControl parent, Emulator emulator, Direction direction) : base(parent, emulator, direction)
         {
-            _root = new Label(texture, spriteFont, this, actions);
-            _root.Caption = "GAME";
+            _root = new Image(this, emulator, "cartridge");
+            _controls.Add(_root);
             
-            _root.Width= 50;
-            _root.Height= 50;
+            _root.Width= 60;
+            _root.Height= 60;
+            _root.Padding = 5;
 
-            _controls.Add(new Button(texture, spriteFont, this, actions) { Width = 200, Height = 50, Caption = "ON", ClickAction = actions[0] });
-            _controls.Add(new Button(texture, spriteFont, this, actions) { Width = 200, Height = 50, Caption = "OFF", ClickAction = actions[1] });
+            _controls.Add(new Label(this, emulator) { Width = 200, Height = 40 });
+            _controls.Add(new Button(this, emulator) { Width = 200, Height = 40, Caption = "Open ROM file", ClickAction = _emulator.Nothing });
+            _controls.Add(new Button(this, emulator) { Width = 200, Height = 40, Caption = "Eject cartridge", ClickAction = _emulator.EjectCartridge });
+        }
+
+        public override void Update()
+        {
+            _controls[1].Caption = _emulator.CartridgeTitle;
+            base.Update();
         }
 
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using GEM.Emu;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace GEM.Ctrl
 {
     internal class Label : BaseControl
     {
-        public Label(Texture2D texture, SpriteFont spriteFont, BaseControl parent, CustomAction[] actions) : base(texture, spriteFont, parent, actions)
+        public Label(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
             _backColorIdle = Color.Transparent;
             _backColorHover= Color.Transparent;
@@ -18,6 +19,8 @@ namespace GEM.Ctrl
             _textColorIdle = Color.White;
             _textColorHover = Color.White;
             _textColorPress = Color.White;
+            _clickEnabled = false;
+            _hoverEnabled= false;
         }
     }
 }

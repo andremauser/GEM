@@ -20,8 +20,6 @@ namespace GEM.Emu
 
         GraphicsDevice _graphicsDevice;
         SpriteBatch _spriteBatch;
-        SpriteFont _fontConsole;
-        Texture2D _pixel;
 
         Color[][] _emuPalette;
         int _emuColorIndex;
@@ -53,6 +51,11 @@ namespace GEM.Emu
         List<BaseControl> _controls = new List<BaseControl>();
         BaseControl _sidePanel;
 
+
+
+        static public Texture2D _Pixel;
+        static public SpriteFont _Font;
+
         #endregion
 
         #region Constructors
@@ -61,7 +64,7 @@ namespace GEM.Emu
         {
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
-
+            _screenOffsetLeft = 60;
         }
 
         #endregion
@@ -72,7 +75,12 @@ namespace GEM.Emu
         {
             get
             {
-                return _gameboy.CartridgeTitle;
+                string title = _gameboy.CartridgeTitle;
+                if (title != "")
+                {
+                    return title;
+                }
+                return "(N/A)";
             }
         }
 
@@ -84,9 +92,9 @@ namespace GEM.Emu
         {
             _gameboy = new Gameboy(_graphicsDevice);
             _spriteBatch = new SpriteBatch(_graphicsDevice);
-            _fontConsole = content.Load<SpriteFont>("Console");
-            _pixel = new Texture2D(_graphicsDevice, 1, 1);
-            _pixel.SetData(new Color[] { Color.White });
+            _Font = content.Load<SpriteFont>("Console");
+            _Pixel = new Texture2D(_graphicsDevice, 1, 1);
+            _Pixel.SetData(new Color[] { Color.White });
             _emuPalette = new Color[][]
             {
                 new Color[]
@@ -127,13 +135,7 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
-            CustomAction[] leftPanelActions =
-            {
-                _gameboy.PowerOn,
-                _gameboy.PowerOff,
-            };
-
-            _sidePanel = new LeftPanel(_pixel, _fontConsole, null, leftPanelActions);
+            _sidePanel = new LeftPanel(null, this);
             _controls.Add(_sidePanel);
 
 
@@ -259,7 +261,7 @@ namespace GEM.Emu
 
         private void printDebugInfo(int posX, int posY)
         {
-            _spriteBatch.DrawString(_fontConsole, "Debug:\n\n" + _gameboy.DebugInfo, new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.DrawString(_Font, "Debug:\n\n" + _gameboy.DebugInfo, new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
         }
 
         private void drawMouseMarker(float size, int left, int top)
@@ -279,15 +281,15 @@ namespace GEM.Emu
             // Tile Marker
             //_spriteBatch.Draw(_pixel, new Rectangle(left, tilePosY, (int)(size*160), tileSize), _gridColorLight);
             //_spriteBatch.Draw(_pixel, new Rectangle(tilePosX, top, tileSize, (int)(size*144)), _gridColorLight);
-            _spriteBatch.DrawString(_fontConsole, tileX.ToString(), new Vector2(tilePosX, top), _pixelMarkerTextColor);
-            _spriteBatch.DrawString(_fontConsole, tileY.ToString(), new Vector2(left, tilePosY), _pixelMarkerTextColor);
+            _spriteBatch.DrawString(_Font, tileX.ToString(), new Vector2(tilePosX, top), _pixelMarkerTextColor);
+            _spriteBatch.DrawString(_Font, tileY.ToString(), new Vector2(left, tilePosY), _pixelMarkerTextColor);
 
             // Pixel Marker
             //_spriteBatch.Draw(_pixel, new Rectangle(left, pixelPosY, (int)(size * 160), pixelSize), _gridColorLight);
             //_spriteBatch.Draw(_pixel, new Rectangle(pixelPosX, top, pixelSize, (int)(size * 160)), _gridColorLight);
-            _spriteBatch.Draw(_pixel, new Rectangle(pixelPosX, pixelPosY, pixelSize, pixelSize), _pixelMarkerColor);
-            _spriteBatch.DrawString(_fontConsole, string.Format("{0}", pixelX), new Vector2(pixelPosX, pixelPosY - 24), _pixelMarkerTextColor);
-            _spriteBatch.DrawString(_fontConsole, string.Format("{0,3}", pixelY), new Vector2(pixelPosX - 40, pixelPosY), _pixelMarkerTextColor);
+            _spriteBatch.Draw(_Pixel, new Rectangle(pixelPosX, pixelPosY, pixelSize, pixelSize), _pixelMarkerColor);
+            _spriteBatch.DrawString(_Font, string.Format("{0}", pixelX), new Vector2(pixelPosX, pixelPosY - 24), _pixelMarkerTextColor);
+            _spriteBatch.DrawString(_Font, string.Format("{0,3}", pixelY), new Vector2(pixelPosX - 40, pixelPosY), _pixelMarkerTextColor);
         }
         private void drawGrid(float pixelSize, int left, int top, int width, int height)
         {
@@ -303,7 +305,7 @@ namespace GEM.Emu
                 {
                     gridColor = _gridColorLight;
                 }
-                _spriteBatch.Draw(_pixel, new Rectangle((int)(left + x * pixelSize), top, 1, height), gridColor);
+                _spriteBatch.Draw(_Pixel, new Rectangle((int)(left + x * pixelSize), top, 1, height), gridColor);
             }
             for (int y = 0; y < 144; y += 1)
             {
@@ -315,26 +317,26 @@ namespace GEM.Emu
                 {
                     gridColor = _gridColorLight;
                 }
-                _spriteBatch.Draw(_pixel, new Rectangle(left, (int)(top + y * pixelSize), width, 1), gridColor);
+                _spriteBatch.Draw(_Pixel, new Rectangle(left, (int)(top + y * pixelSize), width, 1), gridColor);
             }
         }
 
         private void drawWindow(int posX, int posY)
         {
             float scale = 1f;
-            _spriteBatch.DrawString(_fontConsole, "Window:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.DrawString(_Font, "Window:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
             _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
         }
         private void drawBackground(int posX, int posY)
         {
             float scale = 1f;
-            _spriteBatch.DrawString(_fontConsole, "Background:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.DrawString(_Font, "Background:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
             _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
         }
         private void drawTileset(int posX, int posY)
         {
             float scale = 2f;
-            _spriteBatch.DrawString(_fontConsole, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
+            _spriteBatch.DrawString(_Font, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
             _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(128 * scale), (int)(192 * scale)), Color.White);
         }
 
@@ -478,6 +480,33 @@ namespace GEM.Emu
             {
                 _isHandled_5 = false;
             }
+        }
+
+        // UI functions
+
+        public void GameboyPowerOn()
+        {
+            _gameboy.PowerOn();
+        }
+
+        public void GameboyPowerOff()
+        {
+            _gameboy.PowerOff();
+        }
+
+        public void EjectCartridge()
+        {
+            _gameboy.EjectCartridge();
+        }
+
+        public bool IsGameboyOn()
+        {
+            return _gameboy.IsPowerOn;
+        }
+
+        public void Nothing()
+        {
+
         }
 
 

@@ -1,5 +1,6 @@
 ﻿using GEM.Emu;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 
@@ -13,11 +14,13 @@ namespace GEM
 
         #region Fields
 
-        GraphicsDeviceManager _graphics;
+        static public GraphicsDeviceManager _graphics;
         Emulator _emulator;
         float _fpsSecondCounter;
         int _fpsFrameCounter;
         int _fps;
+
+        static public ContentManager _Content;
 
         #endregion
 
@@ -27,6 +30,7 @@ namespace GEM
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            _Content = Content;
             IsMouseVisible = true; 
             Window.AllowUserResizing = true;
             IsFixedTimeStep = true;
@@ -41,7 +45,7 @@ namespace GEM
         {
             _emulator = new Emulator(GraphicsDevice);
             _graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _graphics.PreferredBackBufferWidth = 900;
+            _graphics.PreferredBackBufferWidth = 860;
             _graphics.PreferredBackBufferHeight = 720;
             _graphics.ApplyChanges(); 
 
