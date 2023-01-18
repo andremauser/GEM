@@ -9,159 +9,117 @@ using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
-    public enum Direction
-    { 
-        Left, 
-        Right, 
-        Up, 
-        Down 
-    }
-
     internal class Submenu : BaseControl
     {
-        protected Direction _direction;
+        /// <summary>
+        /// base class for submenu opening to the right - entries one above the other
+        /// </summary>
 
-        protected Image _root; // add _root as _controls[0] !
+        #region Fields
 
-        public Submenu(BaseControl parent, Emulator emulator, Direction direction) : base(parent, emulator)
+        protected Button _rootButton;
+        protected int _rootButtonMinHeight;
+
+        #endregion
+
+        #region Constructors
+
+        public Submenu(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
-            _direction = direction;
-            _backColorIdle = Color.Transparent;
-            _backColorHover = Color.DarkMagenta;
-            _backColorPress = Color.White;
+            _rootButton = new Button(this, emulator);
+            _controls.Add(_rootButton);
+
+            BackColorIdle = Color.Transparent;
+            BackColorHover = new Color(0f, 0f, 0f, 0.8f);
+            BackColorPress = new Color(0f, 0f, 0f, 0.8f);
+
+            _rootButtonMinHeight = 60;
+
+            _rootButton.Height = _rootButtonMinHeight;
+            _rootButton.Width = _rootButtonMinHeight;
         }
 
-        public override void Update()
+        #endregion
+
+        #region Properties
+
+        public override int Width
         {
-            switch (_customState)
-            {
-                case CustomState.Collapsed:
-                    _backColorPress = Color.White;
-                    break;
-                case CustomState.Expanded:
-                    _backColorPress = Color.DarkMagenta;
-                    break;
-                default:
-                    break;
-            }
-
-            // arrange embedded controls
-            switch (_direction)
-            {
-                case Direction.Left:
-                    // TODO
-                    break;
-                case Direction.Right:
-                    int top = 0;
-                    for (int i = 1; i < _controls.Count; i++)
-                    {
-                        _controls[i].Left = _root.Width;
-                        _controls[i].Top = top;
-                        top += _controls[i].Height;
-                    }
-                    break;
-                case Direction.Up:
-                    // TODO
-                    break;
-                case Direction.Down:
-                    // TODO
-                    break;
-                default:
-                    break;
-            }
-            //_root.Update();
-            base.Update();
-        }
-
-        public override void Draw(SpriteBatch spriteBatch)
-        {
-            base.Draw(spriteBatch);
-            //_root.Draw(spriteBatch);
-        }
-
-        public override int Width 
-        { 
             get
             {
-                int width = 0;
-                switch (_customState)
+                int maxControlWidth = 0;
+                for (int i = 1; i < _controls.Count; i++)
                 {
-                    case CustomState.Collapsed:
-                        width = _root.Width;
-                        break;
-                    case CustomState.Expanded:
-                        int maxControlWidth = 0;
-                        for (int i = 1; i < _controls.Count; i++)
-                        {
-                            maxControlWidth = Math.Max(_controls[i].Width, maxControlWidth);
-                        }
-                        switch (_direction)
-                        {
-                            case Direction.Left:
-                            case Direction.Right:
-                                width = _root.Width + maxControlWidth;
-                                break;
-                            case Direction.Up:
-                            case Direction.Down:
-                                width = Math.Max(_root.Width, maxControlWidth);
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
+                    if (_controls[i].Visible)
+                        maxControlWidth = Math.Max(_controls[i].Width, maxControlWidth);
                 }
+                int width = _rootButton.Width + maxControlWidth;
+
                 return width;
             }
-            set => base.Width = value; 
         }
 
         public override int Height
         {
             get
             {
-                int height = 0;
-                switch (_customState)
+                int totalHeight = 0;
+                for (int i = 1; i < _controls.Count; i++)
                 {
-                    case CustomState.Collapsed:
-                        height = _root.Height;
-                        break;
-                    case CustomState.Expanded:
-                        int totalHeight = 0;
-                        for (int i = 1; i < _controls.Count; i++)
-                        {
-                            totalHeight += _controls[i].Height;
-                        }
-                        switch (_direction)
-                        {
-                            case Direction.Left:
-                            case Direction.Right:
-                                height = Math.Max(_root.Height, totalHeight);
-                                break;
-                            case Direction.Up:
-                            case Direction.Down:
-                                height = _root.Height + totalHeight;
-                                break;
-                            default:
-                                break;
-                        }
-                        break;
-                    default:
-                        break;
+                    if (_controls[i].Visible)
+                        totalHeight += _controls[i].Height;
                 }
+                int height = Math.Max(_rootButton.Height, totalHeight);
+
                 return height;
             }
-            set => base.Width = value;
+        }
+
+        #endregion
+
+        #region Methods
+
+        public override void Update()
+        {
+            _rootButton.Height = _rootButtonMinHeight;
+
+            // arrange embedded controls
+            int top = 0;
+            for (int i = 1; i < _controls.Count; i++)
+            {
+                if (_controls[i].Visible)
+                {
+                    _controls[i].Left = _rootButton.Width;
+                    _controls[i].Top = top;
+                    top += _controls[i].Height;
+                }
+            }
+
+            _rootButton.Height = this.Height;
+
+            base.Update();
         }
 
         internal override void onClick()
         {
-            for (int i = 1; i < _controls.Count; i++)
+            if (_customState == CustomState.Collapsed)
             {
-                _controls[i].Visible = true;
+                for (int i = 1; i < _controls.Count; i++)
+                {
+                    _controls[i].Visible = true;
+                }
+                _rootButton.BackColorIdle = Color.DarkOrchid;
+                CustomState = CustomState.Expanded;
             }
-            CustomState = CustomState.Expanded;
+            else
+            {
+                for (int i = 1; i < _controls.Count; i++)
+                {
+                    _controls[i].Visible = false;
+                }
+                _rootButton.BackColorIdle = Color.Transparent;
+                CustomState = CustomState.Collapsed;
+            }
             base.onClick();
         }
 
@@ -171,9 +129,12 @@ namespace GEM.Ctrl
             {
                 _controls[i].Visible = false;
             }
+            _rootButton.BackColorIdle = Color.Transparent;
             CustomState = CustomState.Collapsed;
             base.onHoverOut();
         }
+
+        #endregion
 
     }
 }

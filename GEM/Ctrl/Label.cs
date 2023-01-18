@@ -13,12 +13,12 @@ namespace GEM.Ctrl
     {
         public Label(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
-            _backColorIdle = Color.Transparent;
-            _backColorHover= Color.Transparent;
-            _backColorPress= Color.Transparent;
-            _textColorIdle = Color.White;
-            _textColorHover = Color.White;
-            _textColorPress = Color.White;
+            BackColorIdle = Color.Transparent;
+            BackColorHover= Color.Transparent;
+            BackColorPress= Color.Transparent;
+            TextColorIdle = Color.White;
+            TextColorHover = Color.White;
+            TextColorPress = Color.White;
             _clickEnabled = false;
             _hoverEnabled= false;
         }

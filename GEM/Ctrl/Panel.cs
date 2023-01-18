@@ -21,7 +21,7 @@ namespace GEM.Ctrl
         Orientation _orientation;
         int _padding;
 
-        public Panel(BaseControl parent, Orientation orientation, int padding, Emulator emulator) : base(parent, emulator)
+        public Panel(BaseControl parent, Emulator emulator, Orientation orientation, int padding) : base(parent, emulator)
         {
             _orientation = orientation;
             _padding = padding;

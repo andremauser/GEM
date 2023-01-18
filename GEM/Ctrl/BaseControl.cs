@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -42,11 +43,12 @@ namespace GEM.Ctrl
         protected int _width;
         protected int _height;
 
-        public bool Visible;
-        public bool Enabled;
+        protected bool _visible;
+        protected bool _enabled;
+
         public CustomAction ClickAction;
 
-        protected Align _horizontalTextAlign;
+        public Align Align;
 
         protected List<BaseControl> _controls;
 
@@ -54,14 +56,15 @@ namespace GEM.Ctrl
 
         protected bool _hoverEnabled;
         protected bool _clickEnabled;
-        protected Color _backColorDisabled;
-        protected Color _backColorIdle;
-        protected Color _backColorHover;
-        protected Color _backColorPress;
-        protected Color _textColorDisabled;
-        protected Color _textColorIdle;
-        protected Color _textColorHover;
-        protected Color _textColorPress;
+
+        public Color BackColorDisabled;
+        public Color BackColorIdle;
+        public Color BackColorHover;
+        public Color BackColorPress;
+        public Color TextColorDisabled;
+        public Color TextColorIdle;
+        public Color TextColorHover;
+        public Color TextColorPress;
 
         protected Texture2D _texture;
         protected SpriteFont _font;
@@ -80,7 +83,7 @@ namespace GEM.Ctrl
             _emulator = emulator;
 
             // Default values
-            _horizontalTextAlign = Align.Center;
+            Align = Align.Center;
             Visible = true;
             Enabled = true;
             _left = 0;
@@ -89,14 +92,14 @@ namespace GEM.Ctrl
             _height = 100;
             _hoverEnabled = true;
             _clickEnabled = true;
-            _backColorDisabled = Color.Gray;
-            _backColorIdle = Color.White;
-            _backColorHover = Color.Yellow;
-            _backColorPress = Color.Red;
-            _textColorDisabled = Color.DarkGray;
-            _textColorIdle = Color.Black;
-            _textColorHover = Color.Black;
-            _textColorPress = Color.White;
+            BackColorDisabled = Color.Gray;
+            BackColorIdle = Color.White;
+            BackColorHover = Color.Yellow;
+            BackColorPress = Color.Red;
+            TextColorDisabled = Color.DarkGray;
+            TextColorIdle = Color.Black;
+            TextColorHover = Color.Black;
+            TextColorPress = Color.White;
             CustomState = CustomState.Collapsed;
         }
 
@@ -161,6 +164,46 @@ namespace GEM.Ctrl
             }
         }
 
+        public bool Visible
+        {
+            get
+            {
+                return _visible;
+            }
+            set
+            {
+                _visible = value;
+                foreach (BaseControl control in _controls)
+                {
+                    control.Visible = value;
+                }
+            }
+        }
+        public bool Enabled
+        {
+            get
+            {
+                return _enabled;
+            }
+            set
+            {
+                _enabled = value;
+                foreach (BaseControl control in _controls)
+                {
+                    control.Enabled = value;
+                }
+            }
+        }
+
+        public virtual int Padding { get; set; }
+        public List<BaseControl> Controls
+        {
+            get
+            {
+                return _controls;
+            }
+        }
+
         public Vector2 GlobalPosition
         {
             get
@@ -213,14 +256,14 @@ namespace GEM.Ctrl
             }
 
             // Default
-            _backColor = _backColorIdle;
-            _textColor = _textColorIdle;
+            _backColor = BackColorIdle;
+            _textColor = TextColorIdle;
 
             // Disabled
             if (!Enabled)
             {
-                _backColor = _backColorDisabled;
-                _textColor = _textColorDisabled;
+                _backColor = BackColorDisabled;
+                _textColor = TextColorDisabled;
                 return;
             }
 
@@ -232,8 +275,8 @@ namespace GEM.Ctrl
             {
                 if (_hoverEnabled)
                 {
-                    _backColor = _backColorHover;
-                    _textColor = _textColorHover;
+                    _backColor = BackColorHover;
+                    _textColor = TextColorHover;
                     onHover();
                 }
                 if (_clickEnabled)
@@ -241,8 +284,8 @@ namespace GEM.Ctrl
                     if (Input.IsLeftButtonPressed)
                     {
                         // Button down
-                        _backColor = _backColorPress;
-                        _textColor = _textColorPress;
+                        _backColor = BackColorPress;
+                        _textColor = TextColorPress;
                         onPress();
                         _wasPressed = true;
                     }
@@ -282,10 +325,10 @@ namespace GEM.Ctrl
             }
             Vector2 captionSize = _font.MeasureString(_caption);
             Vector2 captionPos;
-            switch (_horizontalTextAlign)
+            switch (Align)
             {
                 case Align.Left:
-                    captionPos = new Vector2(GlobalPosition.X,
+                    captionPos = new Vector2(GlobalPosition.X + Padding,
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
                     break;
                 case Align.Center:
@@ -293,7 +336,7 @@ namespace GEM.Ctrl
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
                     break;
                 case Align.Right:
-                    captionPos = new Vector2(GlobalPosition.X + Width - captionSize.X,
+                    captionPos = new Vector2(GlobalPosition.X + Width - captionSize.X - Padding,
                                              GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
                     break;
                 default:
@@ -310,6 +353,11 @@ namespace GEM.Ctrl
                     control.Draw(spriteBatch);
                 }
             }
+        }
+
+        public void AddControl(BaseControl control)
+        {
+            _controls.Add(control);
         }
 
         internal virtual void onHover()

@@ -11,23 +11,25 @@ namespace GEM.Emu
 {
     internal class CartridgeMenu : Submenu
     {
-        public CartridgeMenu(BaseControl parent, Emulator emulator, Direction direction) : base(parent, emulator, direction)
-        {
-            _root = new Image(this, emulator, "cartridge");
-            _controls.Add(_root);
-            
-            _root.Width= 60;
-            _root.Height= 60;
-            _root.Padding = 5;
+        BaseControl _subCartridgeTitle;
+        BaseControl _subCartridgeOpen;
+        BaseControl _subCartridgeEject;
 
-            _controls.Add(new Label(this, emulator) { Width = 200, Height = 40 });
-            _controls.Add(new Button(this, emulator) { Width = 200, Height = 40, Caption = "Open ROM file", ClickAction = _emulator.Nothing });
-            _controls.Add(new Button(this, emulator) { Width = 200, Height = 40, Caption = "Eject cartridge", ClickAction = _emulator.EjectCartridge });
+        public CartridgeMenu(BaseControl parent, Emulator emulator) : base(parent, emulator)
+        {
+            _rootButton.AddControl(new Image(_rootButton, emulator, "cartridge") { Width = 60, Height = 60, Padding = 5 }) ;
+
+            _subCartridgeTitle = new Label(this, emulator) { Width = 200, Height = 40, };
+            _subCartridgeOpen = new Button(this, emulator) { Width = 200, Height = 40,  BackColorIdle = Color.Transparent, Caption = "Open ROM file", ClickAction = _emulator.Nothing };
+            _subCartridgeEject = new Button(this, emulator) { Width = 200, Height = 40, BackColorIdle = Color.Transparent, BackColorHover = Color.Firebrick, Caption = "Eject cartridge", ClickAction = _emulator.EjectCartridge };
+            _controls.Add(_subCartridgeTitle);
+            _controls.Add(_subCartridgeOpen);
+            _controls.Add(_subCartridgeEject);
         }
 
         public override void Update()
         {
-            _controls[1].Caption = _emulator.CartridgeTitle;
+            _subCartridgeTitle.Caption = _emulator.CartridgeTitle;
             base.Update();
         }
 

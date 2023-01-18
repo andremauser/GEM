@@ -64,7 +64,6 @@ namespace GEM.Emu
         {
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
-            _screenOffsetLeft = 60;
         }
 
         #endregion

@@ -13,12 +13,13 @@ namespace GEM.Ctrl
     {
         public Button(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
-            _backColorIdle = Color.Black;
-            _backColorHover = Color.DarkMagenta;
-            _backColorPress = Color.White;
-            _textColorIdle = Color.White;
-            _textColorHover = Color.White;
-            _textColorPress = Color.DarkMagenta;
+            BackColorIdle = Color.Black;
+            BackColorHover = Color.DarkOrchid;
+            BackColorPress = Color.DarkSeaGreen;
+
+            TextColorIdle = Color.White;
+            TextColorHover = Color.White;
+            TextColorPress = Color.White;
         }
 
     }

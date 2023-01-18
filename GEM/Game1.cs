@@ -45,7 +45,7 @@ namespace GEM
         {
             _emulator = new Emulator(GraphicsDevice);
             _graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _graphics.PreferredBackBufferWidth = 860;
+            _graphics.PreferredBackBufferWidth = 920;
             _graphics.PreferredBackBufferHeight = 720;
             _graphics.ApplyChanges(); 
 
