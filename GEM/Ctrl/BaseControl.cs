@@ -72,14 +72,23 @@ namespace GEM.Ctrl
             _controls = new List<BaseControl>();
             _emulator = emulator;
 
+            if (parent != null)
+            {
+                Width = parent.Width;
+                Height= parent.Height;
+            }
+            else
+            {
+                Width = 100; 
+                Height = 100;
+            }
+
             // Default values
             Align = Align.Center;
             Visible = true;
             Enabled = true;
             Left = 0;
             Top = 0;
-            Width = 100;
-            Height = 100;
             _hoverEnabled = true;
             _clickEnabled = true;
             BackColorDisabled = Color.Gray;
@@ -280,19 +289,37 @@ namespace GEM.Ctrl
             }
         }
 
-        public void AddControl(BaseControl control)
-        {
-            _controls.Add(control);
-        }
-
-        public void AddControls(BaseControl[] controls)
-        {
-            foreach (BaseControl control in controls) { _controls.Add(control); }
-        }
-
         public Button AddButton()
         {
             Button newControl = new Button(this, _emulator);
+            _controls.Add(newControl);
+            return newControl;
+        }
+
+        public MenuButton AddMenuButton()
+        {
+            MenuButton newControl = new MenuButton(this, _emulator);
+            _controls.Add(newControl);
+            return newControl;
+        }
+
+        public Label AddLabel(string text)
+        {
+            Label newControl = new Label(this, _emulator, text);
+            _controls.Add(newControl);
+            return newControl;
+        }
+
+        public Image AddImage(string content)
+        {
+            Image newControl = new Image(this, _emulator, content);
+            _controls.Add(newControl);
+            return newControl;
+        }
+
+        public Panel AddPanel(Orientation orientation)
+        {
+            Panel newControl = new Panel(this, _emulator, orientation);
             _controls.Add(newControl);
             return newControl;
         }

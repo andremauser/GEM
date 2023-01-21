@@ -19,14 +19,13 @@ namespace GEM.Ctrl
     internal class Panel : BaseControl
     {
         Orientation _orientation;
-        int _padding;
 
-        public Panel(BaseControl parent, Emulator emulator, Orientation orientation, int padding) : base(parent, emulator)
+        public Panel(BaseControl parent, Emulator emulator, Orientation orientation) : base(parent, emulator)
         {
             _orientation = orientation;
-            _padding = padding;
             _hoverEnabled = false;
             _clickEnabled = false;
+            BackColorIdle = Color.Transparent;
         }
 
         public override void Update()
@@ -38,8 +37,8 @@ namespace GEM.Ctrl
                     int top = 0;
                     for (int i = 0; i < _controls.Count; i++)
                     {
-                        top += _padding;
-                        _controls[i].Left = _padding;
+                        top += Padding;
+                        _controls[i].Left = Padding;
                         _controls[i].Top = top;
                         top += _controls[i].Height;
                     }
@@ -48,9 +47,9 @@ namespace GEM.Ctrl
                     int left = 0;
                     for (int i = 0; i < _controls.Count; i++)
                     {
-                        left += _padding;
+                        left += Padding;
                         _controls[i].Left = left;
-                        _controls[i].Top = _padding;
+                        _controls[i].Top = Padding;
                         left += _controls[i].Height;
                     }
                     break;

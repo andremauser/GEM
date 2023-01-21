@@ -134,13 +134,41 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
-            _sidePanel = new LeftPanel(null, this);
+
+            // left panel
+            _sidePanel = this.AddPanel(Orientation.Vertical);
             _controls.Add(_sidePanel);
+            _sidePanel.Width = 60;
+            _sidePanel.BackColorIdle = new Color(0, 0, 0, 0.8f);
 
-            Button i = _sidePanel.AddButton();
-            i.Caption = "Test";
-            i.ClickAction = DoNothing;
+            // cartridge menu
+            MenuButton btnCart = _sidePanel.AddMenuButton();
+            btnCart.Height = 60;
+            btnCart.MenuPanel.Width = 200;
+            Image imgCart = btnCart.AddImage("cartridge");
+            imgCart.Padding = 5;
+            // -> 1
+            Label lblCart = btnCart.MenuPanel.AddLabel("(N/A)");
+            lblCart.Height = 40;
+            // -> 2
+            MenuButton btnOpen = btnCart.MenuPanel.AddMenuButton();
+            btnOpen.Height = 40;
+            Label lblOpen = btnOpen.AddLabel("Open Cartridge");
+            // -> 2 -> 1
+            Label lbl21 = btnOpen.MenuPanel.AddLabel("Open ROM");
+            lbl21.Height = 40;
+            // -> 3
+            Button btnEject = btnCart.MenuPanel.AddButton();
+            btnEject.Height = 40;
+            btnEject.Caption = "Eject Cartridge";
+            btnEject.BackColorHover = Color.Firebrick;
+            btnEject.ClickAction = EjectCartridge;
 
+            // Menu2
+            Button fs = _sidePanel.AddButton();
+            fs.Caption = "FS";
+            fs.Height = 60;
+            fs.ClickAction = toggleFullscreen;
         }
 
         public void Reset()
@@ -508,6 +536,24 @@ namespace GEM.Emu
         public void DoNothing()
         {
 
+        }
+
+        private void toggleFullscreen()
+        {
+            Game1._Graphics.IsFullScreen = !Game1._Graphics.IsFullScreen;
+            Game1._Graphics.ApplyChanges();
+        }
+
+        /// <summary>
+        /// private method for creating panels just like in BaseControl class
+        /// </summary>
+        /// <param name="orientation">panel orientation</param>
+        /// <returns></returns>
+        private Panel AddPanel(Orientation orientation)
+        {
+            Panel newControl = new Panel(null, this, orientation);
+            _controls.Add(newControl);
+            return newControl;
         }
 
 

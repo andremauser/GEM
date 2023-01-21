@@ -14,7 +14,7 @@ namespace GEM
 
         #region Fields
 
-        static public GraphicsDeviceManager _graphics;
+        static public GraphicsDeviceManager _Graphics;
         Emulator _emulator;
         float _fpsSecondCounter;
         int _fpsFrameCounter;
@@ -28,7 +28,7 @@ namespace GEM
 
         public Game1()
         {
-            _graphics = new GraphicsDeviceManager(this);
+            _Graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             _Content = Content;
             IsMouseVisible = true; 
@@ -44,10 +44,10 @@ namespace GEM
         protected override void Initialize()
         {
             _emulator = new Emulator(GraphicsDevice);
-            _graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _graphics.PreferredBackBufferWidth = 920;
-            _graphics.PreferredBackBufferHeight = 720;
-            _graphics.ApplyChanges(); 
+            _Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
+            _Graphics.PreferredBackBufferWidth = 920;
+            _Graphics.PreferredBackBufferHeight = 720;
+            _Graphics.ApplyChanges(); 
 
             //save on quit
             Exiting += _emulator.ShutDown;
