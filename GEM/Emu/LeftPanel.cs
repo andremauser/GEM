@@ -13,7 +13,7 @@ namespace GEM.Emu
     {
         public LeftPanel(BaseControl parent, Emulator emulator) : base(parent, emulator, Orientation.Vertical, 0)
         {
-            _left = 0;
+            Left = 0;
             Top = 0;
             Width = 60;
             Height = 200;

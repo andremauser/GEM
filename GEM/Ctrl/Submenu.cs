@@ -27,6 +27,7 @@ namespace GEM.Ctrl
         public Submenu(BaseControl parent, Emulator emulator) : base(parent, emulator)
         {
             _rootButton = new Button(this, emulator);
+            _rootButton.ClickAction = onRootClick;
             _controls.Add(_rootButton);
 
             BackColorIdle = Color.Transparent;
@@ -58,7 +59,7 @@ namespace GEM.Ctrl
                 return width;
             }
         }
-
+        
         public override int Height
         {
             get
@@ -74,7 +75,7 @@ namespace GEM.Ctrl
                 return height;
             }
         }
-
+        
         #endregion
 
         #region Methods
@@ -99,9 +100,10 @@ namespace GEM.Ctrl
 
             base.Update();
         }
-
-        internal override void onClick()
+        
+        public void onRootClick()
         {
+
             if (_customState == CustomState.Collapsed)
             {
                 for (int i = 1; i < _controls.Count; i++)
@@ -122,7 +124,7 @@ namespace GEM.Ctrl
             }
             base.onClick();
         }
-
+        
         internal override void onHoverOut()
         {
             for (int i = 1; i < _controls.Count; i++)
@@ -133,7 +135,7 @@ namespace GEM.Ctrl
             CustomState = CustomState.Collapsed;
             base.onHoverOut();
         }
-
+        
         #endregion
 
     }

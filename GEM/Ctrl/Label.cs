@@ -11,7 +11,7 @@ namespace GEM.Ctrl
 {
     internal class Label : BaseControl
     {
-        public Label(BaseControl parent, Emulator emulator) : base(parent, emulator)
+        public Label(BaseControl parent, Emulator emulator, string caption) : base(parent, emulator)
         {
             BackColorIdle = Color.Transparent;
             BackColorHover= Color.Transparent;
@@ -21,6 +21,7 @@ namespace GEM.Ctrl
             TextColorPress = Color.White;
             _clickEnabled = false;
             _hoverEnabled= false;
+            Caption = caption;
         }
     }
 }

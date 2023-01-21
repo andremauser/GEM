@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
-    // Delegate for click-, hover-, etc. methods
     public delegate void CustomAction();
 
     public enum CustomState
@@ -26,7 +25,7 @@ namespace GEM.Ctrl
         Right
     }
 
-    internal abstract class BaseControl
+    internal class BaseControl
     {
 
         #region Fields
@@ -35,16 +34,7 @@ namespace GEM.Ctrl
         protected Color _textColor;
         protected bool _wasPressed;
         protected CustomState _customState;
-        protected string _caption;
         protected Emulator _emulator;
-
-        protected int _left;
-        protected int _top;
-        protected int _width;
-        protected int _height;
-
-        protected bool _visible;
-        protected bool _enabled;
 
         public CustomAction ClickAction;
 
@@ -86,10 +76,10 @@ namespace GEM.Ctrl
             Align = Align.Center;
             Visible = true;
             Enabled = true;
-            _left = 0;
-            _top = 0;
-            _width = 100;
-            _height = 100;
+            Left = 0;
+            Top = 0;
+            Width = 100;
+            Height = 100;
             _hoverEnabled = true;
             _clickEnabled = true;
             BackColorDisabled = Color.Gray;
@@ -108,94 +98,16 @@ namespace GEM.Ctrl
 
         #region Properties
 
-        public int Left
-        {
-            get
-            {
-                return _left;
-            }
-            set
-            {
-                _left = value;
-            }
-        }
-        public int Top
-        {
-            get
-            {
-                return _top;
-            }
-            set
-            {
-                _top = value;
-            }
-        }
-        public virtual int Width
-        {
-            get
-            {
-                return _width;
-            }
-            set
-            {
-                _width = value;
-            }
-        }
-        public virtual int Height
-        {
-            get
-            {
-                return _height;
-            }
-            set
-            {
-                _height = value;
-            }
-        }
-        public string Caption
-        {
-            get
-            {
-                return _caption;
-            }
-            set
-            {
-                _caption = value;
-            }
-        }
+        public int Left { get; set; }
+        public int Top { get; set; }
+        public virtual int Width { get; set; }
+        public virtual int Height { get; set; }
+        public string Caption { get; set; }
 
-        public bool Visible
-        {
-            get
-            {
-                return _visible;
-            }
-            set
-            {
-                _visible = value;
-                foreach (BaseControl control in _controls)
-                {
-                    control.Visible = value;
-                }
-            }
-        }
-        public bool Enabled
-        {
-            get
-            {
-                return _enabled;
-            }
-            set
-            {
-                _enabled = value;
-                foreach (BaseControl control in _controls)
-                {
-                    control.Enabled = value;
-                }
-            }
-        }
-
+        public bool Visible { get; set; }
+        public bool Enabled { get; set; }
         public virtual int Padding { get; set; }
+
         public List<BaseControl> Controls
         {
             get
@@ -210,11 +122,11 @@ namespace GEM.Ctrl
             {
                 if (_parent != null)
                 {
-                    return _parent.GlobalPosition + new Vector2(_left, Top);
+                    return _parent.GlobalPosition + new Vector2(Left, Top);
                 }
                 else
                 {
-                    return new Vector2(_left, Top);
+                    return new Vector2(Left, Top);
                 }
             }
         }
@@ -232,6 +144,19 @@ namespace GEM.Ctrl
                 {
                     control.CustomState = _customState;
                 }
+            }
+        }
+
+        // indexer
+        public BaseControl this[int index]
+        {
+            get
+            {
+                return _controls[index];
+            }
+            set
+            {
+                _controls[index] = value;
             }
         }
 
@@ -319,11 +244,11 @@ namespace GEM.Ctrl
             spriteBatch.Draw(_texture, new Rectangle((int)GlobalPosition.X, (int)GlobalPosition.Y, Width, Height), _backColor);
 
             // Caption
-            if (_caption == null)
+            if (Caption == null)
             {
-                _caption = "";
+                Caption = "";
             }
-            Vector2 captionSize = _font.MeasureString(_caption);
+            Vector2 captionSize = _font.MeasureString(Caption);
             Vector2 captionPos;
             switch (Align)
             {
@@ -343,7 +268,7 @@ namespace GEM.Ctrl
                     captionPos = Vector2.Zero;
                     break;
             }
-            spriteBatch.DrawString(_font, _caption, captionPos, _textColor);
+            spriteBatch.DrawString(_font, Caption, captionPos, _textColor);
 
             // Draw embedded controls last (draw from bottom to top)
             if (_controls.Count > 0)
@@ -359,6 +284,19 @@ namespace GEM.Ctrl
         {
             _controls.Add(control);
         }
+
+        public void AddControls(BaseControl[] controls)
+        {
+            foreach (BaseControl control in controls) { _controls.Add(control); }
+        }
+
+        public Button AddButton()
+        {
+            Button newControl = new Button(this, _emulator);
+            _controls.Add(newControl);
+            return newControl;
+        }
+
 
         internal virtual void onHover()
         { }

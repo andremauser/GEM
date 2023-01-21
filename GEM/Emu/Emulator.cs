@@ -137,7 +137,9 @@ namespace GEM.Emu
             _sidePanel = new LeftPanel(null, this);
             _controls.Add(_sidePanel);
 
-
+            Button i = _sidePanel.AddButton();
+            i.Caption = "Test";
+            i.ClickAction = DoNothing;
 
         }
 
@@ -503,7 +505,7 @@ namespace GEM.Emu
             return _gameboy.IsPowerOn;
         }
 
-        public void Nothing()
+        public void DoNothing()
         {
 
         }
