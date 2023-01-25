@@ -1,349 +1,197 @@
-﻿using GEM.Emu;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System;
+﻿using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
-    public delegate void CustomAction();
-
-    public enum CustomState
-    {
-        Collapsed,
-        Expanded
-    }
-
     public enum Align
     {
-        Left,
-        Center,
-        Right
+        Left, Center, Right, Top, Bottom
     }
-
-    internal class BaseControl
+    /// <summary>
+    /// abstract base class for nested controls
+    /// </summary>
+    internal abstract class BaseControl
     {
-
         #region Fields
-
-        protected Color _backColor;
-        protected Color _textColor;
-        protected bool _wasPressed;
-        protected CustomState _customState;
-        protected Emulator _emulator;
-
-        public CustomAction ClickAction;
-
-        public Align Align;
-
-        protected List<BaseControl> _controls;
-
         protected BaseControl _parent;
-
-        protected bool _hoverEnabled;
-        protected bool _clickEnabled;
-
-        public Color BackColorDisabled;
-        public Color BackColorIdle;
-        public Color BackColorHover;
-        public Color BackColorPress;
-        public Color TextColorDisabled;
-        public Color TextColorIdle;
-        public Color TextColorHover;
-        public Color TextColorPress;
-
-        protected Texture2D _texture;
-        protected SpriteFont _font;
-
+        protected List<BaseControl> _childs;
+        Align _horizontalAlign;
+        Align _verticalAlign;
+        int _width;
+        int _height;
         #endregion
-
 
         #region Constructors
-
-        protected BaseControl(BaseControl parent, Emulator emulator)
+        public BaseControl(BaseControl parent)
         {
-            _texture = Emulator._Pixel;
-            _font = Emulator._Font;
             _parent = parent;
-            _controls = new List<BaseControl>();
-            _emulator = emulator;
-
-            if (parent != null)
-            {
-                Width = parent.Width;
-                Height= parent.Height;
-            }
-            else
-            {
-                Width = 100; 
-                Height = 100;
-            }
-
-            // Default values
-            Align = Align.Center;
-            Visible = true;
-            Enabled = true;
-            Left = 0;
-            Top = 0;
-            _hoverEnabled = true;
-            _clickEnabled = true;
-            BackColorDisabled = Color.Gray;
-            BackColorIdle = Color.White;
-            BackColorHover = Color.Yellow;
-            BackColorPress = Color.Red;
-            TextColorDisabled = Color.DarkGray;
-            TextColorIdle = Color.Black;
-            TextColorHover = Color.Black;
-            TextColorPress = Color.White;
-            CustomState = CustomState.Collapsed;
+            _childs = new List<BaseControl>();
+            HorizontalAlign = Align.Center;
+            VerticalAlign = Align.Center;
         }
-
         #endregion
 
-
         #region Properties
-
+        // offset to parent control
         public int Left { get; set; }
         public int Top { get; set; }
-        public virtual int Width { get; set; }
-        public virtual int Height { get; set; }
-        public string Caption { get; set; }
 
-        public bool Visible { get; set; }
-        public bool Enabled { get; set; }
-        public virtual int Padding { get; set; }
-
-        public List<BaseControl> Controls
+        // control size
+        public int Width 
         {
             get
             {
-                return _controls;
+                return _width;
+            }
+            set
+            {
+                _width = value;
+                updateAlignPosition();
+                foreach (BaseControl child in _childs)
+                {
+                    child.updateAlignPosition();
+                }
+            }
+        }
+        public int Height 
+        {
+            get
+            {
+                return _height;
+            }
+            set
+            {
+                _height = value;
+                updateAlignPosition();
+                foreach (BaseControl child in _childs)
+                {
+                    child.updateAlignPosition();
+                }
             }
         }
 
-        public Vector2 GlobalPosition
+        // absolute position on canvas
+        public int PosX
         {
             get
             {
                 if (_parent != null)
                 {
-                    return _parent.GlobalPosition + new Vector2(Left, Top);
+                    return _parent.PosX + Left;
                 }
                 else
                 {
-                    return new Vector2(Left, Top);
+                    return Left;
                 }
             }
         }
-
-        public CustomState CustomState
+        public int PosY
         {
             get
             {
-                return _customState;
-            }
-            set
-            {
-                _customState = value;
-                foreach (BaseControl control in _controls)
+                if (_parent != null)
                 {
-                    control.CustomState = _customState;
+                    return _parent.PosY + Top;
+                }
+                else
+                {
+                    return Top;
                 }
             }
         }
 
-        // indexer
-        public BaseControl this[int index]
+        // align within parent control
+        public Align HorizontalAlign
         {
             get
             {
-                return _controls[index];
+                return _horizontalAlign;
             }
             set
             {
-                _controls[index] = value;
+                _horizontalAlign = value;
+                updateAlignPosition();
             }
         }
-
+        public Align VerticalAlign
+        {
+            get
+            {
+                return _verticalAlign;
+            }
+            set
+            {
+                _verticalAlign = value;
+                updateAlignPosition();
+            }
+        }
         #endregion
-
 
         #region Methods
-
         public virtual void Update()
         {
-            if (!Visible)
-            {
-                return;
-            }
-            // Update embedded controls first (click priority from top to bottom)
-            if (_controls.Count > 0)
-            {
-                foreach (BaseControl control in _controls)
-                {
-                    control.Update();
-                }
-            }
+            // update calculations defined in inherited class
 
-            // Default
-            _backColor = BackColorIdle;
-            _textColor = TextColorIdle;
-
-            // Disabled
-            if (!Enabled)
+            // childs updated first - call base.Update first! (e.g. click priority from top to bottom)
+            foreach (BaseControl child in _childs)
             {
-                _backColor = BackColorDisabled;
-                _textColor = TextColorDisabled;
-                return;
-            }
-
-            // Hover
-            if (Input.MousePosX >= GlobalPosition.X &&
-                Input.MousePosX < GlobalPosition.X + Width &&
-                Input.MousePosY >= GlobalPosition.Y &&
-                Input.MousePosY < GlobalPosition.Y + Height)
-            {
-                if (_hoverEnabled)
-                {
-                    _backColor = BackColorHover;
-                    _textColor = TextColorHover;
-                    onHover();
-                }
-                if (_clickEnabled)
-                {
-                    if (Input.IsLeftButtonPressed)
-                    {
-                        // Button down
-                        _backColor = BackColorPress;
-                        _textColor = TextColorPress;
-                        onPress();
-                        _wasPressed = true;
-                    }
-                    else
-                    {
-                        if (_wasPressed)
-                        {
-                            // Click performed
-                            onClick();
-                            _wasPressed = false;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // Un-Hover
-                onHoverOut();
-                _wasPressed = false;
+                child.Update();
             }
         }
-
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            if (!Visible)
-            {
-                return;
-            }
+            // draw method defined in inherited class
 
-            // Rectangle
-            spriteBatch.Draw(_texture, new Rectangle((int)GlobalPosition.X, (int)GlobalPosition.Y, Width, Height), _backColor);
-
-            // Caption
-            if (Caption == null)
+            // childs drawn last (from bottom to top)
+            foreach (BaseControl child in _childs)
             {
-                Caption = "";
+                child.Draw(spriteBatch);
             }
-            Vector2 captionSize = _font.MeasureString(Caption);
-            Vector2 captionPos;
-            switch (Align)
-            {
-                case Align.Left:
-                    captionPos = new Vector2(GlobalPosition.X + Padding,
-                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
-                    break;
-                case Align.Center:
-                    captionPos = new Vector2(GlobalPosition.X + (Width - captionSize.X) / 2,
-                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
-                    break;
-                case Align.Right:
-                    captionPos = new Vector2(GlobalPosition.X + Width - captionSize.X - Padding,
-                                             GlobalPosition.Y + (Height - captionSize.Y) / 2 + captionSize.Y / 6);
-                    break;
-                default:
-                    captionPos = Vector2.Zero;
-                    break;
-            }
-            spriteBatch.DrawString(_font, Caption, captionPos, _textColor);
+        }
 
-            // Draw embedded controls last (draw from bottom to top)
-            if (_controls.Count > 0)
+        public void Add(BaseControl control)
+        {
+            _childs.Add(control);
+        }
+        public void AddLabel(string caption)
+        {
+            Add(new Label(this, caption));
+        }
+        public void AddButton()
+        {
+            Add(new Button(this));
+        }
+
+        protected void updateAlignPosition()
+        {
+            if (_parent != null)
             {
-                foreach (BaseControl control in _controls)
+                switch (HorizontalAlign)
                 {
-                    control.Draw(spriteBatch);
+                    case Align.Left:
+                        Left = 0;
+                        break;
+                    case Align.Center:
+                        Left = (_parent.Width - Width) / 2;
+                        break;
+                    case Align.Right:
+                        Left = _parent.Width - Width;
+                        break;
+                }
+                switch (VerticalAlign)
+                {
+                    case Align.Top:
+                        Top = 0;
+                        break;
+                    case Align.Center:
+                        Top = (_parent.Height - Height) / 2;
+                        break;
+                    case Align.Bottom:
+                        Top = _parent.Height - Height;
+                        break;
                 }
             }
         }
-
-        public Button AddButton()
-        {
-            Button newControl = new Button(this, _emulator);
-            _controls.Add(newControl);
-            return newControl;
-        }
-
-        public MenuButton AddMenuButton()
-        {
-            MenuButton newControl = new MenuButton(this, _emulator);
-            _controls.Add(newControl);
-            return newControl;
-        }
-
-        public Label AddLabel(string text)
-        {
-            Label newControl = new Label(this, _emulator, text);
-            _controls.Add(newControl);
-            return newControl;
-        }
-
-        public Image AddImage(string content)
-        {
-            Image newControl = new Image(this, _emulator, content);
-            _controls.Add(newControl);
-            return newControl;
-        }
-
-        public Panel AddPanel(Orientation orientation)
-        {
-            Panel newControl = new Panel(this, _emulator, orientation);
-            _controls.Add(newControl);
-            return newControl;
-        }
-
-
-        internal virtual void onHover()
-        { }
-
-        internal virtual void onPress()
-        { }
-
-        internal virtual void onClick()
-        {
-            if (ClickAction == null)
-            {
-                return;
-            }
-            ClickAction();
-        }
-
-        internal virtual void onHoverOut()
-        { }
-
         #endregion
-
     }
 }

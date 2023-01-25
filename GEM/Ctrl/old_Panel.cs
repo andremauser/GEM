@@ -16,17 +16,44 @@ namespace GEM.Ctrl
         Horizontal
     }
 
-    internal class Panel : BaseControl
+    internal class old_Panel : old_BaseControl
     {
         Orientation _orientation;
 
-        public Panel(BaseControl parent, Emulator emulator, Orientation orientation) : base(parent, emulator)
+        public old_Panel(old_BaseControl parent, Emulator emulator, Orientation orientation) : base(parent, emulator)
         {
             _orientation = orientation;
             _hoverEnabled = false;
             _clickEnabled = false;
             BackColorIdle = Color.Transparent;
         }
+
+        public override int Width 
+        { 
+            get
+            {
+                int maxWidth = 0;
+                foreach (old_BaseControl control in _controls)
+                {
+                    maxWidth = Math.Max(maxWidth, control.Width);
+                }
+                return maxWidth;
+            }
+        }
+
+        public override int Height
+        {
+            get
+            {
+                int height = 0;
+                foreach (old_BaseControl control in _controls)
+                {
+                    height += control.Height + Padding;
+                }
+                return height;
+            }
+        }
+
 
         public override void Update()
         {

@@ -11,16 +11,32 @@ namespace GEM.Ctrl
 {
     internal class Button : BaseControl
     {
-        public Button(BaseControl parent, Emulator emulator) : base(parent, emulator)
+        #region Fields
+        Texture2D _pixel;
+        #endregion
+
+        #region Constructors
+        public Button(BaseControl parent) : base(parent)
         {
-            BackColorIdle = Color.Black;
-            BackColorHover = Color.DarkOrchid;
-            BackColorPress = Color.DarkSeaGreen;
-
-            TextColorIdle = Color.White;
-            TextColorHover = Color.White;
-            TextColorPress = Color.White;
+            _pixel = Emulator._Pixel;
         }
+        public Button(BaseControl parent, string caption) : base(parent)
+        {
+            _pixel = Emulator._Pixel;
+            AddLabel(caption);
+        }
+        #endregion
 
+        #region Properties
+        public Color BackColor { get; set; }
+        #endregion
+
+        #region Methods
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), BackColor);
+            base.Draw(spriteBatch);
+        }
+        #endregion
     }
 }

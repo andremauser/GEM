@@ -1,4 +1,5 @@
 ﻿using GEM.Emu;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,16 +8,17 @@ using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
-    internal class MenuButton : Button
+    internal class old_MenuButton : old_Button
     {
-        public Panel MenuPanel;
+        public old_Panel MenuPanel;
 
-        public MenuButton(BaseControl parent, Emulator emulator) : base(parent, emulator)
+        public old_MenuButton(old_BaseControl parent, Emulator emulator, int width, int height, string caption="") : base(parent, emulator, width, height)
         {
-            MenuPanel = new Panel(this, emulator, Orientation.Vertical);
+            MenuPanel = new old_Panel(this, emulator, Orientation.Vertical);
             _controls.Add(MenuPanel);
             MenuPanel.Left = Width;
             MenuPanel.Visible = false;
+            Caption = caption;
         }
 
         public override int Width 
@@ -35,5 +37,6 @@ namespace GEM.Ctrl
             MenuPanel.Visible = !MenuPanel.Visible;
             base.onClick();
         }
+
     }
 }

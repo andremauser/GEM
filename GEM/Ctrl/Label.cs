@@ -1,27 +1,49 @@
 ﻿using GEM.Emu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
     internal class Label : BaseControl
     {
-        public Label(BaseControl parent, Emulator emulator, string caption) : base(parent, emulator)
+        #region Fields
+        SpriteFont _font;
+        string _caption;
+        #endregion
+
+        #region Constructors
+        public Label(BaseControl parent, string caption) : base(parent)
         {
-            BackColorIdle = Color.Transparent;
-            BackColorHover= Color.Transparent;
-            BackColorPress= Color.Transparent;
-            TextColorIdle = Color.White;
-            TextColorHover = Color.White;
-            TextColorPress = Color.White;
-            _clickEnabled = false;
-            _hoverEnabled= false;
+            _font = Emulator._Font;
             Caption = caption;
+            TextColor = Color.White;
         }
+        #endregion
+
+        #region Properties
+        public string Caption
+        {
+            get
+            {
+                return _caption;
+            }
+            set
+            {
+                _caption = value;
+                Width = (int)_font.MeasureString(_caption).X;
+                Height = (int)_font.MeasureString(_caption).Y;
+                updateAlignPosition();
+            }
+        }
+        public Color TextColor { get; set; }
+        #endregion
+
+        #region Methods
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            spriteBatch.DrawString(_font, _caption, new Vector2(PosX, PosY), TextColor);
+            base.Draw(spriteBatch);
+        }
+        #endregion
     }
 }

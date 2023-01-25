@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace GEM.Emu
 {
@@ -48,8 +49,9 @@ namespace GEM.Emu
         int _screenOffsetRight;
 
         List<string> _romList = new List<string>();
-        List<BaseControl> _controls = new List<BaseControl>();
-        BaseControl _sidePanel;
+        List<old_BaseControl> _oldControls = new List<old_BaseControl>();
+        List<BaseControl> _controls;
+        old_BaseControl _sidePanel;
 
 
 
@@ -64,6 +66,7 @@ namespace GEM.Emu
         {
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
+            _controls = new List<BaseControl>();
         }
 
         #endregion
@@ -134,41 +137,56 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
+            // Test new Controls
+            Button button1 = new Button(null, "Test");
+            button1.BackColor = Color.IndianRed;
+            button1.Left = 400;
+            button1.Top = 300;
+            button1.Width = 60;
+            button1.Height = 60;
+            _controls.Add(button1);
 
             // left panel
             _sidePanel = this.AddPanel(Orientation.Vertical);
-            _controls.Add(_sidePanel);
-            _sidePanel.Width = 60;
+            _oldControls.Add(_sidePanel);
             _sidePanel.BackColorIdle = new Color(0, 0, 0, 0.8f);
 
-            // cartridge menu
-            MenuButton btnCart = _sidePanel.AddMenuButton();
-            btnCart.Height = 60;
-            btnCart.MenuPanel.Width = 200;
-            Image imgCart = btnCart.AddImage("cartridge");
-            imgCart.Padding = 5;
-            // -> 1
-            Label lblCart = btnCart.MenuPanel.AddLabel("(N/A)");
-            lblCart.Height = 40;
-            // -> 2
-            MenuButton btnOpen = btnCart.MenuPanel.AddMenuButton();
-            btnOpen.Height = 40;
-            Label lblOpen = btnOpen.AddLabel("Open Cartridge");
-            // -> 2 -> 1
-            Label lbl21 = btnOpen.MenuPanel.AddLabel("Open ROM");
-            lbl21.Height = 40;
-            // -> 3
-            Button btnEject = btnCart.MenuPanel.AddButton();
-            btnEject.Height = 40;
-            btnEject.Caption = "Eject Cartridge";
-            btnEject.BackColorHover = Color.Firebrick;
-            btnEject.ClickAction = EjectCartridge;
+            int menuWidth = 200;
+            int menuHeight = 40;
 
-            // Menu2
-            Button fs = _sidePanel.AddButton();
-            fs.Caption = "FS";
-            fs.Height = 60;
-            fs.ClickAction = toggleFullscreen;
+            // cartridge menu
+            old_MenuButton btnCart = _sidePanel.AddMenuButton(60, 60);
+            btnCart.AddImage("cartridge", 60, 60).Padding = 5;
+                // cardride name
+                btnCart.MenuPanel.AddLabel("(N/A)", menuWidth, menuHeight).BackColorIdle = new Color(0,0,0,0.8f);
+                // open cartridge
+                old_MenuButton btnOpen = btnCart.MenuPanel.AddMenuButton(menuWidth, menuHeight, "Open Cartridge");
+                    // submenu title
+                    btnOpen.MenuPanel.AddLabel("Open ROM", menuWidth, menuHeight);
+                // eject cartridge
+                old_Button btnEject = btnCart.MenuPanel.AddButton(menuWidth, menuHeight, "Eject Cartridge");
+                btnEject.BackColorHover = Color.Firebrick;
+                btnEject.ClickAction = EjectCartridge;
+
+            // setting menu
+            old_MenuButton btnSet = _sidePanel.AddMenuButton(60, 60, "SET");
+                // title
+                btnSet.MenuPanel.AddLabel("Settings", menuWidth, menuHeight).BackColorIdle = new Color(0, 0, 0, 0.8f);
+                // fullscreen
+                btnSet.MenuPanel.AddButton(menuWidth, menuHeight, "Fullscreen").ClickAction = toggleFullscreen;
+                // color set
+                old_MenuButton btnPal = btnSet.MenuPanel.AddMenuButton(menuWidth, menuHeight, "Palette");
+            for (int i = 0; i < _emuPalette.Count(); i++)
+            {
+                old_Button pal = btnPal.MenuPanel.AddButton(menuWidth, menuHeight);
+                old_Panel pan = pal.AddPanel(Orientation.Horizontal);
+                pan.Padding = 5;
+                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][0];
+                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][1];
+                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][2];
+                pan.AddLabel("", menuHeight - 2 * pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][3];
+            }
+                    
         }
 
         public void Reset()
@@ -188,9 +206,13 @@ namespace GEM.Emu
             Input.Update();
 
             _sidePanel.Height = viewport.Height;
-            foreach (BaseControl control in _controls)
+            foreach (old_BaseControl control in _oldControls)
             {
                 control.Update();
+            }
+            foreach (BaseControl control1 in _controls)
+            {
+                control1.Update();
             }
 
             checkInput_Color();
@@ -282,6 +304,10 @@ namespace GEM.Emu
             }
 
 
+            foreach (old_BaseControl control in _oldControls)
+            {
+                control.Draw(_spriteBatch);
+            }
             foreach (BaseControl control in _controls)
             {
                 control.Draw(_spriteBatch);
@@ -549,10 +575,10 @@ namespace GEM.Emu
         /// </summary>
         /// <param name="orientation">panel orientation</param>
         /// <returns></returns>
-        private Panel AddPanel(Orientation orientation)
+        private old_Panel AddPanel(Orientation orientation)
         {
-            Panel newControl = new Panel(null, this, orientation);
-            _controls.Add(newControl);
+            old_Panel newControl = new old_Panel(null, this, orientation);
+            _oldControls.Add(newControl);
             return newControl;
         }
 

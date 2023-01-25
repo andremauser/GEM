@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace GEM.Ctrl
 {
-    internal class Image : BaseControl
+    internal class old_Image : old_BaseControl
     {
         Texture2D _image;
         Color _imageColor;                      
 
-        public Image(BaseControl parent, Emulator emulator, string content) : base(parent, emulator)
+        public old_Image(old_BaseControl parent, Emulator emulator, string content, int width, int height) : base(parent, emulator)
         {
             BackColorIdle = Color.Transparent;
 
@@ -25,6 +25,9 @@ namespace GEM.Ctrl
 
             _image = Game1._Content.Load<Texture2D>(content);
             Padding = 0;
+
+            Width = width;
+            Height = height;
         }
 
 
