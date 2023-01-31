@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace GEM.Emu
 {
@@ -49,14 +50,12 @@ namespace GEM.Emu
         int _screenOffsetRight;
 
         List<string> _romList = new List<string>();
-        List<old_BaseControl> _oldControls = new List<old_BaseControl>();
         List<BaseControl> _controls;
-        old_BaseControl _sidePanel;
-
-
 
         static public Texture2D _Pixel;
         static public SpriteFont _Font;
+
+        MenuButton _leftMenu;
 
         #endregion
 
@@ -137,56 +136,8 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
-            // Test new Controls
-            Button button1 = new Button(null, "Test");
-            button1.BackColor = Color.IndianRed;
-            button1.Left = 400;
-            button1.Top = 300;
-            button1.Width = 60;
-            button1.Height = 60;
-            _controls.Add(button1);
-
-            // left panel
-            _sidePanel = this.AddPanel(Orientation.Vertical);
-            _oldControls.Add(_sidePanel);
-            _sidePanel.BackColorIdle = new Color(0, 0, 0, 0.8f);
-
-            int menuWidth = 200;
-            int menuHeight = 40;
-
-            // cartridge menu
-            old_MenuButton btnCart = _sidePanel.AddMenuButton(60, 60);
-            btnCart.AddImage("cartridge", 60, 60).Padding = 5;
-                // cardride name
-                btnCart.MenuPanel.AddLabel("(N/A)", menuWidth, menuHeight).BackColorIdle = new Color(0,0,0,0.8f);
-                // open cartridge
-                old_MenuButton btnOpen = btnCart.MenuPanel.AddMenuButton(menuWidth, menuHeight, "Open Cartridge");
-                    // submenu title
-                    btnOpen.MenuPanel.AddLabel("Open ROM", menuWidth, menuHeight);
-                // eject cartridge
-                old_Button btnEject = btnCart.MenuPanel.AddButton(menuWidth, menuHeight, "Eject Cartridge");
-                btnEject.BackColorHover = Color.Firebrick;
-                btnEject.ClickAction = EjectCartridge;
-
-            // setting menu
-            old_MenuButton btnSet = _sidePanel.AddMenuButton(60, 60, "SET");
-                // title
-                btnSet.MenuPanel.AddLabel("Settings", menuWidth, menuHeight).BackColorIdle = new Color(0, 0, 0, 0.8f);
-                // fullscreen
-                btnSet.MenuPanel.AddButton(menuWidth, menuHeight, "Fullscreen").ClickAction = toggleFullscreen;
-                // color set
-                old_MenuButton btnPal = btnSet.MenuPanel.AddMenuButton(menuWidth, menuHeight, "Palette");
-            for (int i = 0; i < _emuPalette.Count(); i++)
-            {
-                old_Button pal = btnPal.MenuPanel.AddButton(menuWidth, menuHeight);
-                old_Panel pan = pal.AddPanel(Orientation.Horizontal);
-                pan.Padding = 5;
-                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][0];
-                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][1];
-                pan.AddLabel("", menuHeight - 2*pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][2];
-                pan.AddLabel("", menuHeight - 2 * pan.Padding, menuHeight - 2*pan.Padding).BackColorIdle = _emuPalette[i][3];
-            }
-                    
+            _leftMenu = new MenuButton(null, null, "LB");
+            _controls.Add(_leftMenu);
         }
 
         public void Reset()
@@ -205,11 +156,6 @@ namespace GEM.Emu
         {
             Input.Update();
 
-            _sidePanel.Height = viewport.Height;
-            foreach (old_BaseControl control in _oldControls)
-            {
-                control.Update();
-            }
             foreach (BaseControl control1 in _controls)
             {
                 control1.Update();
@@ -284,8 +230,6 @@ namespace GEM.Emu
             // Debug Mode
             if (DebugMode >= 1)
             {
-                //printDebugInfo(screenLeft - 180, screenTop);
-
                 if (DebugMode >= 2)
                 {
                     drawGrid(pixelSize, screenLeft, screenTop, screenWidth, screenHeight);
@@ -303,11 +247,6 @@ namespace GEM.Emu
                 //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
             }
 
-
-            foreach (old_BaseControl control in _oldControls)
-            {
-                control.Draw(_spriteBatch);
-            }
             foreach (BaseControl control in _controls)
             {
                 control.Draw(_spriteBatch);
@@ -440,8 +379,6 @@ namespace GEM.Emu
             return isHandled;
         }
 
-        private void doNothing() { }
-
         private void checkInput_Reset()
         {
             if (Input.IsButton_Reset && !_isHandled_Reset)
@@ -536,52 +473,6 @@ namespace GEM.Emu
                 _isHandled_5 = false;
             }
         }
-
-        // UI functions
-
-        public void GameboyPowerOn()
-        {
-            _gameboy.PowerOn();
-        }
-
-        public void GameboyPowerOff()
-        {
-            _gameboy.PowerOff();
-        }
-
-        public void EjectCartridge()
-        {
-            _gameboy.EjectCartridge();
-        }
-
-        public bool IsGameboyOn()
-        {
-            return _gameboy.IsPowerOn;
-        }
-
-        public void DoNothing()
-        {
-
-        }
-
-        private void toggleFullscreen()
-        {
-            Game1._Graphics.IsFullScreen = !Game1._Graphics.IsFullScreen;
-            Game1._Graphics.ApplyChanges();
-        }
-
-        /// <summary>
-        /// private method for creating panels just like in BaseControl class
-        /// </summary>
-        /// <param name="orientation">panel orientation</param>
-        /// <returns></returns>
-        private old_Panel AddPanel(Orientation orientation)
-        {
-            old_Panel newControl = new old_Panel(null, this, orientation);
-            _oldControls.Add(newControl);
-            return newControl;
-        }
-
 
         #endregion
     }

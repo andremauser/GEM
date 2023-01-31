@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using GEM.Emu;
+using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
 namespace GEM.Ctrl
@@ -14,7 +15,8 @@ namespace GEM.Ctrl
     {
         #region Fields
         protected BaseControl _parent;
-        protected List<BaseControl> _childs;
+        protected List<BaseControl> _controls;
+        protected Texture2D _pixel;
         Align _horizontalAlign;
         Align _verticalAlign;
         int _width;
@@ -25,9 +27,11 @@ namespace GEM.Ctrl
         public BaseControl(BaseControl parent)
         {
             _parent = parent;
-            _childs = new List<BaseControl>();
+            _controls = new List<BaseControl>();
+            _pixel = Emulator._Pixel;
             HorizontalAlign = Align.Center;
             VerticalAlign = Align.Center;
+            Visible = true;
         }
         #endregion
 
@@ -37,7 +41,7 @@ namespace GEM.Ctrl
         public int Top { get; set; }
 
         // control size
-        public int Width 
+        public virtual int Width 
         {
             get
             {
@@ -47,13 +51,13 @@ namespace GEM.Ctrl
             {
                 _width = value;
                 updateAlignPosition();
-                foreach (BaseControl child in _childs)
+                foreach (BaseControl child in _controls)
                 {
                     child.updateAlignPosition();
                 }
             }
         }
-        public int Height 
+        public virtual int Height 
         {
             get
             {
@@ -63,7 +67,7 @@ namespace GEM.Ctrl
             {
                 _height = value;
                 updateAlignPosition();
-                foreach (BaseControl child in _childs)
+                foreach (BaseControl child in _controls)
                 {
                     child.updateAlignPosition();
                 }
@@ -125,41 +129,42 @@ namespace GEM.Ctrl
                 updateAlignPosition();
             }
         }
+
+        public bool Visible { get; set; }
         #endregion
 
         #region Methods
         public virtual void Update()
         {
-            // update calculations defined in inherited class
+            if (!Visible) return;
+            // update-calculations defined in inherited class
 
-            // childs updated first - call base.Update first! (e.g. click priority from top to bottom)
-            foreach (BaseControl child in _childs)
+            // embedded controls should be updated first (e.g. click priority from top to bottom)
+            foreach (BaseControl control in _controls)
             {
-                child.Update();
+                control.Update();
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            // draw method defined in inherited class
+            if (!Visible) return;
+            // draw-method defined in inherited class
 
-            // childs drawn last (from bottom to top)
-            foreach (BaseControl child in _childs)
+            // embedded controls drawn last (from bottom to top)
+            foreach (BaseControl control in _controls)
             {
-                child.Draw(spriteBatch);
+                control.Draw(spriteBatch);
             }
         }
 
-        public void Add(BaseControl control)
+        public BaseControl Add(BaseControl control)
         {
-            _childs.Add(control);
+            _controls.Add(control);
+            return control;
         }
-        public void AddLabel(string caption)
+        public Label AddLabel(string caption)
         {
-            Add(new Label(this, caption));
-        }
-        public void AddButton()
-        {
-            Add(new Button(this));
+            return (Label)Add(new Label(this, caption));
         }
 
         protected void updateAlignPosition()

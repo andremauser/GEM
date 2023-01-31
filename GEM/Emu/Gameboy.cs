@@ -122,6 +122,11 @@ namespace GEM.Emu
             StopAfterFrame = false;
             StopAfterStep = false;
         }
+        public void Reset()
+        {
+            PowerOff();
+            PowerOn();
+        }
         public void PauseSwitch()
         {
             IsRunning = !IsRunning;
