@@ -166,6 +166,10 @@ namespace GEM.Ctrl
         {
             return (Label)Add(new Label(this, caption));
         }
+        public Panel AddPanel()
+        {
+            return (Panel)Add(new Panel(this));
+        }
 
         protected void updateAlignPosition()
         {

@@ -25,12 +25,14 @@ namespace GEM.Ctrl
         public override void Update()
         {
             base.Update();
-
+            
             int top = 0;
             for (int i = 0; i < _controls.Count; i++)
             {
                 _controls[i].Top = top;
                 top += _controls[i].Height;
+
+                _controls[i].Left = 0;
             }
         }
         #endregion

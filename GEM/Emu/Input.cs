@@ -2,19 +2,36 @@
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
 
 namespace GEM.Emu
 {
-    /// <summary>
-    /// Static snapshot of user input
-    /// </summary>
     internal static class Input
     {
+        #region Fields
+        // gamepad bindings
+        const Buttons BUTTON_A =        Buttons.B;
+        const Buttons BUTTON_B =        Buttons.A;
+        const Buttons BUTTON_START =    Buttons.Start;
+        const Buttons BUTTON_SELECT =   Buttons.Back;
+        const Buttons BUTTON_UP =       Buttons.DPadUp;
+        const Buttons BUTTON_DOWN =     Buttons.DPadDown;
+        const Buttons BUTTON_LEFT =     Buttons.DPadLeft;
+        const Buttons BUTTON_RIGHT =    Buttons.DPadRight;
+        const Buttons BUTTON_MENU =     Buttons.LeftShoulder;
+        // keyboard bindings
+        const Keys KEY_A =              Keys.X;
+        const Keys KEY_B =              Keys.Y;
+        const Keys KEY_START =          Keys.Enter;
+        const Keys KEY_SELECT =         Keys.Back;
+        const Keys KEY_UP =             Keys.Up;
+        const Keys KEY_DOWN =           Keys.Down;
+        const Keys KEY_LEFT =           Keys.Left;
+        const Keys KEY_RIGHT =          Keys.Right;
+        const Keys KEY_MENU =           Keys.Tab;
 
-        #region Properties
-
-        // Emulator Control
+        // TODO: delete
         public static bool IsButton_Color { get; private set; }
         public static bool IsButton_Debug { get; private set; }
         public static bool IsButton_Pause { get; private set; }
@@ -28,39 +45,50 @@ namespace GEM.Emu
         public static bool IsButton_3 { get; private set; }
         public static bool IsButton_4 { get; private set; }
         public static bool IsButton_5 { get; private set; }
+        #endregion
 
-
+        #region Properties
         // D-Pad
-        public static bool IsButton_Right { get; private set; }
-        public static bool IsButton_Left { get; private set; }
         public static bool IsButton_Up { get; private set; }
         public static bool IsButton_Down { get; private set; }
+        public static bool IsButton_Left { get; private set; }
+        public static bool IsButton_Right { get; private set; }
 
         // Buttons
         public static bool IsButton_A { get; private set; }
         public static bool IsButton_B { get; private set; }
-        public static bool IsButton_Select { get; private set; }
         public static bool IsButton_Start { get; private set; }
+        public static bool IsButton_Select { get; private set; }
 
         // Mouse
         public static int MousePosX { get; private set; }
         public static int MousePosY { get; private set; }
         public static bool IsLeftButtonPressed { get; private set; }
-
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Saves current input state to properties
-        /// </summary>
         public static void Update()
         {
             GamePadState gamePadState = GamePad.GetState(PlayerIndex.One);
             KeyboardState keyboardState = Keyboard.GetState();
             MouseState mouseState = Mouse.GetState();
 
-            // Emulator
+            // update properties
+            IsButton_Up =       gamePadState.IsButtonDown(BUTTON_UP)    ||  keyboardState.IsKeyDown(KEY_UP);
+            IsButton_Down =     gamePadState.IsButtonDown(BUTTON_DOWN)  ||  keyboardState.IsKeyDown(KEY_DOWN);
+            IsButton_Left =     gamePadState.IsButtonDown(BUTTON_LEFT)  ||  keyboardState.IsKeyDown(KEY_LEFT);
+            IsButton_Right =    gamePadState.IsButtonDown(BUTTON_RIGHT) ||  keyboardState.IsKeyDown(KEY_RIGHT);
+
+            IsButton_A =        gamePadState.IsButtonDown(BUTTON_A)     ||  keyboardState.IsKeyDown(KEY_A);
+            IsButton_B =        gamePadState.IsButtonDown(BUTTON_B)     ||  keyboardState.IsKeyDown(KEY_B);
+            IsButton_Start =    gamePadState.IsButtonDown(BUTTON_START) ||  keyboardState.IsKeyDown(KEY_START);
+            IsButton_Select =   gamePadState.IsButtonDown(BUTTON_SELECT)||  keyboardState.IsKeyDown(KEY_SELECT);
+
+            MousePosX = mouseState.X;
+            MousePosY = mouseState.Y;
+            IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
+
+            // TODO: delete
             IsButton_Color = gamePadState.Buttons.Y == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.C);
             IsButton_Debug = gamePadState.Buttons.X == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.D);
             IsButton_Pause = gamePadState.Buttons.RightStick == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.P);
@@ -75,23 +103,6 @@ namespace GEM.Emu
             IsButton_3 = keyboardState.IsKeyDown(Keys.D3);
             IsButton_4 = keyboardState.IsKeyDown(Keys.D4);
             IsButton_5 = keyboardState.IsKeyDown(Keys.D5);
-
-            // D-Pad
-            IsButton_Right = gamePadState.DPad.Right == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Right);
-            IsButton_Left = gamePadState.DPad.Left == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Left);
-            IsButton_Up = gamePadState.DPad.Up == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Up);
-            IsButton_Down = gamePadState.DPad.Down == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Down);
-
-            // Buttons
-            IsButton_A = gamePadState.Buttons.B == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.X);
-            IsButton_B = gamePadState.Buttons.A == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Y);
-            IsButton_Select = gamePadState.Buttons.Back == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Back);
-            IsButton_Start = gamePadState.Buttons.Start == ButtonState.Pressed || keyboardState.IsKeyDown(Keys.Enter);
-
-            // Mouse
-            MousePosX = mouseState.X;
-            MousePosY = mouseState.Y;
-            IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
         }
 
         #endregion

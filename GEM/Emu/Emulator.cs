@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace GEM.Emu
@@ -138,6 +139,8 @@ namespace GEM.Emu
 
             _leftMenu = new MenuButton(null, null, "LB");
             _controls.Add(_leftMenu);
+            _leftMenu.AddMenu("Test1");
+            _leftMenu.AddMenu("Test2");
         }
 
         public void Reset()
@@ -161,16 +164,14 @@ namespace GEM.Emu
                 control1.Update();
             }
 
+            // TODO: delete
             checkInput_Color();
             checkInput_Debug();
-
             _isHandled_Pause = checkInput(Input.IsButton_Pause, _isHandled_Pause, _gameboy.PauseSwitch);
             _isHandled_Frame = checkInput(Input.IsButton_Frame, _isHandled_Frame, _gameboy.PauseAfterFrame);
             _isHandled_Step = checkInput(Input.IsButton_Step, _isHandled_Step, _gameboy.PauseAfterStep);
-
             checkInput_Reset();
             checkInput_Quit();
-
             checkInput_1();
             checkInput_2();
             checkInput_3();

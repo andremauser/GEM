@@ -19,17 +19,21 @@ namespace GEM.Ctrl
     internal class MenuButton : BaseControl
     {
         #region Fields
-        public event EventHandler OnButtonDown;
+        // menu button events
+        public event EventHandler OnPress;
         public event EventHandler OnClick;
         public event EventHandler OnHover;
         public event EventHandler OnHoverOut;
+        // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> TextColor = new Dictionary<State, Color>();
-        Dictionary<string, MenuButton> _subMenu;
+        // menu structure
+        Dictionary<string, MenuButton> _subMenu = new Dictionary<string, MenuButton>();
         MenuButton _parentMenu;
-        Panel _subMenuPanel;
+        // property fields
+        State _state = State.Idle;
+        // button functionality
         bool _clickStarted = false;
-        State _state = State.Idle; // property
         #endregion
 
         #region Constructors
@@ -37,15 +41,23 @@ namespace GEM.Ctrl
         {
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
-            defaultColors();
-            _subMenuPanel = new Panel(this);
+            Panel = AddPanel();
+            // set submenu anchor point (size of panel is 0)
+            Panel.HorizontalAlign = Align.Right;
+            Panel.VerticalAlign= Align.Top;
+            // default values
+            applyDefaultColors();
+            Width = 100;
+            Height= 50;
         }
         #endregion
 
         #region Properties
         public Label Label { get; private set; }
+        public Panel Panel { get; private set; }
         public MenuButton this[string name]
         {
+            // submenu acces by name
             get { return _subMenu[name]; }
             set { _subMenu[name] = value; }
         }
@@ -57,12 +69,13 @@ namespace GEM.Ctrl
             }
             private set
             {
-                // fire event when state changes
+                // fire menu button event on state change
                 if (value == State.Hover && _state != State.Hover)
                 {
                     if (_clickStarted)
                     {
                         OnClick?.Invoke(this, EventArgs.Empty);
+                        _clickStarted= false;
                     }
                     else
                     {
@@ -71,7 +84,7 @@ namespace GEM.Ctrl
                 }
                 if (value == State.Press && _state != State.Press)
                 {
-                    OnButtonDown?.Invoke(this, EventArgs.Empty);
+                    OnPress?.Invoke(this, EventArgs.Empty);
                 }
                 if (value == State.Idle && _state != State.Idle)
                 {
@@ -96,16 +109,24 @@ namespace GEM.Ctrl
             base.Draw(spriteBatch);
         }
 
-        public void Add(string name)
+        public void AddMenu(string name, MenuButton button)
         {
             if (_subMenu.ContainsKey(name)) return;
 
-            MenuButton button = new MenuButton(_subMenuPanel, this, name);
-            _subMenuPanel.Add(button);
+            Panel.Add(button);
             _subMenu.Add(name, button);
         }
+        public void AddMenu(string name)
+        {
+            AddMenu(name, new MenuButton(Panel, this, name));
+        }
 
-        private void defaultColors()
+        public void ToggleMenu<EventArgs>(Object sender, EventArgs e)
+        {
+            Panel.Visible = !Panel.Visible;
+        }
+        // private helper methods
+        private void applyDefaultColors()
         {
             BackColor[State.Idle] = Color.Gray;
             BackColor[State.Hover] = Color.White;
@@ -122,8 +143,11 @@ namespace GEM.Ctrl
             {
                 if (Input.IsLeftButtonPressed)
                 {
-                    nextState = State.Press;
-                    if (State == State.Hover) _clickStarted = true;
+                    if (State == State.Hover || _clickStarted)
+                    {
+                        nextState = State.Press;
+                        _clickStarted = true;
+                    }
                 }
                 else
                 {
@@ -133,10 +157,10 @@ namespace GEM.Ctrl
             else
             {
                 nextState = State.Idle;
+                if (!Input.IsLeftButtonPressed) _clickStarted = false;
             }
             State = nextState;
         }
-
         private bool isMouseOver()
         {
             int x = Input.MousePosX;
