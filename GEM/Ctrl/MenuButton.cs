@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,15 +16,25 @@ namespace GEM.Ctrl
         Hover,
         Press
     }
+    public enum MenuType
+    {
+        Click,
+        Hover
+    }
 
     internal class MenuButton : BaseControl
     {
         #region Fields
+        // constants
+        const int DEFAULT_WIDTH = 100;
+        const int DEFAULT_HEIGHT = 50;
         // menu button events
         public event EventHandler OnPress;
         public event EventHandler OnClick;
         public event EventHandler OnHover;
         public event EventHandler OnHoverOut;
+        public event EventHandler OnHoverOutR;
+        public event EventHandler OnClickOut;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> TextColor = new Dictionary<State, Color>();
@@ -37,18 +48,33 @@ namespace GEM.Ctrl
         #endregion
 
         #region Constructors
-        public MenuButton(BaseControl parentControl, MenuButton parentMenu, string caption) : base(parentControl)
+        public MenuButton(BaseControl parentControl, MenuButton parentMenu, string caption, MenuType menuType) : base(parentControl)
         {
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
             Panel = AddPanel();
-            // set submenu anchor point (size of panel is 0)
-            Panel.HorizontalAlign = Align.Right;
-            Panel.VerticalAlign= Align.Top;
+            Panel.Visible = false;
+            switch (menuType)
+            {
+                case MenuType.Click:
+                    OnClick += ToggleMenu;
+                    OnHover += OpenOnSideMenu;
+                    break;
+                case MenuType.Hover:
+                    OnHover += Open;
+                    OnHoverOutR += Close;
+                    break;
+                default:
+                    break;
+            }
+            OnHover += CloseSideMenus;
             // default values
             applyDefaultColors();
-            Width = 100;
-            Height= 50;
+            Width = DEFAULT_WIDTH;
+            Height= DEFAULT_HEIGHT;
+            // set submenu anchor point (size of panel is 0)
+            Panel.HorizontalAlign = Align.Right;
+            Panel.VerticalAlign = Align.Top;
         }
         #endregion
 
@@ -69,7 +95,8 @@ namespace GEM.Ctrl
             }
             private set
             {
-                // fire menu button event on state change
+                // fire menu button events on state change
+                // hover + click
                 if (value == State.Hover && _state != State.Hover)
                 {
                     if (_clickStarted)
@@ -82,13 +109,19 @@ namespace GEM.Ctrl
                         OnHover?.Invoke(this, EventArgs.Empty);
                     }
                 }
+                // press
                 if (value == State.Press && _state != State.Press)
                 {
                     OnPress?.Invoke(this, EventArgs.Empty);
                 }
+                // hover out
                 if (value == State.Idle && _state != State.Idle)
                 {
                     OnHoverOut?.Invoke(this, EventArgs.Empty);
+                    if (!isMouseOverR() && !Input.IsLeftButtonPressed)
+                    {
+                        OnHoverOutR?.Invoke(this, EventArgs.Empty);
+                    }
                 }
                 _state = value;
                 if (Label != null) { Label.TextColor = TextColor[value]; }
@@ -116,15 +149,61 @@ namespace GEM.Ctrl
             Panel.Add(button);
             _subMenu.Add(name, button);
         }
-        public void AddMenu(string name)
+        public void AddMenu(string name, MenuType menuType, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT)
         {
-            AddMenu(name, new MenuButton(Panel, this, name));
+            AddMenu(name, new MenuButton(Panel, this, name, menuType) { Width = width, Height = height});
         }
 
         public void ToggleMenu<EventArgs>(Object sender, EventArgs e)
         {
-            Panel.Visible = !Panel.Visible;
+            if (Panel.Visible)
+            {
+                Close(sender, e);
+            }
+            else
+            {
+                Open(sender, e);
+            }
         }
+        public void Close<EventArgs>(Object sender, EventArgs e)
+        {
+            Panel.Visible = false;
+            foreach (MenuButton button in _subMenu.Values)
+            {
+                button.Panel.Visible = false;
+            }
+        }
+        public void Open<EventArgs>(Object sender, EventArgs e)
+        {
+            Panel.Visible = true;
+        }
+        public void OpenOnSideMenu<EventArgs>(Object sender, EventArgs e)
+        {
+            if (_parentMenu == null) return;
+
+            bool open = false;
+            foreach (MenuButton button in _parentMenu._subMenu.Values)
+            {
+                open |= button.Panel.Visible;
+            }
+            if (open)
+            {
+                Open(sender, e);
+            }
+        }
+        public void CloseSideMenus<EventArgs>(Object sender, EventArgs e)
+        {
+            if (_parentMenu == null) return;
+
+            foreach (MenuButton button in _parentMenu._subMenu.Values)
+            {
+                if (button != this)
+                {
+                    button.Close(sender, e);
+                }
+            }
+        }
+
         // private helper methods
         private void applyDefaultColors()
         {
@@ -136,6 +215,40 @@ namespace GEM.Ctrl
             TextColor[State.Hover] = Color.Blue;
             TextColor[State.Press] = Color.White;
         }
+        private bool isMouseOver()
+        {
+            int x = Input.MousePosX;
+            int y = Input.MousePosY;
+            bool hover = false;
+            if (x > PosX && x < (PosX + Width) && y > PosY && y < (PosY + Height))
+            {
+                hover = true;
+            }
+            return hover;
+        }
+        private bool isMouseOverR()
+        {
+            // recursive hover check
+            bool hover = isMouseOver();
+            if (Panel.Visible)
+            {
+                foreach (MenuButton sub in _subMenu.Values)
+                {
+                    hover |= sub.isMouseOverR();
+                }
+            }
+            return hover;
+        }
+        private bool isClickStartedR()
+        {
+            bool started = _clickStarted;
+            foreach (MenuButton button in _subMenu.Values)
+            {
+                started |= button.isClickStartedR();
+            }
+            return started;
+        }
+
         private void updateMouse()
         {
             State nextState = State;
@@ -159,18 +272,14 @@ namespace GEM.Ctrl
                 nextState = State.Idle;
                 if (!Input.IsLeftButtonPressed) _clickStarted = false;
             }
-            State = nextState;
-        }
-        private bool isMouseOver()
-        {
-            int x = Input.MousePosX;
-            int y = Input.MousePosY;
-            bool hover = false;
-            if (x > PosX && x < (PosX + Width) && y > PosY && y < (PosY + Height))
+            if (_parentMenu == null)
             {
-                hover = true;
+                if (!isMouseOverR() && Input.IsLeftButtonPressed && !isClickStartedR())
+                {
+                    Close(null, EventArgs.Empty);
+                }
             }
-            return hover;
+            State = nextState;
         }
         #endregion
     }

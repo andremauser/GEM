@@ -137,10 +137,23 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
-            _leftMenu = new MenuButton(null, null, "LB");
+            _leftMenu = new MenuButton(null, null, "LB", MenuType.Click) { Width = 60, Height = 60 };
+            _leftMenu.Panel.HorizontalAlign = Align.Left;
+            _leftMenu.Panel.VerticalAlign = Align.Bottom;
             _controls.Add(_leftMenu);
-            _leftMenu.AddMenu("Test1");
-            _leftMenu.AddMenu("Test2");
+            _leftMenu.AddMenu("1", MenuType.Hover, 60, 60);
+            _leftMenu.AddMenu("2", MenuType.Hover, 60, 60);
+            _leftMenu.AddMenu("3", MenuType.Hover, 60, 60);
+            _leftMenu.AddMenu("4", MenuType.Hover, 60, 60);
+            _leftMenu.AddMenu("5", MenuType.Hover, 60, 60);
+            _leftMenu["1"].AddMenu("dolor", MenuType.Hover);
+            _leftMenu["1"].AddMenu("sit", MenuType.Hover);
+            _leftMenu["2"].AddMenu("amet", MenuType.Hover);
+            _leftMenu["2"].AddMenu("blub", MenuType.Hover);
+            _leftMenu["3"].AddMenu("test", MenuType.Hover);
+
+            _leftMenu["1"]["dolor"].AddMenu("bla", MenuType.Hover);
+            _leftMenu["1"]["dolor"].AddMenu("blabla", MenuType.Hover);
         }
 
         public void Reset()
