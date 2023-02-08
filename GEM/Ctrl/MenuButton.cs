@@ -27,14 +27,12 @@ namespace GEM.Ctrl
         #region Fields
         // constants
         const int DEFAULT_WIDTH = 100;
-        const int DEFAULT_HEIGHT = 50;
+        const int DEFAULT_HEIGHT = 60;
         // menu button events
         public event EventHandler OnPress;
         public event EventHandler OnClick;
         public event EventHandler OnHover;
         public event EventHandler OnHoverOut;
-        public event EventHandler OnHoverOutR;
-        public event EventHandler OnClickOut;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> TextColor = new Dictionary<State, Color>();
@@ -58,11 +56,10 @@ namespace GEM.Ctrl
             {
                 case MenuType.Click:
                     OnClick += ToggleMenu;
-                    OnHover += OpenOnSideMenu;
+                    OnHover += OpenIfSideOpen;
                     break;
                 case MenuType.Hover:
                     OnHover += Open;
-                    OnHoverOutR += Close;
                     break;
                 default:
                     break;
@@ -83,7 +80,7 @@ namespace GEM.Ctrl
         public Panel Panel { get; private set; }
         public MenuButton this[string name]
         {
-            // submenu acces by name
+            // submenu access by name
             get { return _subMenu[name]; }
             set { _subMenu[name] = value; }
         }
@@ -118,10 +115,6 @@ namespace GEM.Ctrl
                 if (value == State.Idle && _state != State.Idle)
                 {
                     OnHoverOut?.Invoke(this, EventArgs.Empty);
-                    if (!isMouseOverR() && !Input.IsLeftButtonPressed)
-                    {
-                        OnHoverOutR?.Invoke(this, EventArgs.Empty);
-                    }
                 }
                 _state = value;
                 if (Label != null) { Label.TextColor = TextColor[value]; }
@@ -138,7 +131,15 @@ namespace GEM.Ctrl
         }
         public override void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), BackColor[State]);
+            Color color = BackColor[State];
+            // highlight open menu button with hover preset
+            if ( Panel.Visible && _subMenu.Count > 0 && State == State.Idle)
+            {
+                color = BackColor[State.Hover];
+                Label.TextColor = TextColor[State.Hover];
+            }
+
+            spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), color);
             base.Draw(spriteBatch);
         }
 
@@ -177,7 +178,7 @@ namespace GEM.Ctrl
         {
             Panel.Visible = true;
         }
-        public void OpenOnSideMenu<EventArgs>(Object sender, EventArgs e)
+        public void OpenIfSideOpen<EventArgs>(Object sender, EventArgs e)
         {
             if (_parentMenu == null) return;
 
@@ -215,6 +216,17 @@ namespace GEM.Ctrl
             TextColor[State.Hover] = Color.Blue;
             TextColor[State.Press] = Color.White;
         }
+        private bool isClickStartedR()
+        {
+            bool started = _clickStarted;
+            foreach (MenuButton button in _subMenu.Values)
+            {
+                started |= button.isClickStartedR();
+            }
+            return started;
+        }
+
+        // mouse
         private bool isMouseOver()
         {
             int x = Input.MousePosX;
@@ -239,16 +251,6 @@ namespace GEM.Ctrl
             }
             return hover;
         }
-        private bool isClickStartedR()
-        {
-            bool started = _clickStarted;
-            foreach (MenuButton button in _subMenu.Values)
-            {
-                started |= button.isClickStartedR();
-            }
-            return started;
-        }
-
         private void updateMouse()
         {
             State nextState = State;
