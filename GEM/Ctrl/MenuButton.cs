@@ -26,13 +26,16 @@ namespace GEM.Ctrl
     {
         #region Fields
         // constants
-        const int DEFAULT_WIDTH = 100;
+        const int DEFAULT_WIDTH = 150;
         const int DEFAULT_HEIGHT = 60;
         // menu button events
-        public event EventHandler OnPress;
-        public event EventHandler OnClick;
-        public event EventHandler OnHover;
-        public event EventHandler OnHoverOut;
+        public delegate void MenuEventHandler();
+        public event MenuEventHandler OnPress;
+        public event MenuEventHandler OnClick;
+        public event MenuEventHandler OnHover;
+        public event MenuEventHandler OnHoverOut;
+        public event MenuEventHandler OnOpen;
+        public event MenuEventHandler OnClose;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> TextColor = new Dictionary<State, Color>();
@@ -46,10 +49,15 @@ namespace GEM.Ctrl
         #endregion
 
         #region Constructors
-        public MenuButton(BaseControl parentControl, MenuButton parentMenu, string caption, MenuType menuType) : base(parentControl)
+        public MenuButton(BaseControl parentControl, MenuButton parentMenu, string caption, MenuType menuType, string image = null) : base(parentControl)
         {
             _parentMenu = parentMenu;
-            Label = AddLabel(caption);
+            Caption = AddLabel(caption);
+            if (image != null)
+            {
+                Image = AddImage(image);
+                Caption.Caption = "";
+            }
             Panel = AddPanel();
             Panel.Visible = false;
             switch (menuType)
@@ -68,7 +76,7 @@ namespace GEM.Ctrl
             // default values
             applyDefaultColors();
             Width = DEFAULT_WIDTH;
-            Height= DEFAULT_HEIGHT;
+            Height = DEFAULT_HEIGHT;
             // set submenu anchor point (size of panel is 0)
             Panel.HorizontalAlign = Align.Right;
             Panel.VerticalAlign = Align.Top;
@@ -76,7 +84,8 @@ namespace GEM.Ctrl
         #endregion
 
         #region Properties
-        public Label Label { get; private set; }
+        public Label Caption { get; private set; }
+        public Image Image { get; private set; }
         public Panel Panel { get; private set; }
         public MenuButton this[string name]
         {
@@ -98,26 +107,27 @@ namespace GEM.Ctrl
                 {
                     if (_clickStarted)
                     {
-                        OnClick?.Invoke(this, EventArgs.Empty);
+                        OnClick?.Invoke();
                         _clickStarted= false;
                     }
                     else
                     {
-                        OnHover?.Invoke(this, EventArgs.Empty);
+                        OnHover?.Invoke();
                     }
                 }
                 // press
                 if (value == State.Press && _state != State.Press)
                 {
-                    OnPress?.Invoke(this, EventArgs.Empty);
+                    OnPress?.Invoke();
                 }
                 // hover out
                 if (value == State.Idle && _state != State.Idle)
                 {
-                    OnHoverOut?.Invoke(this, EventArgs.Empty);
+                    OnHoverOut?.Invoke();
                 }
                 _state = value;
-                if (Label != null) { Label.TextColor = TextColor[value]; }
+                if (Caption != null) Caption.TextColor = TextColor[value];
+                if (Image != null) Image.ImageColor = TextColor[value];
             }
         }
         #endregion
@@ -130,55 +140,61 @@ namespace GEM.Ctrl
             updateMouse();
         }
         public override void Draw(SpriteBatch spriteBatch)
-        {
+        { 
+            // highlight open menuButton
             Color color = BackColor[State];
-            // highlight open menu button with hover preset
-            if ( Panel.Visible && _subMenu.Count > 0 && State == State.Idle)
+            if (Panel.Visible && _subMenu.Count > 0 && State == State.Idle)
             {
                 color = BackColor[State.Hover];
-                Label.TextColor = TextColor[State.Hover];
+                Caption.TextColor = TextColor[State.Hover];
+                if (Image != null) Image.ImageColor = TextColor[State.Hover];
             }
-
+            // draw box
             spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), color);
+            // draw label/image and submenu
             base.Draw(spriteBatch);
         }
 
-        public void AddMenu(string name, MenuButton button)
+        public MenuButton AddMenu(string name, MenuButton button)
         {
-            if (_subMenu.ContainsKey(name)) return;
+            if (_subMenu.ContainsKey(name)) return null;
 
             Panel.Add(button);
             _subMenu.Add(name, button);
+            return button;
         }
-        public void AddMenu(string name, MenuType menuType, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT)
+        public MenuButton AddMenu(string name, MenuType menuType = MenuType.Hover, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, string image = null)
         {
-            AddMenu(name, new MenuButton(Panel, this, name, menuType) { Width = width, Height = height});
+            return AddMenu(name, new MenuButton(Panel, this, name, menuType, image) { Width = width, Height = height});
         }
 
-        public void ToggleMenu<EventArgs>(Object sender, EventArgs e)
+        // event handler
+        public void ToggleMenu()
         {
             if (Panel.Visible)
             {
-                Close(sender, e);
+                Close();
             }
             else
             {
-                Open(sender, e);
+                Open();
             }
         }
-        public void Close<EventArgs>(Object sender, EventArgs e)
+        public void Close()
         {
             Panel.Visible = false;
             foreach (MenuButton button in _subMenu.Values)
             {
                 button.Panel.Visible = false;
             }
+            OnClose?.Invoke();
         }
-        public void Open<EventArgs>(Object sender, EventArgs e)
+        public void Open()
         {
             Panel.Visible = true;
+            OnOpen?.Invoke();
         }
-        public void OpenIfSideOpen<EventArgs>(Object sender, EventArgs e)
+        public void OpenIfSideOpen()
         {
             if (_parentMenu == null) return;
 
@@ -189,10 +205,10 @@ namespace GEM.Ctrl
             }
             if (open)
             {
-                Open(sender, e);
+                Open();
             }
         }
-        public void CloseSideMenus<EventArgs>(Object sender, EventArgs e)
+        public void CloseSideMenus()
         {
             if (_parentMenu == null) return;
 
@@ -200,7 +216,7 @@ namespace GEM.Ctrl
             {
                 if (button != this)
                 {
-                    button.Close(sender, e);
+                    button.Close();
                 }
             }
         }
@@ -208,13 +224,13 @@ namespace GEM.Ctrl
         // private helper methods
         private void applyDefaultColors()
         {
-            BackColor[State.Idle] = Color.Gray;
-            BackColor[State.Hover] = Color.White;
-            BackColor[State.Press] = Color.Blue;
+            BackColor[State.Idle] = Color.Indigo;
+            BackColor[State.Hover] = Color.DarkViolet;
+            BackColor[State.Press] = Color.MediumSpringGreen;
 
-            TextColor[State.Idle] = Color.Black;
-            TextColor[State.Hover] = Color.Blue;
-            TextColor[State.Press] = Color.White;
+            TextColor[State.Idle] = Color.White;
+            TextColor[State.Hover] = Color.White;
+            TextColor[State.Press] = Color.DarkSlateGray;
         }
         private bool isClickStartedR()
         {
@@ -278,7 +294,7 @@ namespace GEM.Ctrl
             {
                 if (!isMouseOverR() && Input.IsLeftButtonPressed && !isClickStartedR())
                 {
-                    Close(null, EventArgs.Empty);
+                    Close();
                 }
             }
             State = nextState;

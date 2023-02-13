@@ -127,7 +127,7 @@ namespace GEM.Emu
             PowerOff();
             PowerOn();
         }
-        public void PauseSwitch()
+        public void PauseToggle()
         {
             IsRunning = !IsRunning;
             StopAfterFrame = false;
@@ -135,13 +135,13 @@ namespace GEM.Emu
         }
         public void PauseAfterFrame()
         {
-            PauseSwitch();
+            PauseToggle();
             StopAfterFrame = true;
             StopAfterStep = false;
         }
         public void PauseAfterStep()
         {
-            PauseSwitch();
+            PauseToggle();
             StopAfterFrame = false;
             StopAfterStep = true;
         }

@@ -170,6 +170,10 @@ namespace GEM.Ctrl
         {
             return (Panel)Add(new Panel(this));
         }
+        public Image AddImage(string image)
+        {
+            return (Image)Add(new Image(this, image));
+        }
 
         protected void updateAlignPosition()
         {

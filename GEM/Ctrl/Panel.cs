@@ -26,6 +26,7 @@ namespace GEM.Ctrl
         {
             base.Update();
             
+            // order controls vertically
             int top = 0;
             for (int i = 0; i < _controls.Count; i++)
             {

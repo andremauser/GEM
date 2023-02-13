@@ -137,23 +137,23 @@ namespace GEM.Emu
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
+            // add "left menu" button
             _leftMenu = new MenuButton(null, null, "LB", MenuType.Click) { Width = 60, Height = 60 };
             _leftMenu.Panel.HorizontalAlign = Align.Left;
             _leftMenu.Panel.VerticalAlign = Align.Bottom;
             _controls.Add(_leftMenu);
-            _leftMenu.AddMenu("1", MenuType.Hover, 60, 60);
-            _leftMenu.AddMenu("2", MenuType.Hover, 60, 60);
-            _leftMenu.AddMenu("3", MenuType.Hover, 60, 60);
-            _leftMenu.AddMenu("4", MenuType.Hover, 60, 60);
-            _leftMenu.AddMenu("5", MenuType.Hover, 60, 60);
-            _leftMenu["1"].AddMenu("dolor", MenuType.Hover);
-            _leftMenu["1"].AddMenu("sit", MenuType.Hover);
-            _leftMenu["2"].AddMenu("amet", MenuType.Hover);
-            _leftMenu["2"].AddMenu("blub", MenuType.Hover);
-            _leftMenu["3"].AddMenu("test", MenuType.Hover);
-
-            _leftMenu["1"]["dolor"].AddMenu("bla", MenuType.Hover);
-            _leftMenu["1"]["dolor"].AddMenu("blabla", MenuType.Hover);
+            _leftMenu.OnOpen += () => { _leftMenu.Top = -60; };
+            _leftMenu.OnClose += () => { _leftMenu.Top = 0; };
+            // add menu entries
+            _leftMenu.AddMenu("cart", width: 60, height: 60, image: "cartridge");
+            _leftMenu.AddMenu("2", width: 60, height: 60);
+            _leftMenu.AddMenu("3", width: 60, height: 60);
+            _leftMenu.AddMenu("4", width: 60, height: 60);
+            _leftMenu.AddMenu("5", width: 60, height: 60);
+            _leftMenu["cart"].AddMenu("open rom");
+            _leftMenu["cart"].AddMenu("pause/start").OnClick += _gameboy.PauseToggle;
+            _leftMenu["cart"].AddMenu("reset").OnClick += _gameboy.Reset;
+            _leftMenu["cart"].AddMenu("exit rom").OnClick += _gameboy.EjectCartridge;
         }
 
         public void Reset()
@@ -180,7 +180,7 @@ namespace GEM.Emu
             // TODO: delete
             checkInput_Color();
             checkInput_Debug();
-            _isHandled_Pause = checkInput(Input.IsButton_Pause, _isHandled_Pause, _gameboy.PauseSwitch);
+            _isHandled_Pause = checkInput(Input.IsButton_Pause, _isHandled_Pause, _gameboy.PauseToggle);
             _isHandled_Frame = checkInput(Input.IsButton_Frame, _isHandled_Frame, _gameboy.PauseAfterFrame);
             _isHandled_Step = checkInput(Input.IsButton_Step, _isHandled_Step, _gameboy.PauseAfterStep);
             checkInput_Reset();
