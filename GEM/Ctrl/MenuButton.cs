@@ -14,7 +14,8 @@ namespace GEM.Ctrl
     {
         Idle,
         Hover,
-        Press
+        Press,
+        Disabled
     }
     public enum MenuType
     {
@@ -46,6 +47,7 @@ namespace GEM.Ctrl
         State _state = State.Idle;
         // button functionality
         bool _clickStarted = false;
+        public bool Enabled = true;
         #endregion
 
         #region Constructors
@@ -68,6 +70,7 @@ namespace GEM.Ctrl
                     break;
                 case MenuType.Hover:
                     OnHover += Open;
+                    OnClick += ToggleMenu;
                     break;
                 default:
                     break;
@@ -224,13 +227,15 @@ namespace GEM.Ctrl
         // private helper methods
         private void applyDefaultColors()
         {
-            BackColor[State.Idle] = Color.Indigo;
-            BackColor[State.Hover] = Color.DarkViolet;
-            BackColor[State.Press] = Color.MediumSpringGreen;
+            BackColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            BackColor[State.Hover] = Color.MediumSpringGreen;
+            BackColor[State.Press] = Color.MediumVioletRed;
+            BackColor[State.Disabled] = BackColor[State.Idle];
 
             TextColor[State.Idle] = Color.White;
-            TextColor[State.Hover] = Color.White;
-            TextColor[State.Press] = Color.DarkSlateGray;
+            TextColor[State.Hover] = Color.Black;
+            TextColor[State.Press] = Color.White;
+            TextColor[State.Disabled] = Color.Gray;
         }
         private bool isClickStartedR()
         {
@@ -270,6 +275,11 @@ namespace GEM.Ctrl
         private void updateMouse()
         {
             State nextState = State;
+            if (!Enabled)
+            {
+                State = State.Disabled;
+                return;
+            }
             if (isMouseOver())
             {
                 if (Input.IsLeftButtonPressed)

@@ -138,20 +138,23 @@ namespace GEM.Emu
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
             // add "left menu" button
-            _leftMenu = new MenuButton(null, null, "LB", MenuType.Click) { Width = 60, Height = 60 };
+            _leftMenu = new MenuButton(null, null, "LB", MenuType.Click, "Left Bumper") { Width = 60, Height = 60 };
+            _leftMenu.Image.ResizeToParent();
+            _leftMenu.BackColor[State.Idle] = Color.Transparent;
             _leftMenu.Panel.HorizontalAlign = Align.Left;
             _leftMenu.Panel.VerticalAlign = Align.Bottom;
-            _controls.Add(_leftMenu);
-            _leftMenu.OnOpen += () => { _leftMenu.Top = -60; };
+            //_leftMenu.OnOpen += () => { _leftMenu.Top = -_leftMenu.Height; };
             _leftMenu.OnClose += () => { _leftMenu.Top = 0; };
+            _controls.Add(_leftMenu);
             // add menu entries
             _leftMenu.AddMenu("cart", width: 60, height: 60, image: "cartridge");
             _leftMenu.AddMenu("2", width: 60, height: 60);
             _leftMenu.AddMenu("3", width: 60, height: 60);
             _leftMenu.AddMenu("4", width: 60, height: 60);
             _leftMenu.AddMenu("5", width: 60, height: 60);
-            _leftMenu["cart"].AddMenu("open rom");
+            _leftMenu["cart"].AddMenu("open rom").OnClick += () => { _leftMenu["cart"]["pause/start"].Enabled = !_leftMenu["cart"]["pause/start"].Enabled; }; ;
             _leftMenu["cart"].AddMenu("pause/start").OnClick += _gameboy.PauseToggle;
+            _leftMenu["cart"]["pause/start"].Enabled = false;
             _leftMenu["cart"].AddMenu("reset").OnClick += _gameboy.Reset;
             _leftMenu["cart"].AddMenu("exit rom").OnClick += _gameboy.EjectCartridge;
         }
@@ -191,7 +194,6 @@ namespace GEM.Emu
             checkInput_4();
             checkInput_5();
         }
-
         public void Draw(Viewport viewport)
         {
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
