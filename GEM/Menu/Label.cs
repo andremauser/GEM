@@ -1,8 +1,8 @@
-﻿using GEM.Emu;
+﻿using GEM.Emulation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace GEM.Ctrl
+namespace GEM.Menu
 {
     internal class Label : BaseControl
     {
@@ -16,7 +16,7 @@ namespace GEM.Ctrl
         {
             _font = Emulator._Font;
             Caption = caption;
-            TextColor = Color.White;
+            ForeColor = Color.White;
             MarkColor = Color.Transparent;
         }
         #endregion
@@ -37,7 +37,7 @@ namespace GEM.Ctrl
                 updateAlignPosition();
             }
         }
-        public Color TextColor { get; set; }
+        public Color ForeColor { get; set; }
         public Color MarkColor { get; set; }
         #endregion
 
@@ -45,7 +45,7 @@ namespace GEM.Ctrl
         public override void Draw(SpriteBatch spriteBatch)
         {
             spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), MarkColor);
-            spriteBatch.DrawString(_font, _caption, new Vector2(PosX, PosY), TextColor);
+            spriteBatch.DrawString(_font, _caption, new Vector2(PosX, PosY), ForeColor);
             base.Draw(spriteBatch);
         }
         #endregion

@@ -1,7 +1,8 @@
-﻿using GEM.Ctrl;
+﻿using GEM.Menu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
     /// <summary>
     /// Connection between user and gameboy instance: 
@@ -18,7 +19,6 @@ namespace GEM.Emu
     internal class Emulator
     {
         #region Fields
-
         Gameboy _gameboy;
 
         GraphicsDevice _graphicsDevice;
@@ -45,11 +45,6 @@ namespace GEM.Emu
         bool _isHandled_4;
         bool _isHandled_5;
 
-        int _screenOffsetTop;
-        int _screenOffsetBottom;
-        int _screenOffsetLeft;
-        int _screenOffsetRight;
-
         List<string> _romList = new List<string>();
         List<BaseControl> _controls;
 
@@ -57,22 +52,18 @@ namespace GEM.Emu
         static public SpriteFont _Font;
 
         MenuButton _leftMenu;
-
         #endregion
 
         #region Constructors
-
         public Emulator(GraphicsDevice graphicsDevice)
         {
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
             _controls = new List<BaseControl>();
         }
-
         #endregion
 
         #region Properties
-
         public string CartridgeTitle
         {
             get
@@ -85,11 +76,9 @@ namespace GEM.Emu
                 return "(N/A)";
             }
         }
-
         #endregion
 
         #region Methods
-
         public void LoadContent(ContentManager content)
         {
             _gameboy = new Gameboy(_graphicsDevice);
@@ -143,12 +132,13 @@ namespace GEM.Emu
             _leftMenu.BackColor[State.Idle] = Color.Transparent;
             _leftMenu.Panel.HorizontalAlign = Align.Left;
             _leftMenu.Panel.VerticalAlign = Align.Bottom;
+            _leftMenu.KeyBinding = Keys.LeftControl;
             //_leftMenu.OnOpen += () => { _leftMenu.Top = -_leftMenu.Height; };
             _leftMenu.OnClose += () => { _leftMenu.Top = 0; };
             _controls.Add(_leftMenu);
             // add menu entries
             _leftMenu.AddMenu("cart", width: 60, height: 60, image: "cartridge");
-            _leftMenu.AddMenu("2", width: 60, height: 60);
+            _leftMenu.AddMenu("set", width: 60, height: 60);
             _leftMenu.AddMenu("3", width: 60, height: 60);
             _leftMenu.AddMenu("4", width: 60, height: 60);
             _leftMenu.AddMenu("5", width: 60, height: 60);
@@ -157,6 +147,11 @@ namespace GEM.Emu
             _leftMenu["cart"]["pause/start"].Enabled = false;
             _leftMenu["cart"].AddMenu("reset").OnClick += _gameboy.Reset;
             _leftMenu["cart"].AddMenu("exit rom").OnClick += _gameboy.EjectCartridge;
+            _leftMenu["set"].AddMenu("palette");
+            _leftMenu["set"]["palette"].AddMenu("green").OnClick += () => { _emuColorIndex = 0; };
+            _leftMenu["set"]["palette"].AddMenu("yellow").OnClick += () => { _emuColorIndex = 1; };
+            _leftMenu["set"]["palette"].AddMenu("grey").OnClick += () => { _emuColorIndex = 2; };
+            _leftMenu["set"]["palette"].AddMenu("original").OnClick += () => { _emuColorIndex = 3; };
         }
 
         public void Reset()
@@ -211,13 +206,13 @@ namespace GEM.Emu
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
             // Screen Position & Size
-            float pixelSize = MathHelper.Min((viewport.Height - _screenOffsetTop - _screenOffsetBottom) / 144f,
-                                             (viewport.Width - _screenOffsetLeft - _screenOffsetRight) / 160f);
+            float pixelSize = MathHelper.Min(viewport.Height / 144f,
+                                             viewport.Width / 160f);
 
-            int screenWidth = (int)(pixelSize * 160);
-            int screenHeight = (int)(pixelSize * 144);
-            int screenLeft = _screenOffsetLeft + (viewport.Width - screenWidth - _screenOffsetLeft - _screenOffsetRight) / 2;
-            int screenTop = _screenOffsetTop;
+            int screenWidth = (int)pixelSize * 160;
+            int screenHeight = (int)pixelSize * 144;
+            int screenLeft = (viewport.Width - screenWidth) / 2;
+            int screenTop = (viewport.Height - screenHeight) / 2;
 
             //Temporary File Browser
             string fileBrowser = "Rom browser: 'roms/' - currently max. 5 games\n\n";

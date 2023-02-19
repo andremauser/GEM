@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
     public class GPU
     {

@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
     /// <summary>
     /// Representation of a physical Gameboy. Receives user input and outputs a gameboy screen (and maybe sound in future)

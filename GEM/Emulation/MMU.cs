@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
     public class MMU
     {

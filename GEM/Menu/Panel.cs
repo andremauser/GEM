@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GEM.Ctrl
+namespace GEM.Menu
 {
     internal class Panel : BaseControl
     {

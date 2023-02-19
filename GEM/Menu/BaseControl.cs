@@ -1,8 +1,8 @@
-﻿using GEM.Emu;
+﻿using GEM.Emulation;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
-namespace GEM.Ctrl
+namespace GEM.Menu
 {
     public enum Align
     {
@@ -136,10 +136,10 @@ namespace GEM.Ctrl
         #region Methods
         public virtual void Update()
         {
-            if (!Visible) return;
-            // update-calculations defined in inherited class
+            // update-calculations (defined in inherited class)
 
             // embedded controls should be updated first (e.g. click priority from top to bottom)
+            if (!Visible) return;
             foreach (BaseControl control in _controls)
             {
                 control.Update();
@@ -147,10 +147,10 @@ namespace GEM.Ctrl
         }
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            if (!Visible) return;
-            // draw-method defined in inherited class
+            // draw-method (defined in inherited class)
 
             // embedded controls drawn last (from bottom to top)
+            if (!Visible) return;
             foreach (BaseControl control in _controls)
             {
                 control.Draw(spriteBatch);

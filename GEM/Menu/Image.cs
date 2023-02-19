@@ -1,33 +1,34 @@
-﻿using GEM.Emu;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace GEM.Ctrl
+namespace GEM.Menu
 {
     internal class Image : BaseControl
     {
         #region Fields
         Texture2D _image;
-        public Color ImageColor;
         #endregion
 
         #region Constructors
         public Image(BaseControl parent, string image) : base(parent)
         {
+            // load image
             _image = Game1._Content.Load<Texture2D>(image);
-            ImageColor = Color.White;
+            // default values
+            ForeColor = Color.White;
             Width = _image.Width;
             Height = _image.Height;
         }
         #endregion
 
         #region Properties
+        public Color ForeColor { get; set; }
         #endregion
 
         #region Methods
         public override void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(_image, new Rectangle(PosX, PosY, Width, Height), ImageColor);
+            spriteBatch.Draw(_image, new Rectangle(PosX, PosY, Width, Height), ForeColor);
             base.Draw(spriteBatch);
         }
 

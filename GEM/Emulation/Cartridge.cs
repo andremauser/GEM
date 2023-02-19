@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
     public class Cartridge
     {

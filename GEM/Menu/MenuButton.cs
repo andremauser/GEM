@@ -1,14 +1,10 @@
-﻿using GEM.Emu;
+﻿using GEM.Emulation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
+using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace GEM.Ctrl
+namespace GEM.Menu
 {
     public enum State
     {
@@ -29,25 +25,31 @@ namespace GEM.Ctrl
         // constants
         const int DEFAULT_WIDTH = 150;
         const int DEFAULT_HEIGHT = 60;
-        // menu button events
+        // simple event handler
         public delegate void MenuEventHandler();
+        // menu button events
         public event MenuEventHandler OnPress;
         public event MenuEventHandler OnClick;
         public event MenuEventHandler OnHover;
         public event MenuEventHandler OnHoverOut;
+        // menu structure events
         public event MenuEventHandler OnOpen;
         public event MenuEventHandler OnClose;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
-        public Dictionary<State, Color> TextColor = new Dictionary<State, Color>();
+        public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
         // menu structure
         Dictionary<string, MenuButton> _subMenu = new Dictionary<string, MenuButton>();
         MenuButton _parentMenu;
         // property fields
         State _state = State.Idle;
+        Keys _keyBinding;
         // button functionality
         bool _clickStarted = false;
         public bool Enabled = true;
+        State _gamepadRequest;
+        State _keyboardRequest;
+        State _mouseRequest;
         #endregion
 
         #region Constructors
@@ -76,6 +78,11 @@ namespace GEM.Ctrl
                     break;
             }
             OnHover += CloseSideMenus;
+
+            // bind mouse events
+            Input.OnMouseDown += MouseDownHandler;
+            Input.OnMouseUp += MouseUpHandler;
+
             // default values
             applyDefaultColors();
             Width = DEFAULT_WIDTH;
@@ -105,23 +112,23 @@ namespace GEM.Ctrl
             private set
             {
                 // fire menu button events on state change
-                // hover + click
-                if (value == State.Hover && _state != State.Hover)
+
+                // hover
+                if (value == State.Hover && _state == State.Idle)
                 {
-                    if (_clickStarted)
-                    {
-                        OnClick?.Invoke();
-                        _clickStarted= false;
-                    }
-                    else
-                    {
-                        OnHover?.Invoke();
-                    }
+                    OnHover?.Invoke();
                 }
                 // press
                 if (value == State.Press && _state != State.Press)
                 {
+                    _clickStarted = true;
                     OnPress?.Invoke();
+                }
+                // click
+                if (value != State.Press && _state == State.Press && _clickStarted)
+                {
+                    OnClick?.Invoke();
+                    _clickStarted = false;
                 }
                 // hover out
                 if (value == State.Idle && _state != State.Idle)
@@ -129,8 +136,21 @@ namespace GEM.Ctrl
                     OnHoverOut?.Invoke();
                 }
                 _state = value;
-                if (Caption != null) Caption.TextColor = TextColor[value];
-                if (Image != null) Image.ImageColor = TextColor[value];
+                if (Caption != null) Caption.ForeColor = ForeColor[value];
+                if (Image != null) Image.ForeColor = ForeColor[value];
+            }
+        }
+        public Keys KeyBinding
+        {
+            get
+            {
+                return _keyBinding;
+            }
+            set
+            {
+                _keyBinding = value;
+                Input.OnKeyDown += KeyDownHandler;
+                Input.OnKeyUp += KeyUpHandler;
             }
         }
         #endregion
@@ -138,32 +158,52 @@ namespace GEM.Ctrl
         #region Methods
         public override void Update()
         {
+            if (!Visible) return;
+
             base.Update();
 
-            updateMouse();
+            // mouse hover
+            if (isMouseOver() && _mouseRequest == State.Idle && !Input.IsLeftButtonPressed)
+            {
+                _mouseRequest = State.Hover;
+            }
+            if (!isMouseOver() && _mouseRequest != State.Press)
+            {
+                _mouseRequest = State.Idle;
+            }
+
+            resolveStateRequests();
         }
         public override void Draw(SpriteBatch spriteBatch)
-        { 
-            // highlight open menuButton
+        {
+            if (!Visible) return;
+
+            // highlight button when submenu is visible
             Color color = BackColor[State];
             if (Panel.Visible && _subMenu.Count > 0 && State == State.Idle)
             {
                 color = BackColor[State.Hover];
-                Caption.TextColor = TextColor[State.Hover];
-                if (Image != null) Image.ImageColor = TextColor[State.Hover];
+                Caption.ForeColor = ForeColor[State.Hover];
+                if (Image != null) Image.ForeColor = ForeColor[State.Hover];
             }
             // draw box
             spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), color);
-            // draw label/image and submenu
+            // draw label, image and submenu
             base.Draw(spriteBatch);
         }
 
+        // add submenu
         public MenuButton AddMenu(string name, MenuButton button)
         {
+            // check for duplicate name
             if (_subMenu.ContainsKey(name)) return null;
 
+            // add to embedded controls
             Panel.Add(button);
+
+            // add to menu structure
             _subMenu.Add(name, button);
+
             return button;
         }
         public MenuButton AddMenu(string name, MenuType menuType = MenuType.Hover, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, string image = null)
@@ -171,7 +211,7 @@ namespace GEM.Ctrl
             return AddMenu(name, new MenuButton(Panel, this, name, menuType, image) { Width = width, Height = height});
         }
 
-        // event handler
+        // menu event handler
         public void ToggleMenu()
         {
             if (Panel.Visible)
@@ -188,7 +228,8 @@ namespace GEM.Ctrl
             Panel.Visible = false;
             foreach (MenuButton button in _subMenu.Values)
             {
-                button.Panel.Visible = false;
+                // close all submenus
+                button.Close();
             }
             OnClose?.Invoke();
         }
@@ -199,6 +240,8 @@ namespace GEM.Ctrl
         }
         public void OpenIfSideOpen()
         {
+            // used for open menu on hover when another menu on same level is already opened
+
             if (_parentMenu == null) return;
 
             bool open = false;
@@ -213,6 +256,8 @@ namespace GEM.Ctrl
         }
         public void CloseSideMenus()
         {
+            // used for closing other menus on same level when menu opened
+
             if (_parentMenu == null) return;
 
             foreach (MenuButton button in _parentMenu._subMenu.Values)
@@ -224,18 +269,65 @@ namespace GEM.Ctrl
             }
         }
 
+        // keyboard event handler
+        public void KeyDownHandler(Keys key)
+        {
+            if (key == KeyBinding)
+            {
+                _keyboardRequest = State.Press;
+            }
+        }
+        public void KeyUpHandler(Keys key)
+        {
+            if (key == KeyBinding)
+            {
+                _keyboardRequest = State.Idle;
+                _clickStarted = true; // keep clickStarted even when mouse click outside
+            }
+        }
+
+        // mouse event handler
+        public void MouseDownHandler()
+        {
+            if (isMouseOver())
+            {
+                _mouseRequest = State.Press;
+                _clickStarted = true;
+            }
+            // close menu on click outside
+            if (_parentMenu == null)
+            {
+                if (!isMouseOverR())
+                { 
+                    Close();
+                }
+            }
+        }
+        public void MouseUpHandler()
+        {
+            if (isMouseOver())
+            {
+                _mouseRequest = State.Hover;
+            }
+            else
+            {
+                _mouseRequest = State.Idle;
+                _clickStarted = false;
+            }
+        }
+
         // private helper methods
         private void applyDefaultColors()
         {
             BackColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
             BackColor[State.Hover] = Color.MediumSpringGreen;
-            BackColor[State.Press] = Color.MediumVioletRed;
+            BackColor[State.Press] = Color.DarkViolet;
             BackColor[State.Disabled] = BackColor[State.Idle];
 
-            TextColor[State.Idle] = Color.White;
-            TextColor[State.Hover] = Color.Black;
-            TextColor[State.Press] = Color.White;
-            TextColor[State.Disabled] = Color.Gray;
+            ForeColor[State.Idle] = Color.White;
+            ForeColor[State.Hover] = Color.Black;
+            ForeColor[State.Press] = Color.White;
+            ForeColor[State.Disabled] = Color.Gray;
         }
         private bool isClickStartedR()
         {
@@ -246,8 +338,6 @@ namespace GEM.Ctrl
             }
             return started;
         }
-
-        // mouse
         private bool isMouseOver()
         {
             int x = Input.MousePosX;
@@ -272,42 +362,32 @@ namespace GEM.Ctrl
             }
             return hover;
         }
-        private void updateMouse()
+        private void resolveStateRequests()
         {
-            State nextState = State;
+            // Disabled
             if (!Enabled)
             {
                 State = State.Disabled;
                 return;
             }
-            if (isMouseOver())
+            // Press
+            if (_gamepadRequest == State.Press ||
+                _keyboardRequest == State.Press ||
+                _mouseRequest == State.Press)
             {
-                if (Input.IsLeftButtonPressed)
-                {
-                    if (State == State.Hover || _clickStarted)
-                    {
-                        nextState = State.Press;
-                        _clickStarted = true;
-                    }
-                }
-                else
-                {
-                    nextState = State.Hover;
-                }
+                State = State.Press;
+                return;
             }
-            else
+            // Hover
+            if (_gamepadRequest == State.Hover ||
+                _keyboardRequest == State.Hover ||
+                _mouseRequest == State.Hover)
             {
-                nextState = State.Idle;
-                if (!Input.IsLeftButtonPressed) _clickStarted = false;
+                State = State.Hover;
+                return;
             }
-            if (_parentMenu == null)
-            {
-                if (!isMouseOverR() && Input.IsLeftButtonPressed && !isClickStartedR())
-                {
-                    Close();
-                }
-            }
-            State = nextState;
+            // else: Idle
+            State = State.Idle;
         }
         #endregion
     }

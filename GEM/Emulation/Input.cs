@@ -5,11 +5,29 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text;
 
-namespace GEM.Emu
+namespace GEM.Emulation
 {
+    public enum InputType
+    {
+        Mouse,
+        Keyboard,
+        Gamepad
+    }
     internal static class Input
     {
         #region Fields
+        static Keys[] _lastPressedKeys;
+        static bool _wasMouseDown;
+
+        // keyboard events
+        public delegate void KeyboardEventHandler(Keys key);
+        public static event KeyboardEventHandler OnKeyDown;
+        public static event KeyboardEventHandler OnKeyUp;
+        // mouse events
+        public delegate void MouseEventHanler();
+        public static event MouseEventHanler OnMouseDown;
+        public static event MouseEventHanler OnMouseUp;
+
         // gamepad bindings
         const Buttons BUTTON_A =        Buttons.B;
         const Buttons BUTTON_B =        Buttons.A;
@@ -73,6 +91,9 @@ namespace GEM.Emu
             KeyboardState keyboardState = Keyboard.GetState();
             MouseState mouseState = Mouse.GetState();
 
+            invokeKeyboardEvents(keyboardState);
+            invokeMouseEvents(mouseState);
+
             // update properties
             IsButton_Up =       gamePadState.IsButtonDown(BUTTON_UP)    ||  keyboardState.IsKeyDown(KEY_UP);
             IsButton_Down =     gamePadState.IsButtonDown(BUTTON_DOWN)  ||  keyboardState.IsKeyDown(KEY_DOWN);
@@ -84,6 +105,7 @@ namespace GEM.Emu
             IsButton_Start =    gamePadState.IsButtonDown(BUTTON_START) ||  keyboardState.IsKeyDown(KEY_START);
             IsButton_Select =   gamePadState.IsButtonDown(BUTTON_SELECT)||  keyboardState.IsKeyDown(KEY_SELECT);
 
+            // TODO: delete? 
             MousePosX = mouseState.X;
             MousePosY = mouseState.Y;
             IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
@@ -103,6 +125,53 @@ namespace GEM.Emu
             IsButton_3 = keyboardState.IsKeyDown(Keys.D3);
             IsButton_4 = keyboardState.IsKeyDown(Keys.D4);
             IsButton_5 = keyboardState.IsKeyDown(Keys.D5);
+        }
+
+        static void invokeKeyboardEvents(KeyboardState keyboardState)
+        {
+            // keyboard events
+            Keys[] pressedKeys = keyboardState.GetPressedKeys();
+            if (_lastPressedKeys != null)
+            {
+                // key down
+                foreach (Keys key in pressedKeys)
+                {
+                    bool newPress = true;
+                    foreach (Keys lastKey in _lastPressedKeys)
+                    {
+                        if (key == lastKey) newPress = false;
+                    }
+                    if (newPress) OnKeyDown?.Invoke(key);
+                }
+                // key up
+                foreach (Keys lastKey in _lastPressedKeys)
+                {
+                    bool endPress = true;
+                    foreach (Keys key in pressedKeys)
+                    {
+                        if (key == lastKey) endPress = false;
+                    }
+                    if (endPress) OnKeyUp?.Invoke(lastKey);
+                }
+            }
+            _lastPressedKeys = pressedKeys;
+        }
+        static void invokeMouseEvents(MouseState mouseState)
+        {
+            // mouse events
+
+            // mouse down
+            if (mouseState.LeftButton.HasFlag(ButtonState.Pressed) && !_wasMouseDown)
+            {
+                _wasMouseDown = true;
+                OnMouseDown?.Invoke();
+            }
+            // mouse up
+            if (!mouseState.LeftButton.HasFlag(ButtonState.Pressed) && _wasMouseDown)
+            {
+                _wasMouseDown = false;
+                OnMouseUp?.Invoke();
+            }
         }
 
         #endregion
