@@ -1,4 +1,5 @@
 ﻿using GEM.Emulation;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 
@@ -9,9 +10,9 @@ namespace GEM.Menu
         Left, Center, Right, Top, Bottom
     }
     /// <summary>
-    /// abstract base class for nested controls
+    /// base class for nested controls
     /// </summary>
-    internal abstract class BaseControl
+    internal class BaseControl
     {
         #region Fields
         protected BaseControl _parent;
@@ -21,6 +22,7 @@ namespace GEM.Menu
         Align _verticalAlign;
         int _width;
         int _height;
+        protected float _rotation;
         #endregion
 
         #region Constructors
@@ -177,6 +179,7 @@ namespace GEM.Menu
 
         protected void updateAlignPosition()
         {
+            // align performed before rotation, so preferably use square images
             if (_parent != null)
             {
                 switch (HorizontalAlign)
@@ -204,6 +207,15 @@ namespace GEM.Menu
                         break;
                 }
             }
+        }
+
+        public void SetRotation(float radian)
+        {
+            _rotation = radian;
+        }
+        public void SetRotation(int degree)
+        {
+            _rotation = degree / 180f * MathHelper.Pi;
         }
         #endregion
     }

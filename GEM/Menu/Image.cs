@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 
 namespace GEM.Menu
 {
@@ -14,6 +15,7 @@ namespace GEM.Menu
         {
             // load image
             _image = Game1._Content.Load<Texture2D>(image);
+
             // default values
             ForeColor = Color.White;
             Width = _image.Width;
@@ -28,14 +30,20 @@ namespace GEM.Menu
         #region Methods
         public override void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(_image, new Rectangle(PosX, PosY, Width, Height), ForeColor);
+            Rectangle destinationRectangle = new Rectangle(PosX + Width / 2, PosY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
+            Rectangle sourceRectangle = new Rectangle(0, 0, _image.Width, _image.Height); // use full texture
+            Vector2 origin = new Vector2(_image.Width / 2f, _image.Height / 2f); // rotation around center of texture
+
+            spriteBatch.Draw(_image, destinationRectangle, sourceRectangle, ForeColor, -_rotation, origin, SpriteEffects.None, 1.0f);
+
             base.Draw(spriteBatch);
         }
 
         public void ResizeToParent()
         {
-            float aspectRatio = _image.Width / _image.Height;
-            float parentRatio = _parent.Width / _parent.Height;
+            // resize performed before rotation, so preferably use square images
+            float aspectRatio = (float)_image.Width / _image.Height;
+            float parentRatio = (float)_parent.Width / _parent.Height;
 
             if (aspectRatio <= parentRatio)
             {
@@ -48,6 +56,7 @@ namespace GEM.Menu
                 Height = (int)(Width / aspectRatio);
             }
         }
+
         #endregion
     }
 }

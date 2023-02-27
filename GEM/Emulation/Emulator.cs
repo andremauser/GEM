@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Xml;
+using static GEM.Menu.MenuButton;
 
 namespace GEM.Emulation
 {
@@ -32,18 +34,6 @@ namespace GEM.Emulation
         Color _pixelMarkerColor;
 
         int DebugMode;
-        bool _isHandled_Color;
-        bool _isHandled_Debug;
-        bool _isHandled_Pause;
-        bool _isHandled_Frame;
-        bool _isHandled_Step;
-        bool _isHandled_Reset;
-        bool _isHandled_Quit;
-        bool _isHandled_1;
-        bool _isHandled_2;
-        bool _isHandled_3;
-        bool _isHandled_4;
-        bool _isHandled_5;
 
         List<string> _romList = new List<string>();
         List<BaseControl> _controls;
@@ -52,6 +42,18 @@ namespace GEM.Emulation
         static public SpriteFont _Font;
 
         MenuButton _leftMenu;
+        BaseControl _dpad;
+
+        MenuButton _buttonA;
+        MenuButton _buttonB;
+        MenuButton _buttonStart;
+        MenuButton _buttonSelect;
+
+        MenuButton _buttonLeft;
+        MenuButton _buttonRight;
+        MenuButton _buttonUp;
+        MenuButton _buttonDown;
+
         #endregion
 
         #region Constructors
@@ -133,25 +135,110 @@ namespace GEM.Emulation
             _leftMenu.Panel.HorizontalAlign = Align.Left;
             _leftMenu.Panel.VerticalAlign = Align.Bottom;
             _leftMenu.KeyBinding = Keys.LeftControl;
-            //_leftMenu.OnOpen += () => { _leftMenu.Top = -_leftMenu.Height; };
-            _leftMenu.OnClose += () => { _leftMenu.Top = 0; };
             _controls.Add(_leftMenu);
             // add menu entries
             _leftMenu.AddMenu("cart", width: 60, height: 60, image: "cartridge");
             _leftMenu.AddMenu("set", width: 60, height: 60);
             _leftMenu.AddMenu("3", width: 60, height: 60);
             _leftMenu.AddMenu("4", width: 60, height: 60);
-            _leftMenu.AddMenu("5", width: 60, height: 60);
+            _leftMenu.AddMenu("5", width: 60, height: 60).OnClick += () => {
+                _gameboy.PowerOff();
+                _gameboy.InsertCartridge(_romList[0]);
+                _gameboy.PowerOn();
+            };
             _leftMenu["cart"].AddMenu("open rom").OnClick += () => { _leftMenu["cart"]["pause/start"].Enabled = !_leftMenu["cart"]["pause/start"].Enabled; }; ;
             _leftMenu["cart"].AddMenu("pause/start").OnClick += _gameboy.PauseToggle;
             _leftMenu["cart"]["pause/start"].Enabled = false;
             _leftMenu["cart"].AddMenu("reset").OnClick += _gameboy.Reset;
             _leftMenu["cart"].AddMenu("exit rom").OnClick += _gameboy.EjectCartridge;
             _leftMenu["set"].AddMenu("palette");
+            _leftMenu["set"].AddMenu("fullscreen").OnClick += Game1._Graphics.ToggleFullScreen;
             _leftMenu["set"]["palette"].AddMenu("green").OnClick += () => { _emuColorIndex = 0; };
             _leftMenu["set"]["palette"].AddMenu("yellow").OnClick += () => { _emuColorIndex = 1; };
             _leftMenu["set"]["palette"].AddMenu("grey").OnClick += () => { _emuColorIndex = 2; };
             _leftMenu["set"]["palette"].AddMenu("original").OnClick += () => { _emuColorIndex = 3; };
+
+            _dpad = new BaseControl(null) { Left = 120, Top = 500 };
+            MenuButton btn = new MenuButton(_dpad, null, "->", MenuType.StandAlone, "dpad") { Width=100, Height=100};
+            btn.Left = 20;
+            btn.Top = -50;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.Right;
+            btn.BtnBinding = Buttons.DPadRight;
+            btn.OnPress += () => _gameboy.IsButton_Right = true;
+            btn.OnRelease += () => _gameboy.IsButton_Right = false;
+            _dpad.Add(btn);
+            btn = new MenuButton(_dpad, null, "<-", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
+            btn.Left = -120;
+            btn.Top = -50;
+            btn.Image.ResizeToParent();
+            btn.Image.SetRotation(180);
+            btn.KeyBinding = Keys.Left;
+            btn.BtnBinding = Buttons.DPadLeft;
+            btn.OnPress += () => _gameboy.IsButton_Left = true;
+            btn.OnRelease += () => _gameboy.IsButton_Left = false;
+            _dpad.Add(btn);
+            btn = new MenuButton(_dpad, null, "up", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
+            btn.Left = -50;
+            btn.Top = -120;
+            btn.Image.ResizeToParent();
+            btn.Image.SetRotation(90);
+            btn.KeyBinding = Keys.Up;
+            btn.BtnBinding = Buttons.DPadUp;
+            btn.OnPress += () => _gameboy.IsButton_Up = true;
+            btn.OnRelease += () => _gameboy.IsButton_Up = false;
+            _dpad.Add(btn);
+            btn = new MenuButton(_dpad, null, "down", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
+            btn.Left = -50;
+            btn.Top = 20;
+            btn.Image.SetRotation(270);
+            btn.KeyBinding = Keys.Down;
+            btn.BtnBinding = Buttons.DPadDown;
+            btn.OnPress += () => _gameboy.IsButton_Down = true;
+            btn.OnRelease += () => _gameboy.IsButton_Down = false;
+            _dpad.Add(btn);
+            _controls.Add(_dpad);
+
+
+            btn = new MenuButton(null, null, "A", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = 1165;
+            btn.Top = 420;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.X;
+            btn.BtnBinding = Buttons.B;
+            btn.OnPress += () => _gameboy.IsButton_A = true;
+            btn.OnRelease += () => _gameboy.IsButton_A = false;
+            _dpad.Add(btn);
+
+            btn = new MenuButton(null, null, "B", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = 1055;
+            btn.Top = 460;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.Y;
+            btn.BtnBinding = Buttons.A;
+            btn.OnPress += () => _gameboy.IsButton_B = true;
+            btn.OnRelease += () => _gameboy.IsButton_B = false;
+            _dpad.Add(btn);
+
+            btn = new MenuButton(null, null, "Start", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = 1040;
+            btn.Top = 620;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.Enter;
+            btn.BtnBinding = Buttons.Start;
+            btn.OnPress += () => _gameboy.IsButton_Start = true;
+            btn.OnRelease += () => _gameboy.IsButton_Start = false;
+            _dpad.Add(btn);
+
+            btn = new MenuButton(null, null, "Select", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = 140;
+            btn.Top = 620;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.Back;
+            btn.BtnBinding = Buttons.Back;
+            btn.OnPress += () => _gameboy.IsButton_Select = true;
+            btn.OnRelease += () => _gameboy.IsButton_Select = false;
+            _dpad.Add(btn);
         }
 
         public void Reset()
@@ -174,20 +261,6 @@ namespace GEM.Emulation
             {
                 control1.Update();
             }
-
-            // TODO: delete
-            checkInput_Color();
-            checkInput_Debug();
-            _isHandled_Pause = checkInput(Input.IsButton_Pause, _isHandled_Pause, _gameboy.PauseToggle);
-            _isHandled_Frame = checkInput(Input.IsButton_Frame, _isHandled_Frame, _gameboy.PauseAfterFrame);
-            _isHandled_Step = checkInput(Input.IsButton_Step, _isHandled_Step, _gameboy.PauseAfterStep);
-            checkInput_Reset();
-            checkInput_Quit();
-            checkInput_1();
-            checkInput_2();
-            checkInput_3();
-            checkInput_4();
-            checkInput_5();
         }
         public void Draw(Viewport viewport)
         {
@@ -264,11 +337,6 @@ namespace GEM.Emulation
             }
         }
 
-        private void printDebugInfo(int posX, int posY)
-        {
-            _spriteBatch.DrawString(_Font, "Debug:\n\n" + _gameboy.DebugInfo, new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-        }
-
         private void drawMouseMarker(float size, int left, int top)
         {
             int pixelX = (int)((Input.MousePosX - left) / size);
@@ -343,146 +411,6 @@ namespace GEM.Emulation
             float scale = 2f;
             _spriteBatch.DrawString(_Font, "Tileset:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
             _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[_emuColorIndex]), new Rectangle(posX, posY + 20, (int)(128 * scale), (int)(192 * scale)), Color.White);
-        }
-
-        private void checkInput_Color()
-        {
-            if (Input.IsButton_Color && !_isHandled_Color)
-            {
-                _emuColorIndex++;
-                _emuColorIndex %= _emuPalette.GetLength(0);
-                _isHandled_Color = true;
-            }
-            else if (!Input.IsButton_Color && _isHandled_Color)
-            {
-                _isHandled_Color = false;
-            }
-        }
-        private void checkInput_Debug()
-        {
-            if (Input.IsButton_Debug && !_isHandled_Debug)
-            {
-                DebugMode++;
-                DebugMode %= 2;
-                _isHandled_Debug = true;
-            }
-            else if (!Input.IsButton_Debug && _isHandled_Debug)
-            {
-                _isHandled_Debug = false;
-            }
-        }
-
-        private bool checkInput(bool button, bool isHandled, Action action)
-        {
-            // Handles Actions via Key or Button
-            if (button && !isHandled)
-            {
-                // button pressed and not handled yet -> perform action and disable
-                action();
-                return true;
-            }
-            else if (!button && isHandled)
-            {
-                // button released -> enable again
-                return false;
-            }
-            // keep status
-            return isHandled;
-        }
-
-        private void checkInput_Reset()
-        {
-            if (Input.IsButton_Reset && !_isHandled_Reset)
-            {
-                Reset();
-                _isHandled_Reset = true;
-            }
-            else if (!Input.IsButton_Reset && _isHandled_Reset)
-            {
-                _isHandled_Reset = false;
-            }
-        }
-        private void checkInput_Quit()
-        {
-            if (Input.IsButton_Quit && !_isHandled_Quit)
-            {
-                _gameboy.PowerOff();
-                _isHandled_Quit = true;
-            }
-            else if (!Input.IsButton_Quit && _isHandled_Quit)
-            {
-                _isHandled_Quit = false;
-            }
-        }
-        private void checkInput_1()
-        {
-            if (Input.IsButton_1 && !_isHandled_1 && _romList.Count >= 1)
-            {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[0]);
-                _gameboy.PowerOn();
-                _isHandled_1 = true;
-            }
-            else if (!Input.IsButton_1 && _isHandled_1)
-            {
-                _isHandled_1 = false;
-            }
-        }
-        private void checkInput_2()
-        {
-            if (Input.IsButton_2 && !_isHandled_2 && _romList.Count >= 2)
-            {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[1]);
-                _gameboy.PowerOn();
-                _isHandled_2 = true;
-            }
-            else if (!Input.IsButton_2 && _isHandled_2)
-            {
-                _isHandled_2 = false;
-            }
-        }
-        private void checkInput_3()
-        {
-            if (Input.IsButton_3 && !_isHandled_3 && _romList.Count >= 3)
-            {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[2]);
-                _gameboy.PowerOn();
-                _isHandled_3 = true;
-            }
-            else if (!Input.IsButton_3 && _isHandled_3)
-            {
-                _isHandled_3 = false;
-            }
-        }
-        private void checkInput_4()
-        {
-            if (Input.IsButton_4 && !_isHandled_4 && _romList.Count >= 4)
-            {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[3]);
-                _gameboy.PowerOn();
-                _isHandled_4 = true;
-            }
-            else if (!Input.IsButton_4 && _isHandled_4)
-            {
-                _isHandled_4 = false;
-            }
-        }
-        private void checkInput_5()
-        {
-            if (Input.IsButton_5 && !_isHandled_5 && _romList.Count >= 5)
-            {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[4]);
-                _gameboy.PowerOn();
-                _isHandled_5 = true;
-            }
-            else if (!Input.IsButton_5 && _isHandled_5)
-            {
-                _isHandled_5 = false;
-            }
         }
 
         #endregion

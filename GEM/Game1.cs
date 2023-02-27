@@ -1,4 +1,5 @@
 ﻿using GEM.Emulation;
+using GEM.Menu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -32,7 +33,7 @@ namespace GEM
             Content.RootDirectory = "Content";
             _Content = Content;
             IsMouseVisible = true; 
-            Window.AllowUserResizing = true;
+            Window.AllowUserResizing = false;
             IsFixedTimeStep = true;
             TargetElapsedTime = System.TimeSpan.FromSeconds(70224d / 4194304); // set MonoGame frame rate to original DMG
         }
@@ -45,7 +46,7 @@ namespace GEM
         {
             _emulator = new Emulator(GraphicsDevice);
             _Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _Graphics.PreferredBackBufferWidth = 800;
+            _Graphics.PreferredBackBufferWidth = 1280;
             _Graphics.PreferredBackBufferHeight = 720;
             _Graphics.ApplyChanges(); 
 
@@ -82,7 +83,6 @@ namespace GEM
                 _fpsSecondCounter = 0;
             }
             Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, _fps, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
-
         }
 
         #endregion

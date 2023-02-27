@@ -1,8 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GEM.Emulation
 {
@@ -19,6 +17,16 @@ namespace GEM.Emulation
         //private SPU _spu;
         private int _cycleCount;
         private Texture2D _nullTexture;
+
+        // input
+        public bool IsButton_A;
+        public bool IsButton_B;
+        public bool IsButton_Start;
+        public bool IsButton_Select;
+        public bool IsButton_Left;
+        public bool IsButton_Right;
+        public bool IsButton_Up;
+        public bool IsButton_Down;
 
         #endregion
 
@@ -41,44 +49,6 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public string DebugInfo
-        {
-            get
-            {
-                return string.Format("PC  =  {0:X4} 0x{1:X2} \n\n" +
-                                     "AF  =  {3:X4} {4}{5}{6}{7}\n" +
-                                     "BC  =  {8:X4}\n" +
-                                     "DE  =  {9:X4}\n" +
-                                     "HL  =  {10:X4}\n" +
-                                     "SP  =  {11:X4}\n\n" +
-                                     "IME =  {12}\n" +
-                                     "IE  =  {13}\n" +
-                                     "IF  =  {14}\n" +
-                                     "P1  =  {15}\n\n" +
-                                     "   {16}           {20}\n" +
-                                     " {19}   {17}       {21}\n" +
-                                     "   {18}   {22} {23}\n",
-                                     _cpu.PC, _mmu.Read(_cpu.PC), null,
-                                     _cpu.AF, _cpu.FlagZ == 1 ? "Z" : " ", _cpu.FlagN == 1 ? "N" : " ", _cpu.FlagH == 1 ? "H" : " ", _cpu.FlagC == 1 ? "C" : " ",
-                                     _cpu.BC,
-                                     _cpu.DE,
-                                     _cpu.HL,
-                                     _cpu.SP,
-                                     _mmu.IME,
-                                     Convert.ToString(_mmu.IE, 2).PadLeft(8, '0'),
-                                     Convert.ToString(_mmu.IF, 2).PadLeft(8, '0'),
-                                     Convert.ToString(_mmu.P1, 2).PadLeft(8, '0'),
-                                     Input.IsButton_Up ? "U" : "-",
-                                     Input.IsButton_Right ? "R" : "-",
-                                     Input.IsButton_Down ? "D" : "-",
-                                     Input.IsButton_Left ? "L" : "-",
-                                     Input.IsButton_A ? "A" : "-",
-                                     Input.IsButton_B ? "B" : "-",
-                                     Input.IsButton_Select ? "SE" : "--",
-                                     Input.IsButton_Start ? "ST" : "--"
-                                     );
-            }
-        }
         public string CartridgeTitle
         {
             get
@@ -248,17 +218,17 @@ namespace GEM.Emulation
             // INPUT interrupt
             if (_mmu.P1[4] == 0 && _mmu.P1[5] == 1)
             {
-                if (Input.IsButton_Right) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
-                if (Input.IsButton_Left) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
-                if (Input.IsButton_Up) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
-                if (Input.IsButton_Down) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
+                if (IsButton_Right) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
+                if (IsButton_Left) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
+                if (IsButton_Up) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
+                if (IsButton_Down) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
             }
             if (_mmu.P1[4] == 1 && _mmu.P1[5] == 0)
             {
-                if (Input.IsButton_A) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
-                if (Input.IsButton_B) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
-                if (Input.IsButton_Select) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
-                if (Input.IsButton_Start) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
+                if (IsButton_A) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
+                if (IsButton_B) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
+                if (IsButton_Select) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
+                if (IsButton_Start) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
             }
         }
         private void checkInterrupt(int index, ushort isrAddress)
