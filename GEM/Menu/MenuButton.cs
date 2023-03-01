@@ -435,12 +435,12 @@ namespace GEM.Menu
         private void applyDefaultColors()
         {
             BackColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
-            BackColor[State.Hover] = Color.MediumSpringGreen;
+            BackColor[State.Hover] = new Color(0.2f, 0.2f, 0.2f, 1f);
             BackColor[State.Press] = Color.DarkViolet;
             BackColor[State.Disabled] = BackColor[State.Idle];
 
             ForeColor[State.Idle] = Color.White;
-            ForeColor[State.Hover] = Color.Black;
+            ForeColor[State.Hover] = Color.White;
             ForeColor[State.Press] = Color.White;
             ForeColor[State.Disabled] = Color.Gray;
         }

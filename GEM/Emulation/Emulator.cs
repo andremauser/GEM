@@ -42,17 +42,6 @@ namespace GEM.Emulation
         static public SpriteFont _Font;
 
         MenuButton _leftMenu;
-        BaseControl _dpad;
-
-        MenuButton _buttonA;
-        MenuButton _buttonB;
-        MenuButton _buttonStart;
-        MenuButton _buttonSelect;
-
-        MenuButton _buttonLeft;
-        MenuButton _buttonRight;
-        MenuButton _buttonUp;
-        MenuButton _buttonDown;
 
         #endregion
 
@@ -129,7 +118,7 @@ namespace GEM.Emulation
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
             // add "left menu" button
-            _leftMenu = new MenuButton(null, null, "LB", MenuType.Click, "Left Bumper") { Width = 60, Height = 60 };
+            _leftMenu = new MenuButton(null, null, "LB", MenuType.Click, "menu") { Width = 60, Height = 60 };
             _leftMenu.Image.ResizeToParent();
             _leftMenu.BackColor[State.Idle] = Color.Transparent;
             _leftMenu.Panel.HorizontalAlign = Align.Left;
@@ -158,26 +147,13 @@ namespace GEM.Emulation
             _leftMenu["set"]["palette"].AddMenu("grey").OnClick += () => { _emuColorIndex = 2; };
             _leftMenu["set"]["palette"].AddMenu("original").OnClick += () => { _emuColorIndex = 3; };
 
-            _dpad = new BaseControl(null) { Left = 120, Top = 500 };
-            MenuButton btn = new MenuButton(_dpad, null, "->", MenuType.StandAlone, "dpad") { Width=100, Height=100};
-            btn.Left = 20;
-            btn.Top = -50;
-            btn.Image.ResizeToParent();
-            btn.KeyBinding = Keys.Right;
-            btn.BtnBinding = Buttons.DPadRight;
-            btn.OnPress += () => _gameboy.IsButton_Right = true;
-            btn.OnRelease += () => _gameboy.IsButton_Right = false;
-            _dpad.Add(btn);
-            btn = new MenuButton(_dpad, null, "<-", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
-            btn.Left = -120;
-            btn.Top = -50;
-            btn.Image.ResizeToParent();
-            btn.Image.SetRotation(180);
-            btn.KeyBinding = Keys.Left;
-            btn.BtnBinding = Buttons.DPadLeft;
-            btn.OnPress += () => _gameboy.IsButton_Left = true;
-            btn.OnRelease += () => _gameboy.IsButton_Left = false;
-            _dpad.Add(btn);
+            MenuButton btn;
+
+            // dpad
+            BaseControl _dpad = new BaseControl(null) { Left = 120, Top = 400 };
+            _controls.Add(_dpad);
+
+            // up
             btn = new MenuButton(_dpad, null, "up", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
             btn.Left = -50;
             btn.Top = -120;
@@ -187,40 +163,78 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadUp;
             btn.OnPress += () => _gameboy.IsButton_Up = true;
             btn.OnRelease += () => _gameboy.IsButton_Up = false;
+            btn.BackColor[State.Idle] = Color.Transparent;
             _dpad.Add(btn);
+
+            // down
             btn = new MenuButton(_dpad, null, "down", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
             btn.Left = -50;
             btn.Top = 20;
+            btn.Image.ResizeToParent();
             btn.Image.SetRotation(270);
             btn.KeyBinding = Keys.Down;
             btn.BtnBinding = Buttons.DPadDown;
             btn.OnPress += () => _gameboy.IsButton_Down = true;
             btn.OnRelease += () => _gameboy.IsButton_Down = false;
+            btn.BackColor[State.Idle] = Color.Transparent;
             _dpad.Add(btn);
-            _controls.Add(_dpad);
+
+            // right
+            btn = new MenuButton(_dpad, null, "->", MenuType.StandAlone, "dpad") { Width=100, Height=100};
+            btn.Left = 20;
+            btn.Top = -50;
+            btn.Image.ResizeToParent();
+            btn.KeyBinding = Keys.Right;
+            btn.BtnBinding = Buttons.DPadRight;
+            btn.OnPress += () => _gameboy.IsButton_Right = true;
+            btn.OnRelease += () => _gameboy.IsButton_Right = false;
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _dpad.Add(btn);
+
+            // left
+            btn = new MenuButton(_dpad, null, "<-", MenuType.StandAlone, "dpad") { Width = 100, Height = 100 };
+            btn.Left = -120;
+            btn.Top = -50;
+            btn.Image.ResizeToParent();
+            btn.Image.SetRotation(180);
+            btn.KeyBinding = Keys.Left;
+            btn.BtnBinding = Buttons.DPadLeft;
+            btn.OnPress += () => _gameboy.IsButton_Left = true;
+            btn.OnRelease += () => _gameboy.IsButton_Left = false;
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _dpad.Add(btn);
 
 
-            btn = new MenuButton(null, null, "A", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
-            btn.Left = 1165;
-            btn.Top = 420;
+            // buttons A, B
+            BaseControl _btns = new BaseControl(null) { Left = 1150, Top = 400 };
+            _controls.Add(_btns);
+
+            // A
+            btn = new MenuButton(_btns, null, "A", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = 10;
+            btn.Top = -70;
             btn.Image.ResizeToParent();
             btn.KeyBinding = Keys.X;
             btn.BtnBinding = Buttons.B;
             btn.OnPress += () => _gameboy.IsButton_A = true;
             btn.OnRelease += () => _gameboy.IsButton_A = false;
-            _dpad.Add(btn);
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _btns.Add(btn);
 
-            btn = new MenuButton(null, null, "B", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
-            btn.Left = 1055;
-            btn.Top = 460;
+            // B
+            btn = new MenuButton(_btns, null, "B", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            btn.Left = -110;
+            btn.Top = -30;
             btn.Image.ResizeToParent();
             btn.KeyBinding = Keys.Y;
             btn.BtnBinding = Buttons.A;
             btn.OnPress += () => _gameboy.IsButton_B = true;
             btn.OnRelease += () => _gameboy.IsButton_B = false;
-            _dpad.Add(btn);
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _btns.Add(btn);
 
-            btn = new MenuButton(null, null, "Start", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            // start
+            btn = new MenuButton(null, null, "Start", MenuType.StandAlone, "stasel") { Width = 100, Height = 100 };
             btn.Left = 1040;
             btn.Top = 620;
             btn.Image.ResizeToParent();
@@ -228,9 +242,11 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Start;
             btn.OnPress += () => _gameboy.IsButton_Start = true;
             btn.OnRelease += () => _gameboy.IsButton_Start = false;
-            _dpad.Add(btn);
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _controls.Add(btn);
 
-            btn = new MenuButton(null, null, "Select", MenuType.StandAlone, "btn") { Width = 100, Height = 100 };
+            // select
+            btn = new MenuButton(null, null, "Select", MenuType.StandAlone, "stasel") { Width = 100, Height = 100 };
             btn.Left = 140;
             btn.Top = 620;
             btn.Image.ResizeToParent();
@@ -238,7 +254,8 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Back;
             btn.OnPress += () => _gameboy.IsButton_Select = true;
             btn.OnRelease += () => _gameboy.IsButton_Select = false;
-            _dpad.Add(btn);
+            btn.BackColor[State.Idle] = Color.Transparent;
+            _controls.Add(btn);
         }
 
         public void Reset()
