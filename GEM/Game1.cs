@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace GEM
 {
@@ -16,6 +17,7 @@ namespace GEM
         #region Fields
 
         static public GraphicsDeviceManager _Graphics;
+        static public Game1 _Instance; 
         Emulator _emulator;
         float _fpsSecondCounter;
         int _fpsFrameCounter;
@@ -30,6 +32,7 @@ namespace GEM
         public Game1()
         {
             _Graphics = new GraphicsDeviceManager(this);
+            _Instance = this;
             Content.RootDirectory = "Content";
             _Content = Content;
             IsMouseVisible = true; 

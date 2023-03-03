@@ -117,6 +117,27 @@ namespace GEM.Emulation
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
 
+            MenuButton max = new MenuButton(null, null, "Max", MenuType.StandAlone, "max") { Width = 60, Height = 60};
+            max.Image.ResizeToParent();
+            max.Left = 1160;
+            max.BackColor[State.Idle] = Color.Transparent;
+            max.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            max.ForeColor[State.Hover] = max.ForeColor[State.Idle];
+            max.ForeColor[State.Press] = max.ForeColor[State.Idle];
+            max.OnClick += Game1._Graphics.ToggleFullScreen;
+            _controls.Add(max);
+
+
+            MenuButton quit = new MenuButton(null, null, "Quit", MenuType.StandAlone, "quit") { Width = 60, Height = 60 };
+            quit.Image.ResizeToParent();
+            quit.Left = 1220;
+            quit.BackColor[State.Idle] = Color.Transparent;
+            quit.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            quit.ForeColor[State.Hover] = quit.ForeColor[State.Idle];
+            quit.ForeColor[State.Press] = quit.ForeColor[State.Idle];
+            quit.OnClick += Game1._Instance.Exit;
+            _controls.Add(quit);
+
             // add "left menu" button
             _leftMenu = new MenuButton(null, null, "LB", MenuType.Click, "menu") { Width = 60, Height = 60 };
             _leftMenu.Image.ResizeToParent();
@@ -124,17 +145,21 @@ namespace GEM.Emulation
             _leftMenu.Panel.HorizontalAlign = Align.Left;
             _leftMenu.Panel.VerticalAlign = Align.Bottom;
             _leftMenu.KeyBinding = Keys.LeftControl;
+            _leftMenu.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            _leftMenu.ForeColor[State.Hover] = _leftMenu.ForeColor[State.Idle];
+            _leftMenu.ForeColor[State.Press] = _leftMenu.ForeColor[State.Idle];
             _controls.Add(_leftMenu);
             // add menu entries
             _leftMenu.AddMenu("cart", width: 60, height: 60, image: "cartridge");
             _leftMenu.AddMenu("set", width: 60, height: 60);
-            _leftMenu.AddMenu("3", width: 60, height: 60);
-            _leftMenu.AddMenu("4", width: 60, height: 60);
             _leftMenu.AddMenu("5", width: 60, height: 60).OnClick += () => {
                 _gameboy.PowerOff();
                 _gameboy.InsertCartridge(_romList[0]);
                 _gameboy.PowerOn();
             };
+            _leftMenu.AddMenu("quit", width: 60, height: 60, image: "quit").OnClick += Game1._Instance.Exit;
+            _leftMenu["quit"].Image.Width = 40;
+            _leftMenu["quit"].Image.Height = 40;
             _leftMenu["cart"].AddMenu("open rom").OnClick += () => { _leftMenu["cart"]["pause/start"].Enabled = !_leftMenu["cart"]["pause/start"].Enabled; }; ;
             _leftMenu["cart"].AddMenu("pause/start").OnClick += _gameboy.PauseToggle;
             _leftMenu["cart"]["pause/start"].Enabled = false;
@@ -164,6 +189,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Up = true;
             btn.OnRelease += () => _gameboy.IsButton_Up = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _dpad.Add(btn);
 
             // down
@@ -177,6 +205,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Down = true;
             btn.OnRelease += () => _gameboy.IsButton_Down = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _dpad.Add(btn);
 
             // right
@@ -189,6 +220,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Right = true;
             btn.OnRelease += () => _gameboy.IsButton_Right = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _dpad.Add(btn);
 
             // left
@@ -202,6 +236,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Left = true;
             btn.OnRelease += () => _gameboy.IsButton_Left = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _dpad.Add(btn);
 
 
@@ -219,6 +256,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_A = true;
             btn.OnRelease += () => _gameboy.IsButton_A = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _btns.Add(btn);
 
             // B
@@ -231,6 +271,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_B = true;
             btn.OnRelease += () => _gameboy.IsButton_B = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _btns.Add(btn);
 
             // start
@@ -243,6 +286,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Start = true;
             btn.OnRelease += () => _gameboy.IsButton_Start = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _controls.Add(btn);
 
             // select
@@ -255,6 +301,9 @@ namespace GEM.Emulation
             btn.OnPress += () => _gameboy.IsButton_Select = true;
             btn.OnRelease += () => _gameboy.IsButton_Select = false;
             btn.BackColor[State.Idle] = Color.Transparent;
+            btn.ForeColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
+            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
+            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
             _controls.Add(btn);
         }
 
