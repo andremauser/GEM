@@ -172,9 +172,9 @@ namespace GEM.Menu
         {
             return (Panel)Add(new Panel(this));
         }
-        public Image AddImage(string image)
+        public Image AddImage(string image, int imagesPerRow = 1)
         {
-            return (Image)Add(new Image(this, image));
+            return (Image)Add(new Image(this, image, imagesPerRow));
         }
 
         protected void updateAlignPosition()

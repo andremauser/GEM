@@ -28,17 +28,15 @@ namespace GEM.Menu
         // constants
         const int DEFAULT_WIDTH = 150;
         const int DEFAULT_HEIGHT = 60;
-        // simple event handler
-        public delegate void MenuEventHandler();
         // menu button events
-        public event MenuEventHandler OnPress;
-        public event MenuEventHandler OnRelease;
-        public event MenuEventHandler OnClick;
-        public event MenuEventHandler OnHover;
-        public event MenuEventHandler OnHoverOut;
+        public event EventHandler OnPress;
+        public event EventHandler OnRelease;
+        public event EventHandler OnClick;
+        public event EventHandler OnFokus;
+        public event EventHandler OnFokusOut;
         // menu structure events
-        public event MenuEventHandler OnOpen;
-        public event MenuEventHandler OnClose;
+        public event EventHandler OnOpen;
+        public event EventHandler OnClose;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
@@ -57,16 +55,17 @@ namespace GEM.Menu
         State _gamepadRequest;
         State _keyboardRequest;
         State _mouseRequest;
+        public int ButtonData;
         #endregion
 
         #region Constructors
-        public MenuButton(BaseControl parentControl, MenuButton parentMenu, string caption, MenuType menuType, string image = null) : base(parentControl)
+        public MenuButton(BaseControl parentControl = null, MenuButton parentMenu = null, string caption = "", MenuType menuType = MenuType.StandAlone, string image = null, int imagesPerRow = 1) : base(parentControl)
         {
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
             if (image != null)
             {
-                Image = AddImage(image);
+                Image = AddImage(image, imagesPerRow);
                 Label.Caption = "";
             }
             Panel = AddPanel();
@@ -74,18 +73,20 @@ namespace GEM.Menu
             switch (menuType)
             {
                 case MenuType.Click:
+                    // submenu open on click
                     OnClick += ToggleMenu;
-                    OnHover += OpenIfSideOpen;
+                    OnFokus += OpenIfSideOpen;
                     break;
                 case MenuType.Hover:
-                    OnHover += Open;
+                    // submenu open on hover
+                    OnFokus += Open;
                     OnClick += ToggleMenu;
                     break;
                 default:
                     break;
             }
-            OnHover += CloseSideMenus;
-            OnHover += CloseSubSubmenus;
+            OnFokus += CloseSideMenus;
+            OnFokus += CloseSubSubmenus;
 
             // bind mouse events
             Input.OnMouseDown += MouseDownHandler;
@@ -124,33 +125,39 @@ namespace GEM.Menu
                 // hover
                 if (value == State.Hover && _state == State.Idle)
                 {
-                    OnHover?.Invoke();
+                    OnFokus?.Invoke(this, EventArgs.Empty);
                 }
                 // press
                 if (value == State.Press && _state != State.Press)
                 {
                     _clickStarted = true;
-                    OnPress?.Invoke();
+                    OnPress?.Invoke(this, EventArgs.Empty);
                 }
                 // release
                 if (value != State.Press && _state == State.Press)
                 {
-                    OnRelease?.Invoke();
+                    OnRelease?.Invoke(this, EventArgs.Empty);
                 }
                 // click
                 if (value != State.Press && _state == State.Press && _clickStarted)
                 {
-                    OnClick?.Invoke();
+                    OnClick?.Invoke(this, EventArgs.Empty);
                     _clickStarted = false;
                 }
                 // hover out
                 if (value == State.Idle && _state != State.Idle)
                 {
-                    OnHoverOut?.Invoke();
+                    OnFokusOut?.Invoke(this, EventArgs.Empty);
                 }
                 _state = value;
+                // update button label
                 if (Label != null) Label.ForeColor = ForeColor[value];
-                if (Image != null) Image.ForeColor = ForeColor[value];
+                // update button image
+                if (Image != null)
+                {
+                    Image.ForeColor = ForeColor[value];
+                    Image.ImageIndex = (int)value; // cast enum to int
+                }
             }
         }
         public Keys KeyBinding
@@ -245,40 +252,46 @@ namespace GEM.Menu
 
             return button;
         }
+        public MenuButton AddHoverMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT)
+        {
+            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Hover, image) { Width = width, Height = height});
+            if (tmp.Image != null) tmp.Image.ResizeToParent();
+            return tmp;
+        }
         public MenuButton AddMenu(string name, MenuType menuType = MenuType.Hover, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, string image = null)
         {
             return AddMenu(name, new MenuButton(Panel, this, name, menuType, image) { Width = width, Height = height});
         }
 
         // menu event handler
-        public void ToggleMenu()
+        public void ToggleMenu(object sender, EventArgs e)
         {
             if (Panel.Visible)
             {
-                Close();
+                Close(this, EventArgs.Empty);
             }
             else
             {
-                Open();
+                Open(this, EventArgs.Empty);
             }
         }
-        public void Close()
+        public void Close(object sender, EventArgs e)
         {
             Panel.Visible = false;
             foreach (MenuButton button in _subMenu.Values)
             {
                 // close all submenus
-                button.Close();
+                button.Close(this, EventArgs.Empty);
             }
-            OnClose?.Invoke();
+            OnClose?.Invoke(this, EventArgs.Empty);
         }
-        public void Open()
+        public void Open(object sender, EventArgs e)
         {
             Fokus = this;
             Panel.Visible = true;
-            OnOpen?.Invoke();
+            OnOpen?.Invoke(this, EventArgs.Empty);
         }
-        public void OpenIfSideOpen()
+        public void OpenIfSideOpen(object sender, EventArgs e)
         {
             // used for open menu on hover when another menu on same level is already opened
 
@@ -291,10 +304,10 @@ namespace GEM.Menu
             }
             if (open)
             {
-                Open();
+                Open(this, EventArgs.Empty);
             }
         }
-        public void CloseSideMenus()
+        public void CloseSideMenus(object sender, EventArgs e)
         {
             // used for closing other menus on same level when menu opened
 
@@ -304,15 +317,15 @@ namespace GEM.Menu
             {
                 if (button != this)
                 {
-                    button.Close();
+                    button.Close(this, EventArgs.Empty);
                 }
             }
         }
-        public void CloseSubSubmenus()
+        public void CloseSubSubmenus(object sender, EventArgs e)
         {
             foreach (MenuButton button in _subMenu.Values)
             {
-                button.Close();
+                button.Close(this, EventArgs.Empty);
             }
         }
 
@@ -363,7 +376,7 @@ namespace GEM.Menu
             {
                 if (!isMouseOverR())
                 { 
-                    Close();
+                    Close(this, EventArgs.Empty);
                     Fokus = null;
                 }
             }
@@ -427,7 +440,7 @@ namespace GEM.Menu
 
             if (key == Keys.Enter)
             {
-                Fokus.OnClick?.Invoke();
+                Fokus.OnClick?.Invoke(this, EventArgs.Empty);
             }
         }
 

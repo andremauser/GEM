@@ -11,10 +11,11 @@ namespace GEM.Menu
         #endregion
 
         #region Constructors
-        public Image(BaseControl parent, string image) : base(parent)
+        public Image(BaseControl parent, string image, int imagesPerRow = 1) : base(parent)
         {
             // load image
             _image = Game1._Content.Load<Texture2D>(image);
+            ImagesPerRow = imagesPerRow;
 
             // default values
             ForeColor = Color.White;
@@ -25,14 +26,25 @@ namespace GEM.Menu
 
         #region Properties
         public Color ForeColor { get; set; }
+        public int ImagesPerRow { get; private set; }
+        public int ImageIndex { get; set; }
+        public float TextureAspectRatio
+        {
+            get
+            {
+                return (float)_image.Width / ImagesPerRow / _image.Height;
+            }
+        }
         #endregion
 
         #region Methods
         public override void Draw(SpriteBatch spriteBatch)
         {
             Rectangle destinationRectangle = new Rectangle(PosX + Width / 2, PosY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
-            Rectangle sourceRectangle = new Rectangle(0, 0, _image.Width, _image.Height); // use full texture
-            Vector2 origin = new Vector2(_image.Width / 2f, _image.Height / 2f); // rotation around center of texture
+            int drawWidth = (int)(_image.Height * TextureAspectRatio);
+            int drawLeft = (drawWidth * ImageIndex) % _image.Width;
+            Rectangle sourceRectangle = new Rectangle(drawLeft, 0, drawWidth, _image.Height); // use full texture
+            Vector2 origin = new Vector2(drawWidth / 2f, _image.Height / 2f); // rotation around center of texture
 
             spriteBatch.Draw(_image, destinationRectangle, sourceRectangle, ForeColor, -_rotation, origin, SpriteEffects.None, 1.0f);
 
@@ -42,18 +54,17 @@ namespace GEM.Menu
         public void ResizeToParent()
         {
             // resize performed before rotation, so preferably use square images
-            float aspectRatio = (float)_image.Width / _image.Height;
             float parentRatio = (float)_parent.Width / _parent.Height;
 
-            if (aspectRatio <= parentRatio)
+            if (TextureAspectRatio <= parentRatio)
             {
                 Height = _parent.Height;
-                Width = (int)(Height * aspectRatio);
+                Width = (int)(Height * TextureAspectRatio);
             }
             else 
             {
                 Width = _parent.Width;
-                Height = (int)(Width / aspectRatio);
+                Height = (int)(Width / TextureAspectRatio);
             }
         }
 

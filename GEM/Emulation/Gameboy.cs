@@ -70,7 +70,7 @@ namespace GEM.Emulation
         {
             _mmu.Cartridge.Load(game);
         }
-        public void EjectCartridge()
+        public void EjectCartridge(object sender, EventArgs e)
         {
             PowerOff();
             _mmu.Cartridge.Reset();
@@ -92,12 +92,12 @@ namespace GEM.Emulation
             StopAfterFrame = false;
             StopAfterStep = false;
         }
-        public void Reset()
+        public void Reset(object sender, EventArgs e)
         {
             PowerOff();
             PowerOn();
         }
-        public void PauseToggle()
+        public void PauseToggle(object sender, EventArgs e)
         {
             IsRunning = !IsRunning;
             StopAfterFrame = false;
@@ -105,13 +105,13 @@ namespace GEM.Emulation
         }
         public void PauseAfterFrame()
         {
-            PauseToggle();
+            PauseToggle(this, EventArgs.Empty);
             StopAfterFrame = true;
             StopAfterStep = false;
         }
         public void PauseAfterStep()
         {
-            PauseToggle();
+            PauseToggle(this, EventArgs.Empty);
             StopAfterFrame = false;
             StopAfterStep = true;
         }
