@@ -35,7 +35,7 @@ namespace GEM.Menu
                 Width = (int)_font.MeasureString(_caption).X;
                 Height = (int)_font.MeasureString(_caption).Y;
                 Height = (int)(Height * 0.8f); // ground line adjustment
-                updateAlignPosition();
+                UpdateAlignPosition();
             }
         }
         public Color ForeColor { get; set; }

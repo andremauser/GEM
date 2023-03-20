@@ -41,7 +41,7 @@ namespace GEM.Menu
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
         // menu structure
-        Dictionary<string, MenuButton> _subMenu = new Dictionary<string, MenuButton>();
+        public Dictionary<string, MenuButton> SubMenu = new Dictionary<string, MenuButton>();
         MenuButton _parentMenu;
         int _menuIndex;
         // property fields
@@ -51,7 +51,6 @@ namespace GEM.Menu
         static MenuButton _fokus;
         // button functionality
         bool _clickStarted = false;
-        public bool Enabled = true;
         State _gamepadRequest;
         State _keyboardRequest;
         State _mouseRequest;
@@ -109,8 +108,8 @@ namespace GEM.Menu
         public MenuButton this[string name]
         {
             // submenu access by name
-            get { return _subMenu[name]; }
-            set { _subMenu[name] = value; }
+            get { return SubMenu[name]; }
+            set { SubMenu[name] = value; }
         }
         public State State 
         {
@@ -195,7 +194,15 @@ namespace GEM.Menu
             set
             {
                 if (_fokus != null) Input.OnKeyDown -= _fokus.NavigationHandler;
-                _fokus = value;
+                if (value == null)
+                {
+                    _fokus = null;
+                    return;
+                }
+                if (value.Parent != null)
+                {
+                    _fokus = value;
+                }
                 if (_fokus != null) Input.OnKeyDown += _fokus.NavigationHandler;
             }
         }
@@ -225,7 +232,7 @@ namespace GEM.Menu
 
             // highlight button when submenu is visible
             Color color = BackColor[State];
-            if (Panel.Visible && _subMenu.Count > 0 && State == State.Idle)
+            if (Panel.Visible && SubMenu.Count > 0 && State == State.Idle)
             {
                 color = BackColor[State.Hover];
                 Label.ForeColor = ForeColor[State.Hover];
@@ -241,14 +248,14 @@ namespace GEM.Menu
         public MenuButton AddMenu(string name, MenuButton button)
         {
             // check for duplicate name
-            if (_subMenu.ContainsKey(name)) return null;
+            if (SubMenu.ContainsKey(name)) return null;
 
             // add to embedded controls
             Panel.Add(button);
 
             // add to menu structure
-            button._menuIndex = _subMenu.Count; // index for menu navigation
-            _subMenu.Add(name, button); 
+            button._menuIndex = SubMenu.Count; // index for menu navigation
+            SubMenu.Add(name, button); 
 
             return button;
         }
@@ -278,7 +285,7 @@ namespace GEM.Menu
         public void Close(object sender, EventArgs e)
         {
             Panel.Visible = false;
-            foreach (MenuButton button in _subMenu.Values)
+            foreach (MenuButton button in SubMenu.Values)
             {
                 // close all submenus
                 button.Close(this, EventArgs.Empty);
@@ -298,7 +305,7 @@ namespace GEM.Menu
             if (_parentMenu == null) return;
 
             bool open = false;
-            foreach (MenuButton button in _parentMenu._subMenu.Values)
+            foreach (MenuButton button in _parentMenu.SubMenu.Values)
             {
                 open |= button.Panel.Visible;
             }
@@ -313,7 +320,7 @@ namespace GEM.Menu
 
             if (_parentMenu == null) return;
 
-            foreach (MenuButton button in _parentMenu._subMenu.Values)
+            foreach (MenuButton button in _parentMenu.SubMenu.Values)
             {
                 if (button != this)
                 {
@@ -323,7 +330,7 @@ namespace GEM.Menu
         }
         public void CloseSubSubmenus(object sender, EventArgs e)
         {
-            foreach (MenuButton button in _subMenu.Values)
+            foreach (MenuButton button in SubMenu.Values)
             {
                 button.Close(this, EventArgs.Empty);
             }
@@ -397,6 +404,7 @@ namespace GEM.Menu
         // navigation handler
         public void NavigationHandler(Keys key)
         {
+            // only continue if fokus on current control
             if (Fokus != this) return;
 
             if (key == Keys.Down)
@@ -406,9 +414,9 @@ namespace GEM.Menu
                 do
                 {
                     i++;
-                    int nextIndex = (_menuIndex + i) % _parentMenu._subMenu.Count;
-                    Fokus = _parentMenu._subMenu.Values.ToArray<MenuButton>()[nextIndex];
-                } while (!Fokus.Enabled);
+                    int nextIndex = (_menuIndex + i) % _parentMenu.SubMenu.Count;
+                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
+                } while (!Fokus.Enabled); // skip to next entry if control is disabled
             }
             if (key == Keys.Up)
             {
@@ -417,24 +425,24 @@ namespace GEM.Menu
                 do
                 {
                     i++;
-                    int nextIndex = (_parentMenu._subMenu.Count + _menuIndex - i) % _parentMenu._subMenu.Count;
-                    Fokus = _parentMenu._subMenu.Values.ToArray<MenuButton>()[nextIndex];
+                    int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex - i) % _parentMenu.SubMenu.Count;
+                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
                 } while (!Fokus.Enabled);
             }
             if (key == Keys.Right)
             {
-                if (_subMenu.Count == 0) return;
+                if (SubMenu.Count == 0) return;
                 int i = 0;
                 do
                 {
                     i++;
-                    i %= _subMenu.Count;
-                    Fokus = _subMenu.Values.ToArray<MenuButton>()[0];
+                    i %= SubMenu.Count;
+                    Fokus = SubMenu.Values.ToArray<MenuButton>()[0];
                 } while (!Fokus.Enabled);
             }
             if (key == Keys.Left)
             {
-                if (_parentMenu == null) return;
+                if (_parentMenu == null || _parentMenu._parentMenu == null) return;
                 Fokus = _parentMenu;
             }
 
@@ -460,7 +468,7 @@ namespace GEM.Menu
         private bool isClickStartedR()
         {
             bool started = _clickStarted;
-            foreach (MenuButton button in _subMenu.Values)
+            foreach (MenuButton button in SubMenu.Values)
             {
                 started |= button.isClickStartedR();
             }
@@ -483,7 +491,7 @@ namespace GEM.Menu
             bool hover = isMouseOver();
             if (Panel.Visible)
             {
-                foreach (MenuButton sub in _subMenu.Values)
+                foreach (MenuButton sub in SubMenu.Values)
                 {
                     hover |= sub.isMouseOverR();
                 }
@@ -517,6 +525,17 @@ namespace GEM.Menu
             }
             // else: Idle
             State = State.Idle;
+        }
+        public void SetButtonColors(Color background, Color foreground)
+        {
+            BackColor[State.Idle] = background;
+            BackColor[State.Hover] = background;
+            BackColor[State.Press] = background;
+            BackColor[State.Disabled] = background;
+            ForeColor[State.Idle] = foreground;
+            ForeColor[State.Hover] = foreground;
+            ForeColor[State.Press] = foreground;
+            ForeColor[State.Disabled] = foreground;
         }
         #endregion
     }

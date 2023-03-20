@@ -7,9 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Xml;
 using static GEM.Menu.MenuButton;
 
 namespace GEM.Emulation
@@ -40,6 +37,12 @@ namespace GEM.Emulation
 
         static public Texture2D _Pixel;
         static public SpriteFont _Font;
+
+        public BaseControl OnScreenButtons;
+
+        MenuButton _leftMenu;
+        int _openStartIndex = 0;
+        const int OPEN_ENTRIES = 12;
 
         #endregion
 
@@ -114,14 +117,17 @@ namespace GEM.Emulation
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
+            updateRomList(null, EventArgs.Empty); // initial call to rom search - updated by click on "open rom"
 
             MenuButton tmp;
+            MenuButton b;
 
             // maximize window
             tmp = new MenuButton(image: "max") { Width = 60, Height = 60 };
             tmp.Image.ResizeToParent();
             tmp.Left = 1160;
             tmp.BackColor[State.Idle] = Color.Transparent;
+            tmp.ForeColor[State.Idle] = Color.DimGray;
             tmp.OnClick += toggleFullScreen;
             _controls.Add(tmp);
 
@@ -130,46 +136,79 @@ namespace GEM.Emulation
             tmp.Image.ResizeToParent();
             tmp.Left = 1220;
             tmp.BackColor[State.Idle] = Color.Transparent;
+            tmp.ForeColor[State.Idle] = Color.DimGray;
             tmp.OnClick += exit;
             _controls.Add(tmp);
 
             // left menu
             tmp = new MenuButton(image: "menu", menuType: MenuType.Click) { Width = 60, Height = 60 };
+            _leftMenu = tmp;
             tmp.Image.ResizeToParent();
             tmp.BackColor[State.Idle] = Color.Transparent;
             tmp.Panel.HorizontalAlign = Align.Left;
             tmp.Panel.VerticalAlign = Align.Bottom;
             tmp.KeyBinding = Keys.LeftControl;
+            tmp.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; };// Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
+            tmp.OnClose += (o, e) => { OnScreenButtons.Enabled = true; Fokus = null; };
+            tmp.ForeColor[State.Idle] = Color.DimGray;
             _controls.Add(tmp);
             // add menu entries
             tmp.AddHoverMenu("cart", "cart", 60, 60);
             tmp.AddHoverMenu("set", "set", 60, 60);
-
-            tmp.AddHoverMenu("start", null, 60, 60).OnClick += (o,e) => {
-                _gameboy.PowerOff();
-                _gameboy.InsertCartridge(_romList[0]);
-                _gameboy.PowerOn();
-            };
-            tmp["cart"].AddHoverMenu("open rom").OnClick += (o,e) => { tmp["cart"]["pause/start"].Enabled = !tmp["cart"]["pause/start"].Enabled; }; ;
-            tmp["cart"].AddHoverMenu("pause/start").OnClick += _gameboy.PauseToggle;
-            tmp["cart"]["pause/start"].Enabled = false;
+            MenuButton m = tmp["cart"].AddHoverMenu("open rom");
+                // update rom list
+                m.OnOpen += updateRomList;
+                m.OnOpen += (o, e) => { fillOpenDialog(m); };
             tmp["cart"].AddHoverMenu("reset").OnClick += _gameboy.Reset;
             tmp["cart"].AddHoverMenu("exit rom").OnClick += _gameboy.EjectCartridge;
             tmp["set"].AddHoverMenu("palette");
-            tmp["set"].AddHoverMenu("fullscreen").OnClick += toggleFullScreen;
+            // palette entries
             for (int i = 0; i < _emuPalette.Count(); i++)
             {
-                MenuButton b = tmp["set"]["palette"].AddHoverMenu("color" + i.ToString());
+                b = tmp["set"]["palette"].AddHoverMenu("color" + i.ToString());
+                b.Label.Caption = "";
+                Panel p = b.AddPanel();
+                p.Direction = Direction.Horizontal;
+                for (int j = 0; j < 4; j++)
+                {
+                    Label tile = p.AddLabel(j.ToString());
+                    tile.Caption = "";
+                    tile.Width = 30;
+                    tile.Height = 30;
+                    tile.MarkColor = _emuPalette[i][j];
+                }
+                p.UpdateAlignPosition();
                 b.ButtonData = i; // set button data to color index
                 b.OnClick += setColorIndex;
             }
+            // open rom entries
+            // up
+            b = tmp["cart"]["open rom"].AddHoverMenu("up");
+            b.OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(tmp["cart"]["open rom"]); };
+            b.Width = 300;
+            b.Height = 40;
+            // add empty entry dummies
+            for (int i = 0; i < OPEN_ENTRIES; i++)
+            {
+                b = tmp["cart"]["open rom"].AddHoverMenu(i.ToString());
+                b.OnClick += openRomIndex;
+                b.Width = 300;
+                b.Height = 40;
+            }
+            // down
+            b = tmp["cart"]["open rom"].AddHoverMenu("down");
+            b.OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(tmp["cart"]["open rom"]); };
+            b.Width = 300;
+            b.Height = 40;
 
+            OnScreenButtons = new BaseControl(null);
+            _controls.Add(OnScreenButtons);
 
             MenuButton btn;
 
             // dpad
             BaseControl _dpad = new BaseControl(null) { Left = 120, Top = 400 };
-            _controls.Add(_dpad);
+            OnScreenButtons.Add(_dpad);
 
             // up
             btn = new MenuButton(_dpad, null, "up", MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
@@ -181,12 +220,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadUp;
             btn.OnPress += (o,e) => _gameboy.IsButton_Up = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Up = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _dpad.Add(btn);
 
             // down
@@ -199,12 +233,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadDown;
             btn.OnPress += (o,e) => _gameboy.IsButton_Down = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Down = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _dpad.Add(btn);
 
             // right
@@ -216,12 +245,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadRight;
             btn.OnPress += (o,e) => _gameboy.IsButton_Right = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Right = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _dpad.Add(btn);
 
             // left
@@ -234,18 +258,13 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadLeft;
             btn.OnPress += (o,e) => _gameboy.IsButton_Left = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Left = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _dpad.Add(btn);
 
 
             // buttons A, B
             BaseControl _btns = new BaseControl(null) { Left = 1150, Top = 400 };
-            _controls.Add(_btns);
+            OnScreenButtons.Add(_btns);
 
             // A
             btn = new MenuButton(_btns, null, "A", MenuType.StandAlone, "btna", 4) { Width = 100, Height = 100 };
@@ -257,12 +276,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.B;
             btn.OnPress += (o,e) => _gameboy.IsButton_A = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_A = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _btns.Add(btn);
 
             // B
@@ -275,12 +289,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.A;
             btn.OnPress += (o,e) => _gameboy.IsButton_B = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_B = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
             _btns.Add(btn);
 
             // start
@@ -293,13 +302,8 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Start;
             btn.OnPress += (o,e) => _gameboy.IsButton_Start = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Start = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
-            _controls.Add(btn);
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            OnScreenButtons.Add(btn);
 
             // select
             btn = new MenuButton(null, null, "Select", MenuType.StandAlone, "stasel", 4) { Width = 100, Height = 100 };
@@ -311,13 +315,8 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Back;
             btn.OnPress += (o,e) => _gameboy.IsButton_Select = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Select = false;
-            btn.BackColor[State.Idle] = Color.Transparent;
-            btn.BackColor[State.Hover] = btn.BackColor[State.Idle];
-            btn.BackColor[State.Press] = btn.BackColor[State.Idle];
-            btn.ForeColor[State.Idle] = Color.White;
-            btn.ForeColor[State.Hover] = btn.ForeColor[State.Idle];
-            btn.ForeColor[State.Press] = btn.ForeColor[State.Idle];
-            _controls.Add(btn);
+            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            OnScreenButtons.Add(btn);
         }
 
         public void Reset()
@@ -336,9 +335,9 @@ namespace GEM.Emulation
         {
             Input.Update();
 
-            foreach (BaseControl control1 in _controls)
+            foreach (BaseControl control in _controls)
             {
-                control1.Update();
+                control.Update();
             }
         }
         public void Draw(Viewport viewport)
@@ -365,27 +364,6 @@ namespace GEM.Emulation
             int screenHeight = (int)pixelSize * 144;
             int screenLeft = (viewport.Width - screenWidth) / 2;
             int screenTop = (viewport.Height - screenHeight) / 2;
-
-            //Temporary File Browser
-            string fileBrowser = "Rom browser: 'roms/' - currently max. 5 games\n\n";
-            if (!Directory.Exists("roms/"))
-                Directory.CreateDirectory("roms/");
-            int i = 0;
-            _romList.Clear();
-            foreach (var file in Directory.EnumerateFiles("roms/"))
-            {
-                int dotPos = file.LastIndexOf('.');
-                if (file.Substring(dotPos, file.Length - dotPos) == ".gb")
-                {
-                    i++;
-                    int slashPos = file.LastIndexOf('/') + 1;
-                    fileBrowser += string.Format("{0} - {1}\n", i, file.Substring(slashPos, file.Length - slashPos));
-                    _romList.Add(file);
-                }
-                // Temporarily max. 5 games - TODO: Better File Browser 
-                if (i == 5)
-                    break;
-            }
 
             // Draw Screen
             _spriteBatch.Draw(screen, new Rectangle(screenLeft, screenTop, screenWidth, screenHeight), Color.White);
@@ -501,10 +479,66 @@ namespace GEM.Emulation
             Game1._Instance.Exit();
         }
 
-        void setColorIndex(object sender, EventArgs e)
+        private void setColorIndex(object sender, EventArgs e)
         {
             MenuButton btn = (MenuButton)sender;
             _emuColorIndex = btn.ButtonData;
+        }
+
+        private void updateRomList(object sender, EventArgs e)
+        {
+            if (!Directory.Exists("roms/"))
+                Directory.CreateDirectory("roms/");
+            int i = 0;
+            _romList.Clear();
+            foreach (var file in Directory.EnumerateFiles("roms/"))
+            {
+                int dotPos = file.LastIndexOf('.');
+                if (file.Substring(dotPos, file.Length - dotPos) == ".gb")
+                {
+                    i++;
+                    _romList.Add(file);
+                }
+            }
+        }
+        private void openRomIndex(object sender, EventArgs e)
+        {
+            MenuButton menuButton = (MenuButton)sender;
+            int index = menuButton.ButtonData;
+            _gameboy.PowerOff();
+            updateRomList(null, EventArgs.Empty);
+            if (index < _romList.Count) // error check
+            {
+                _gameboy.InsertCartridge(_romList[index]);
+                _gameboy.PowerOn();
+            }
+            _leftMenu.Close(null, EventArgs.Empty);
+        }
+        private void fillOpenDialog(MenuButton parent)
+        {
+            parent["up"].Enabled = (_openStartIndex - OPEN_ENTRIES) >= 0;
+            if (!parent["up"].Enabled && Fokus == parent["up"]) Fokus = null;
+            for (int i = 0; i < OPEN_ENTRIES; i++)
+            {
+                int index = _openStartIndex + i;
+                if (index < _romList.Count)
+                {
+                    parent[i.ToString()].Enabled = true;
+                    parent[i.ToString()].ButtonData = index;
+                    string fullName = _romList[index];
+                    string fileName = fullName.Substring(fullName.LastIndexOf("/") + 1);
+                    parent[i.ToString()].Label.Caption = fileName.Substring(0, Math.Min(fileName.Length, 26));
+                    parent[i.ToString()].Label.HorizontalAlign = Align.Left;
+                    parent[i.ToString()].Label.Left = 20;
+                }
+                else
+                {
+                    parent[i.ToString()].Enabled = false;
+                    parent[i.ToString()].Label.Caption = "";
+                }
+            }
+            parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
+            if (!parent["down"].Enabled && Fokus == parent["down"]) Fokus = null;
         }
         #endregion
     }

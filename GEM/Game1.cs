@@ -68,6 +68,7 @@ namespace GEM
 
         protected override void Update(GameTime gameTime)
         {
+            if (!IsActive) return;
             _emulator.Update(GraphicsDevice.Viewport);
         }
 

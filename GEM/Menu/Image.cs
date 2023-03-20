@@ -54,16 +54,16 @@ namespace GEM.Menu
         public void ResizeToParent()
         {
             // resize performed before rotation, so preferably use square images
-            float parentRatio = (float)_parent.Width / _parent.Height;
+            float parentRatio = (float)Parent.Width / Parent.Height;
 
             if (TextureAspectRatio <= parentRatio)
             {
-                Height = _parent.Height;
+                Height = Parent.Height;
                 Width = (int)(Height * TextureAspectRatio);
             }
             else 
             {
-                Width = _parent.Width;
+                Width = Parent.Width;
                 Height = (int)(Width / TextureAspectRatio);
             }
         }
