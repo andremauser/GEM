@@ -122,12 +122,14 @@ namespace GEM.Emulation
             MenuButton tmp;
             MenuButton b;
 
+            Color menuColor = new Color(0.1f, 0.1f, 0.1f);
+
             // maximize window
             tmp = new MenuButton(image: "max") { Width = 60, Height = 60 };
             tmp.Image.ResizeToParent();
             tmp.Left = 1160;
             tmp.BackColor[State.Idle] = Color.Transparent;
-            tmp.ForeColor[State.Idle] = Color.DimGray;
+            tmp.ForeColor[State.Idle] = menuColor;
             tmp.OnClick += toggleFullScreen;
             _controls.Add(tmp);
 
@@ -136,7 +138,7 @@ namespace GEM.Emulation
             tmp.Image.ResizeToParent();
             tmp.Left = 1220;
             tmp.BackColor[State.Idle] = Color.Transparent;
-            tmp.ForeColor[State.Idle] = Color.DimGray;
+            tmp.ForeColor[State.Idle] = menuColor;
             tmp.OnClick += exit;
             _controls.Add(tmp);
 
@@ -148,20 +150,24 @@ namespace GEM.Emulation
             tmp.Panel.HorizontalAlign = Align.Left;
             tmp.Panel.VerticalAlign = Align.Bottom;
             tmp.KeyBinding = Keys.LeftControl;
-            tmp.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; };// Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
+            tmp.BtnBinding = Buttons.LeftShoulder;
+            tmp.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
             tmp.OnClose += (o, e) => { OnScreenButtons.Enabled = true; Fokus = null; };
-            tmp.ForeColor[State.Idle] = Color.DimGray;
+            tmp.ForeColor[State.Idle] = menuColor;
             _controls.Add(tmp);
             // add menu entries
-            tmp.AddHoverMenu("cart", "cart", 60, 60);
-            tmp.AddHoverMenu("set", "set", 60, 60);
+            tmp.AddHoverMenu("cart", width: 60).Label.Caption = "game";
+            tmp.AddHoverMenu("set", width: 60);
+            tmp.AddHoverMenu("quit", width: 60);
+            tmp["quit"].AddHoverMenu("quit GEM").OnClick += exit;
             MenuButton m = tmp["cart"].AddHoverMenu("open rom");
                 // update rom list
                 m.OnOpen += updateRomList;
                 m.OnOpen += (o, e) => { fillOpenDialog(m); };
-            tmp["cart"].AddHoverMenu("reset").OnClick += _gameboy.Reset;
+            tmp["cart"].AddHoverMenu("reset rom").OnClick += _gameboy.Reset;
             tmp["cart"].AddHoverMenu("exit rom").OnClick += _gameboy.EjectCartridge;
             tmp["set"].AddHoverMenu("palette");
+            tmp["set"].AddHoverMenu("fullscreen").OnClick += toggleFullScreen;
             // palette entries
             for (int i = 0; i < _emuPalette.Count(); i++)
             {
@@ -201,6 +207,10 @@ namespace GEM.Emulation
             b.Width = 300;
             b.Height = 40;
 
+
+
+            // onscreen buttons
+            Color onscreenColor = new Color(0.1f, 0.1f, 0.1f);
             OnScreenButtons = new BaseControl(null);
             _controls.Add(OnScreenButtons);
 
@@ -220,7 +230,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadUp;
             btn.OnPress += (o,e) => _gameboy.IsButton_Up = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Up = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
             // down
@@ -233,7 +243,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadDown;
             btn.OnPress += (o,e) => _gameboy.IsButton_Down = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Down = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
             // right
@@ -245,7 +255,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadRight;
             btn.OnPress += (o,e) => _gameboy.IsButton_Right = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Right = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
             // left
@@ -258,7 +268,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadLeft;
             btn.OnPress += (o,e) => _gameboy.IsButton_Left = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Left = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
 
@@ -276,7 +286,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.B;
             btn.OnPress += (o,e) => _gameboy.IsButton_A = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_A = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _btns.Add(btn);
 
             // B
@@ -289,7 +299,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.A;
             btn.OnPress += (o,e) => _gameboy.IsButton_B = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_B = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             _btns.Add(btn);
 
             // start
@@ -302,7 +312,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Start;
             btn.OnPress += (o,e) => _gameboy.IsButton_Start = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Start = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             OnScreenButtons.Add(btn);
 
             // select
@@ -315,7 +325,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Back;
             btn.OnPress += (o,e) => _gameboy.IsButton_Select = true;
             btn.OnRelease += (o,e) => _gameboy.IsButton_Select = false;
-            btn.SetButtonColors(Color.Transparent, Color.DimGray);
+            btn.SetButtonColors(Color.Transparent, onscreenColor);
             OnScreenButtons.Add(btn);
         }
 
@@ -517,7 +527,6 @@ namespace GEM.Emulation
         private void fillOpenDialog(MenuButton parent)
         {
             parent["up"].Enabled = (_openStartIndex - OPEN_ENTRIES) >= 0;
-            if (!parent["up"].Enabled && Fokus == parent["up"]) Fokus = null;
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
                 int index = _openStartIndex + i;
@@ -538,7 +547,6 @@ namespace GEM.Emulation
                 }
             }
             parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
-            if (!parent["down"].Enabled && Fokus == parent["down"]) Fokus = null;
         }
         #endregion
     }

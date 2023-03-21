@@ -193,7 +193,11 @@ namespace GEM.Menu
             }
             set
             {
-                if (_fokus != null) Input.OnKeyDown -= _fokus.NavigationHandler;
+                if (_fokus != null)
+                {
+                    Input.OnKeyDown -= _fokus.NavigationHandler;
+                    Input.OnButtonDown -= _fokus.NavigationHandler;
+                }
                 if (value == null)
                 {
                     _fokus = null;
@@ -203,7 +207,11 @@ namespace GEM.Menu
                 {
                     _fokus = value;
                 }
-                if (_fokus != null) Input.OnKeyDown += _fokus.NavigationHandler;
+                if (_fokus != null)
+                {
+                    Input.OnKeyDown += _fokus.NavigationHandler;
+                    Input.OnButtonDown += _fokus.NavigationHandler;
+                }
             }
         }
         #endregion
@@ -435,20 +443,77 @@ namespace GEM.Menu
                 int i = 0;
                 do
                 {
+                    Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
                     i++;
                     i %= SubMenu.Count;
-                    Fokus = SubMenu.Values.ToArray<MenuButton>()[0];
                 } while (!Fokus.Enabled);
             }
-            if (key == Keys.Left)
+            if (key == Keys.Left || key == Keys.Escape)
             {
                 if (_parentMenu == null || _parentMenu._parentMenu == null) return;
                 Fokus = _parentMenu;
+                Fokus.Close(null, EventArgs.Empty); // does not work.. why?!
             }
 
-            if (key == Keys.Enter)
+            if (key == Keys.Enter || key == Keys.X)
             {
-                Fokus.OnClick?.Invoke(this, EventArgs.Empty);
+                if (Fokus.Enabled)
+                {
+                    Fokus.OnClick?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+        public void NavigationHandler(Buttons btn)
+        {
+            // only continue if fokus on current control
+            if (Fokus != this) return;
+
+            if (btn == Buttons.DPadDown)
+            {
+                if (_parentMenu == null) return;
+                int i = 0;
+                do
+                {
+                    i++;
+                    int nextIndex = (_menuIndex + i) % _parentMenu.SubMenu.Count;
+                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
+                } while (!Fokus.Enabled); // skip to next entry if control is disabled
+            }
+            if (btn == Buttons.DPadUp)
+            {
+                if (_parentMenu == null) return;
+                int i = 0;
+                do
+                {
+                    i++;
+                    int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex - i) % _parentMenu.SubMenu.Count;
+                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
+                } while (!Fokus.Enabled);
+            }
+            if (btn == Buttons.DPadRight)
+            {
+                if (SubMenu.Count == 0) return;
+                int i = 0;
+                do
+                {
+                    Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
+                    i++;
+                    i %= SubMenu.Count;
+                } while (!Fokus.Enabled);
+            }
+            if (btn == Buttons.DPadLeft || btn == Buttons.B)
+            {
+                if (_parentMenu == null || _parentMenu._parentMenu == null) return;
+                Fokus = _parentMenu;
+                Fokus.Close(null, EventArgs.Empty);
+            }
+
+            if (btn == Buttons.A || btn == Buttons.Start)
+            {
+                if (Fokus.Enabled)
+                {
+                    Fokus.OnClick?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 

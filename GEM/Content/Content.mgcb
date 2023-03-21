@@ -37,18 +37,6 @@
 /processorParam:TextureFormat=Color
 /build:btnb.png
 
-#begin cart.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:cart.png
-
 #begin Console.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor
@@ -103,18 +91,6 @@
 /processorParam:MakeSquare=False
 /processorParam:TextureFormat=Color
 /build:quit.png
-
-#begin set.png
-/importer:TextureImporter
-/processor:TextureProcessor
-/processorParam:ColorKeyColor=255,0,255,255
-/processorParam:ColorKeyEnabled=True
-/processorParam:GenerateMipmaps=False
-/processorParam:PremultiplyAlpha=True
-/processorParam:ResizeToPowerOfTwo=False
-/processorParam:MakeSquare=False
-/processorParam:TextureFormat=Color
-/build:set.png
 
 #begin stasel.png
 /importer:TextureImporter
