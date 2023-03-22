@@ -350,6 +350,7 @@ namespace GEM.Menu
             if (key == KeyBinding)
             {
                 _keyboardRequest = State.Press;
+                resolveStateRequests(); // handle input even if button invisible
             }
         }
         public void KeyUpHandler(Keys key)
@@ -358,6 +359,7 @@ namespace GEM.Menu
             {
                 _keyboardRequest = State.Idle;
                 _clickStarted = true; // keep clickStarted even when mouse click outside
+                resolveStateRequests();
             }
         }
 

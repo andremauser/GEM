@@ -38,9 +38,9 @@ namespace GEM.Emulation
         static public Texture2D _Pixel;
         static public SpriteFont _Font;
 
-        public BaseControl OnScreenButtons;
+         BaseControl OnScreenButtons;
 
-        MenuButton _leftMenu;
+        MenuButton _menu;
         int _openStartIndex = 0;
         const int OPEN_ENTRIES = 12;
 
@@ -119,102 +119,16 @@ namespace GEM.Emulation
             _pixelMarkerColor = new Color(255, 0, 255, 255);
             updateRomList(null, EventArgs.Empty); // initial call to rom search - updated by click on "open rom"
 
-            MenuButton tmp;
-            MenuButton b;
+            MenuButton temp;
+            MenuButton btn;
 
-            Color menuColor = new Color(0.1f, 0.1f, 0.1f);
+            Color onscreenColor =   new Color(0.1f, 0.1f, 0.1f);
+            Color menuColor =       new Color(0.1f, 0.1f, 0.1f);
 
-            // maximize window
-            tmp = new MenuButton(image: "max") { Width = 60, Height = 60 };
-            tmp.Image.ResizeToParent();
-            tmp.Left = 1160;
-            tmp.BackColor[State.Idle] = Color.Transparent;
-            tmp.ForeColor[State.Idle] = menuColor;
-            tmp.OnClick += toggleFullScreen;
-            _controls.Add(tmp);
-
-            // quit emulator
-            tmp = new MenuButton(image: "quit") { Width = 60, Height = 60 };
-            tmp.Image.ResizeToParent();
-            tmp.Left = 1220;
-            tmp.BackColor[State.Idle] = Color.Transparent;
-            tmp.ForeColor[State.Idle] = menuColor;
-            tmp.OnClick += exit;
-            _controls.Add(tmp);
-
-            // left menu
-            tmp = new MenuButton(image: "menu", menuType: MenuType.Click) { Width = 60, Height = 60 };
-            _leftMenu = tmp;
-            tmp.Image.ResizeToParent();
-            tmp.BackColor[State.Idle] = Color.Transparent;
-            tmp.Panel.HorizontalAlign = Align.Left;
-            tmp.Panel.VerticalAlign = Align.Bottom;
-            tmp.KeyBinding = Keys.LeftControl;
-            tmp.BtnBinding = Buttons.LeftShoulder;
-            tmp.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
-            tmp.OnClose += (o, e) => { OnScreenButtons.Enabled = true; Fokus = null; };
-            tmp.ForeColor[State.Idle] = menuColor;
-            _controls.Add(tmp);
-            // add menu entries
-            tmp.AddHoverMenu("cart", width: 60).Label.Caption = "game";
-            tmp.AddHoverMenu("set", width: 60);
-            tmp.AddHoverMenu("quit", width: 60);
-            tmp["quit"].AddHoverMenu("quit GEM").OnClick += exit;
-            MenuButton m = tmp["cart"].AddHoverMenu("open rom");
-                // update rom list
-                m.OnOpen += updateRomList;
-                m.OnOpen += (o, e) => { fillOpenDialog(m); };
-            tmp["cart"].AddHoverMenu("reset rom").OnClick += _gameboy.Reset;
-            tmp["cart"].AddHoverMenu("exit rom").OnClick += _gameboy.EjectCartridge;
-            tmp["set"].AddHoverMenu("palette");
-            tmp["set"].AddHoverMenu("fullscreen").OnClick += toggleFullScreen;
-            // palette entries
-            for (int i = 0; i < _emuPalette.Count(); i++)
-            {
-                b = tmp["set"]["palette"].AddHoverMenu("color" + i.ToString());
-                b.Label.Caption = "";
-                Panel p = b.AddPanel();
-                p.Direction = Direction.Horizontal;
-                for (int j = 0; j < 4; j++)
-                {
-                    Label tile = p.AddLabel(j.ToString());
-                    tile.Caption = "";
-                    tile.Width = 30;
-                    tile.Height = 30;
-                    tile.MarkColor = _emuPalette[i][j];
-                }
-                p.UpdateAlignPosition();
-                b.ButtonData = i; // set button data to color index
-                b.OnClick += setColorIndex;
-            }
-            // open rom entries
-            // up
-            b = tmp["cart"]["open rom"].AddHoverMenu("up");
-            b.OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(tmp["cart"]["open rom"]); };
-            b.Width = 300;
-            b.Height = 40;
-            // add empty entry dummies
-            for (int i = 0; i < OPEN_ENTRIES; i++)
-            {
-                b = tmp["cart"]["open rom"].AddHoverMenu(i.ToString());
-                b.OnClick += openRomIndex;
-                b.Width = 300;
-                b.Height = 40;
-            }
-            // down
-            b = tmp["cart"]["open rom"].AddHoverMenu("down");
-            b.OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(tmp["cart"]["open rom"]); };
-            b.Width = 300;
-            b.Height = 40;
-
-
-
-            // onscreen buttons
-            Color onscreenColor = new Color(0.1f, 0.1f, 0.1f);
+            #region onscreen buttons
+            
             OnScreenButtons = new BaseControl(null);
             _controls.Add(OnScreenButtons);
-
-            MenuButton btn;
 
             // dpad
             BaseControl _dpad = new BaseControl(null) { Left = 120, Top = 400 };
@@ -228,8 +142,8 @@ namespace GEM.Emulation
             btn.Image.SetRotation(90);
             btn.KeyBinding = Keys.Up;
             btn.BtnBinding = Buttons.DPadUp;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Up = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Up = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Up = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Up = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
@@ -241,20 +155,20 @@ namespace GEM.Emulation
             btn.Image.SetRotation(270);
             btn.KeyBinding = Keys.Down;
             btn.BtnBinding = Buttons.DPadDown;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Down = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Down = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Down = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Down = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
             // right
-            btn = new MenuButton(_dpad, null, "->", MenuType.StandAlone, "dpad", 4) { Width=100, Height=100};
+            btn = new MenuButton(_dpad, null, "->", MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
             btn.Left = 20;
             btn.Top = -50;
             btn.Image.ResizeToParent();
             btn.KeyBinding = Keys.Right;
             btn.BtnBinding = Buttons.DPadRight;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Right = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Right = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Right = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Right = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
@@ -266,8 +180,8 @@ namespace GEM.Emulation
             btn.Image.SetRotation(180);
             btn.KeyBinding = Keys.Left;
             btn.BtnBinding = Buttons.DPadLeft;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Left = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Left = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Left = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Left = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _dpad.Add(btn);
 
@@ -284,8 +198,8 @@ namespace GEM.Emulation
             btn.Image.SetRotation(20);
             btn.KeyBinding = Keys.X;
             btn.BtnBinding = Buttons.B;
-            btn.OnPress += (o,e) => _gameboy.IsButton_A = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_A = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_A = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_A = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _btns.Add(btn);
 
@@ -297,8 +211,8 @@ namespace GEM.Emulation
             btn.Image.SetRotation(20);
             btn.KeyBinding = Keys.Y;
             btn.BtnBinding = Buttons.A;
-            btn.OnPress += (o,e) => _gameboy.IsButton_B = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_B = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_B = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_B = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             _btns.Add(btn);
 
@@ -310,8 +224,8 @@ namespace GEM.Emulation
             btn.Image.SetRotation(20);
             btn.KeyBinding = Keys.Enter;
             btn.BtnBinding = Buttons.Start;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Start = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Start = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Start = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             OnScreenButtons.Add(btn);
 
@@ -323,10 +237,88 @@ namespace GEM.Emulation
             btn.Image.SetRotation(20);
             btn.KeyBinding = Keys.Back;
             btn.BtnBinding = Buttons.Back;
-            btn.OnPress += (o,e) => _gameboy.IsButton_Select = true;
-            btn.OnRelease += (o,e) => _gameboy.IsButton_Select = false;
+            btn.OnPress += (o, e) => _gameboy.IsButton_Select = true;
+            btn.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
             btn.SetButtonColors(Color.Transparent, onscreenColor);
             OnScreenButtons.Add(btn);
+            #endregion
+
+            #region window buttons
+            // maximize window
+            temp = new MenuButton(image: "max") { Width = 60, Height = 60 };
+            temp.Image.ResizeToParent();
+            temp.Left = 1160;
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.ForeColor[State.Idle] = menuColor;
+            temp.OnClick += toggleFullScreen;
+            _controls.Add(temp);
+
+            // quit emulator
+            temp = new MenuButton(image: "quit") { Width = 60, Height = 60 };
+            temp.Image.ResizeToParent();
+            temp.Left = 1220;
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.ForeColor[State.Idle] = menuColor;
+            temp.OnClick += exit;
+            _controls.Add(temp);
+            #endregion
+
+            #region menu
+            // menu
+            _menu = new MenuButton(image: "menu", menuType: MenuType.Click) { Width = 60, Height = 60 };
+            _menu.Image.ResizeToParent();
+            _menu.BackColor[State.Idle] = Color.Transparent;
+            _menu.Panel.HorizontalAlign = Align.Left;
+            _menu.Panel.VerticalAlign = Align.Bottom;
+            _menu.KeyBinding = Keys.LeftControl;
+            _menu.BtnBinding = Buttons.LeftShoulder;
+            _menu.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
+            _menu.OnClose += (o, e) => { OnScreenButtons.Enabled = true; Fokus = null; };
+            _menu.ForeColor[State.Idle] = menuColor;
+            _controls.Add(_menu);
+            // add menu entries
+            _menu.AddHoverMenu("cart", width: 60).Label.Caption = "game";
+            _menu.AddHoverMenu("set", width: 60);
+            _menu.AddHoverMenu("quit", width: 60);
+            // cart
+            MenuButton romBrowser = _menu["cart"].AddHoverMenu("open rom");
+            romBrowser.OnOpen += updateRomList;
+            romBrowser.OnOpen += (o, e) => { fillOpenDialog(romBrowser); };
+            _menu["cart"]["open rom"].AddHoverMenu("up", null, 300, 40).OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
+            for (int i = 0; i < OPEN_ENTRIES; i++)
+            {
+                _menu["cart"]["open rom"].AddHoverMenu(i.ToString(), null, 300, 40).OnClick += openRomIndex; // add empty entry dummies
+            }
+            _menu["cart"]["open rom"].AddHoverMenu("down", null, 300, 40).OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
+            _menu["cart"].AddHoverMenu("reset rom").OnClick += _gameboy.Reset;
+            _menu["cart"].AddHoverMenu("exit rom").OnClick += _gameboy.EjectCartridge;
+            // set
+            _menu["set"].AddHoverMenu("palette");
+            for (int i = 0; i < _emuPalette.Count(); i++)
+            {
+                temp = _menu["set"]["palette"].AddHoverMenu("color" + i.ToString());
+                temp.Label.Caption = "";
+                Panel colorPanel = temp.AddPanel();
+                colorPanel.Direction = Direction.Horizontal;
+                for (int j = 0; j < 4; j++)
+                {
+                    Label tile = colorPanel.AddLabel(j.ToString());
+                    tile.Caption = "";
+                    tile.Width = 30;
+                    tile.Height = 30;
+                    tile.MarkColor = _emuPalette[i][j];
+                }
+                colorPanel.UpdateAlignPosition();
+                temp.ButtonData = i; // set button data to color index
+                temp.OnClick += setColorIndex;
+            }
+            _menu["set"].AddHoverMenu("screen buttons").OnClick += (o, e) => { OnScreenButtons.Visible = !OnScreenButtons.Visible; };
+            _menu["set"].AddHoverMenu("fullscreen").OnClick += toggleFullScreen;
+            // quit
+            _menu["quit"].AddHoverMenu("quit GEM").OnClick += exit;
+
+            #endregion
+
         }
 
         public void Reset()
@@ -522,7 +514,7 @@ namespace GEM.Emulation
                 _gameboy.InsertCartridge(_romList[index]);
                 _gameboy.PowerOn();
             }
-            _leftMenu.Close(null, EventArgs.Empty);
+            _menu.Close(null, EventArgs.Empty);
         }
         private void fillOpenDialog(MenuButton parent)
         {

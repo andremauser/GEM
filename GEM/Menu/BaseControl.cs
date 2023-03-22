@@ -195,6 +195,10 @@ namespace GEM.Menu
         {
             return (Image)Add(new Image(this, image, imagesPerRow));
         }
+        public Image AddImage(Texture2D image, int imagesPerRow = 1)
+        {
+            return (Image)Add(new Image(this, image, imagesPerRow));
+        }
 
         public void UpdateAlignPosition()
         {
