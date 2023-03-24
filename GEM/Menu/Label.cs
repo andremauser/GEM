@@ -56,8 +56,6 @@ namespace GEM.Menu
                         origin =                new Vector2(Width / 2, Height / 2);
             spriteBatch.DrawString(_font, _caption, position, ForeColor, -_rotation, origin, 1.0f, SpriteEffects.None, 1.0f);
 
-            //spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), MarkColor);
-            //spriteBatch.DrawString(_font, _caption, new Vector2(PosX, PosY), ForeColor);
             base.Draw(spriteBatch);
         }
         #endregion

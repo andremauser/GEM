@@ -24,6 +24,7 @@ namespace GEM.Menu
         int _height;
         protected float _rotation;
         bool _enabled;
+        bool _visible;
         #endregion
 
         #region Constructors
@@ -134,7 +135,34 @@ namespace GEM.Menu
             }
         }
 
-        public bool Visible { get; set; }
+        public bool Visible
+        {
+            get
+            {
+                if (!_visible)
+                {
+                    // if not visible -> return this
+                    return _visible;
+                }
+                else
+                {
+                    if (Parent != null)
+                    {
+                        // if visible and has parent, both must be visible
+                        return _visible && Parent.Visible;
+                    }
+                    else
+                    {
+                        // visible and top level -> return this
+                        return _visible;
+                    }
+                }
+            }
+            set
+            {
+                _visible = value;
+            }
+        }
         public bool Enabled 
         { 
             get
@@ -159,7 +187,6 @@ namespace GEM.Menu
             // update-calculations (defined in inherited class)
 
             // embedded controls should be updated first (e.g. click priority from top to bottom)
-            if (!Visible) return;
             foreach (BaseControl control in _controls)
             {
                 control.Update();

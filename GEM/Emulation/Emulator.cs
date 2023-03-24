@@ -272,31 +272,34 @@ namespace GEM.Emulation
             _menu.Panel.VerticalAlign = Align.Bottom;
             _menu.KeyBinding = Keys.LeftControl;
             _menu.BtnBinding = Buttons.LeftShoulder;
-            _menu.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; };
+            _menu.OnOpen += (o, e) => { OnScreenButtons.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Fokus.Close(o, e); };
             _menu.OnClose += (o, e) => { OnScreenButtons.Enabled = true; Fokus = null; };
             _menu.ForeColor[State.Idle] = menuColor;
             _controls.Add(_menu);
             // add menu entries
-            _menu.AddHoverMenu("cart", width: 60).Label.Caption = "game";
-            _menu.AddHoverMenu("set", width: 60);
-            _menu.AddHoverMenu("quit", width: 60);
+            _menu.AddClickMenu("cart").Label.Caption = "game";
+            _menu.AddClickMenu("set").Label.Caption = "settings";
+            _menu.AddClickMenu("debug").Enabled = false;
+            _menu.AddClickMenu("quit");
             // cart
-            MenuButton romBrowser = _menu["cart"].AddHoverMenu("open rom");
+            MenuButton romBrowser = _menu["cart"].AddClickMenu("open rom");
             romBrowser.OnOpen += updateRomList;
             romBrowser.OnOpen += (o, e) => { fillOpenDialog(romBrowser); };
-            _menu["cart"]["open rom"].AddHoverMenu("up", null, 300, 40).OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
+            _menu["cart"]["open rom"].AddClickMenu("up", "arrow", 300, 40).OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
+            _menu["cart"]["open rom"]["up"].Image.SetRotation(90);
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
-                _menu["cart"]["open rom"].AddHoverMenu(i.ToString(), null, 300, 40).OnClick += openRomIndex; // add empty entry dummies
+                _menu["cart"]["open rom"].AddClickMenu(i.ToString(), null, 300, 40).OnClick += openRomIndex; // add empty entry dummies
             }
-            _menu["cart"]["open rom"].AddHoverMenu("down", null, 300, 40).OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
-            _menu["cart"].AddHoverMenu("reset rom").OnClick += _gameboy.Reset;
-            _menu["cart"].AddHoverMenu("exit rom").OnClick += _gameboy.EjectCartridge;
+            _menu["cart"]["open rom"].AddClickMenu("down", "arrow", 300, 40).OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["cart"]["open rom"]); };
+            _menu["cart"]["open rom"]["down"].Image.SetRotation(-90);
+            _menu["cart"].AddClickMenu("reset rom").OnClick += _gameboy.Reset;
+            _menu["cart"].AddClickMenu("exit rom").OnClick += _gameboy.EjectCartridge;
             // set
-            _menu["set"].AddHoverMenu("palette");
+            _menu["set"].AddClickMenu("palette");
             for (int i = 0; i < _emuPalette.Count(); i++)
             {
-                temp = _menu["set"]["palette"].AddHoverMenu("color" + i.ToString());
+                temp = _menu["set"]["palette"].AddClickMenu("color" + i.ToString());
                 temp.Label.Caption = "";
                 Panel colorPanel = temp.AddPanel();
                 colorPanel.Direction = Direction.Horizontal;
@@ -312,10 +315,10 @@ namespace GEM.Emulation
                 temp.ButtonData = i; // set button data to color index
                 temp.OnClick += setColorIndex;
             }
-            _menu["set"].AddHoverMenu("screen buttons").OnClick += (o, e) => { OnScreenButtons.Visible = !OnScreenButtons.Visible; };
-            _menu["set"].AddHoverMenu("fullscreen").OnClick += toggleFullScreen;
+            _menu["set"].AddClickMenu("screen buttons").OnClick += (o, e) => { OnScreenButtons.Visible = !OnScreenButtons.Visible; };
+            _menu["set"].AddClickMenu("fullscreen").OnClick += toggleFullScreen;
             // quit
-            _menu["quit"].AddHoverMenu("quit GEM").OnClick += exit;
+            _menu["quit"].AddClickMenu("quit GEM").OnClick += exit;
 
             #endregion
 
@@ -502,6 +505,7 @@ namespace GEM.Emulation
                     _romList.Add(file);
                 }
             }
+            _openStartIndex = 0;
         }
         private void openRomIndex(object sender, EventArgs e)
         {

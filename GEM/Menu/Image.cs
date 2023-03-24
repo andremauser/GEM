@@ -51,6 +51,7 @@ namespace GEM.Menu
         #region Methods
         public override void Draw(SpriteBatch spriteBatch)
         {
+            if (!Visible) return;
             Rectangle destinationRectangle = new Rectangle(PosX + Width / 2, PosY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
             int drawWidth = (int)(_image.Height * TextureAspectRatio);
             int drawLeft = (drawWidth * ImageIndex) % _image.Width;
