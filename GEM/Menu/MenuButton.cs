@@ -490,7 +490,7 @@ namespace GEM.Menu
             {
                 if (_parentMenu == null || _parentMenu._parentMenu == null) return;
                 Fokus = _parentMenu;
-                Fokus.Close(null, EventArgs.Empty); // does not work.. why?!
+                Fokus.Close(null, EventArgs.Empty);
             }
 
             if (key == Keys.Enter || key == Keys.X)
