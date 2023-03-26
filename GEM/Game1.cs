@@ -1,10 +1,7 @@
 ﻿using GEM.Emulation;
-using GEM.Menu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Runtime.CompilerServices;
 
 namespace GEM
 {
@@ -15,20 +12,16 @@ namespace GEM
     {
 
         #region Fields
-
         static public GraphicsDeviceManager _Graphics;
         static public Game1 _Instance; 
         Emulator _emulator;
         float _fpsSecondCounter;
         int _fpsFrameCounter;
         int _fps;
-
         static public ContentManager _Content;
-
         #endregion
 
         #region Constructors
-
         public Game1()
         {
             _Graphics = new GraphicsDeviceManager(this);
@@ -40,11 +33,9 @@ namespace GEM
             IsFixedTimeStep = true;
             TargetElapsedTime = System.TimeSpan.FromSeconds(70224d / 4194304); // set MonoGame frame rate to original DMG
         }
-
         #endregion
 
         #region Methods
-
         protected override void Initialize()
         {
             _emulator = new Emulator(GraphicsDevice);
@@ -59,7 +50,6 @@ namespace GEM
 
             base.Initialize();
         }
-
 
         protected override void LoadContent()
         {
@@ -88,7 +78,6 @@ namespace GEM
             }
             Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, _fps, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
         }
-
         #endregion
 
     }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GEM.Emulation
 {
@@ -9,14 +7,11 @@ namespace GEM.Emulation
         public delegate void opCode();
 
         #region Fields
-
         private MMU _mmu;
         private opCode[] _cbSet;
-
         #endregion
 
         #region Constructors
-
         public CPU(MMU mmu)
         {
             _mmu = mmu;
@@ -123,11 +118,9 @@ namespace GEM.Emulation
                 SET_7_B,        SET_7_C,        SET_7_D,        SET_7_E,        SET_7_H,        SET_7_L,        SET_7__HL_,     SET_7_A
             };
         }
-
         #endregion
 
         #region Properties
-
         public opCode[] InstructionSet { get; private set; }
         public int InstructionCycles { get; set; }  // clock cycles @ 4 Mhz
         public bool IsCPUHalt { get; set; }

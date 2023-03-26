@@ -9,6 +9,7 @@ namespace GEM.Emulation
 {
     public class Cartridge
     {
+        #region Fields
         private bool _isCartridgeLoaded;
         private byte[] _data;
         private byte[] _ram;
@@ -19,10 +20,10 @@ namespace GEM.Emulation
         private int _mbc;
         public bool IsCGB;
         private string _saveFile;
-
-
         public string Title { get; private set; }
+        #endregion
 
+        #region Constructors
         public Cartridge()
         {
             _data = new byte[0x8000];
@@ -32,7 +33,12 @@ namespace GEM.Emulation
             _ramBank = 0;
             Title = "";
         }
+        #endregion
 
+        #region Properties
+        #endregion
+
+        #region Methods
         public void Reset()
         {
             _data = new byte[0x8000];
@@ -42,7 +48,6 @@ namespace GEM.Emulation
             _ramBank = 0;
             Title = "";
         }
-
         public void Load(string file)
         {
             if (file == null)
@@ -90,7 +95,6 @@ namespace GEM.Emulation
             }
         }
 
-
         public byte Read(ushort pos)
         {
             if (!_isCartridgeLoaded) return 0xFF;
@@ -129,7 +133,6 @@ namespace GEM.Emulation
             }
             else return 0xFF;
         }
-
         public byte ReadRAM(ushort pos)
         {
             // RAM Bank 0-n
@@ -201,7 +204,6 @@ namespace GEM.Emulation
                 }
             }
         }
-
         public void WriteRAM(ushort pos, byte value)
         {
             // RAM Bank 0-n
@@ -218,5 +220,6 @@ namespace GEM.Emulation
                 File.WriteAllBytes(_saveFile, _ram);
             }
         }
+        #endregion
     }
 }

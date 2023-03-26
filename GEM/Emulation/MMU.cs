@@ -9,7 +9,6 @@ namespace GEM.Emulation
     {
 
         #region Fields
-
         byte[] _bootROM;
         byte[] _videoRAM;
         byte[] _workRAM;
@@ -18,11 +17,9 @@ namespace GEM.Emulation
         // Timer
         int _divCycleCount;
         int _timaCycleCount;
-
         #endregion
 
         #region Constructors
-
         public MMU()
         {
             _bootROM = new byte[] { 0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
@@ -49,11 +46,9 @@ namespace GEM.Emulation
             IME = true;
             IsBooting = true;
         }
-
         #endregion
 
         #region Properties
-
         public Cartridge Cartridge { get; set; }
         public bool IsBooting { get; set; }
         public bool IsCGB
@@ -144,7 +139,6 @@ namespace GEM.Emulation
             }
         }
 
-
         // LCDC (0xFF40)
         public bool IsBGEnabled
         {
@@ -225,7 +219,6 @@ namespace GEM.Emulation
             get { return STAT[6]; }
             set { STAT[6] = value; }
         }
-
         #endregion
 
         #region Methods
@@ -371,7 +364,6 @@ namespace GEM.Emulation
                 return 0xFF;
             }
         }
-
         public void Write(ushort address, byte value)
         {
             // Boot ROM
@@ -435,7 +427,6 @@ namespace GEM.Emulation
         {
             return (ushort)(Read(address) + (Read((ushort)(address + 1)) << 8));
         }
-
         public void WriteWord(ushort address, ushort value)
         {
             Write(address, (byte)(value & 0xFF));

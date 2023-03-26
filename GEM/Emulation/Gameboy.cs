@@ -10,7 +10,6 @@ namespace GEM.Emulation
     internal class Gameboy
     {
         #region Fields
-
         private MMU _mmu;
         private CPU _cpu;
         private GPU _gpu;
@@ -27,11 +26,9 @@ namespace GEM.Emulation
         public bool IsButton_Right;
         public bool IsButton_Up;
         public bool IsButton_Down;
-
         #endregion
 
         #region Constructors
-
         public Gameboy(GraphicsDevice graphicsDevice)
         {
             _mmu = new MMU();
@@ -45,7 +42,6 @@ namespace GEM.Emulation
             _nullTexture = new Texture2D(graphicsDevice, 1, 1);
             _nullTexture.SetData(new Color[] { Color.Black });
         }
-
         #endregion
 
         #region Properties
@@ -61,11 +57,9 @@ namespace GEM.Emulation
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
         public bool SwitchedOn { get; private set; }
-
         #endregion
 
         #region Methods
-
         public void InsertCartridge(string game)
         {
             _mmu.Cartridge.Load(game);
@@ -145,6 +139,7 @@ namespace GEM.Emulation
             return _gpu.Tileset.Texture;
         }
 
+        // ---
         public void UpdateFrame()
         {
             if (IsRunning)
@@ -182,7 +177,7 @@ namespace GEM.Emulation
                 IsRunning &= !StopAfterFrame;
             }
         }
-
+        // ---
 
         // Private Helper Methods
         private void checkInterrupts()
@@ -263,7 +258,6 @@ namespace GEM.Emulation
             }
             return colorData;
         }
-
         #endregion
 
     }

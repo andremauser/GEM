@@ -21,6 +21,7 @@ namespace GEM.Menu
         #region Constructors
         public Panel(BaseControl parent) : base(parent)
         {
+            // default values
             Direction = Direction.Vertical;
         }
         #endregion
