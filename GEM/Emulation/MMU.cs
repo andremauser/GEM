@@ -19,6 +19,7 @@ namespace GEM.Emulation
         int _timaCycleCount;
         // property fields
         Register _nr12;
+        Register _nr14;
         #endregion
 
         #region Constructors
@@ -88,8 +89,18 @@ namespace GEM.Emulation
             }
         }
         public Register NR13;   // 0xFF13   Sound CH1 wavelength low
-        public Register NR14;   // 0xFF14   Sound CH1 wavelength high + control
-
+        public Register NR14    // 0xFF14   Sound CH1 wavelength high + control
+        {
+            get
+            {
+                return _nr14;
+            }
+            set
+            {
+                _nr14 = value;
+                if (CH1Trigger == 1) IsCH1On = true;
+            }
+        }
         public Register NR30;   // 0xFF1A
         public Register NR31;   // 0xFF1B
         public Register NR32;   // 0xFF1C
@@ -246,22 +257,22 @@ namespace GEM.Emulation
             }
             set
             {
-                NR14[2] = (value >> 10) & 1;
-                NR14[1] = (value >> 9) & 1;
-                NR14[0] = (value >> 8) & 1;
+                _nr14[2] = (value >> 10) & 1;
+                _nr14[1] = (value >> 9) & 1;
+                _nr14[0] = (value >> 8) & 1;
                 NR13 = (byte)(value & 0xFF);
             }
         }
         public bool IsCH1LengthEnabled
         {
             get { return Convert.ToBoolean(NR14[6]); }
-            set { NR14[6] = Convert.ToInt32(value); }
+            set { _nr14[6] = Convert.ToInt32(value); }
         }
         public int CH1Trigger
         {
             // 1: Restart channel
             get { return NR14[7]; }
-            set { NR14[7] = value; }
+            set { _nr14[7] = value; }
         }
 
 

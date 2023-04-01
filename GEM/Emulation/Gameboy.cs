@@ -57,6 +57,13 @@ namespace GEM.Emulation
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
         public bool SwitchedOn { get; private set; }
+        public bool IsCH1On 
+        {
+            get
+            {
+                return _mmu.IsCH1On;
+            }
+        }
         #endregion
 
         #region Methods

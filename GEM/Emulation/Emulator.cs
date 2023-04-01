@@ -350,9 +350,10 @@ namespace GEM.Emulation
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
 
             _gameboy.UpdateFrame();
-
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
             drawEmulator(viewport, gbScreen);
+
+            _spriteBatch.DrawString(_Font, _gameboy.IsCH1On.ToString(), new Vector2(180, 0), Color.Red);
 
             _spriteBatch.End();
         }
