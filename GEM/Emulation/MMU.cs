@@ -17,6 +17,8 @@ namespace GEM.Emulation
         // Timer
         int _divCycleCount;
         int _timaCycleCount;
+        // property fields
+        Register _nr12;
         #endregion
 
         #region Constructors
@@ -71,9 +73,22 @@ namespace GEM.Emulation
         public Register TAC;    // 0xFF07
 
         public Register IF;     // 0xFF0F
-
         public Register NR10;   // 0xFF10   Sound CH1 sweep
         public Register NR11;   // 0xFF11   Sound CH1 length + duty cycle
+        public Register NR12    // 0xFF12   Sound CH1 volume + envelope
+        {
+            get
+            {
+                return _nr12;
+            }
+            set
+            {
+                _nr12 = value;
+                if ((_nr12 & 0b11111000) == 0) IsCH1On = false; // turn DAC off
+            }
+        }
+        public Register NR13;   // 0xFF13   Sound CH1 wavelength low
+        public Register NR14;   // 0xFF14   Sound CH1 wavelength high + control
 
         public Register NR30;   // 0xFF1A
         public Register NR31;   // 0xFF1B
@@ -118,7 +133,7 @@ namespace GEM.Emulation
                 NR10[0] = (value >> 0) & 1;
             }
         }
-        public int CH1SweepIncDec
+        public int CH1SweepDirection
         {
             // 0: Addition      (wavelength increase)
             // 1: Subtraction   (wavelength decrease)
@@ -177,6 +192,77 @@ namespace GEM.Emulation
             }
         }
 
+        // NR12 (0xFF12)
+        public int CH1EnvelopeTime
+        {
+            // envelope pace / step time (0-7)*(64Hz-tick)
+            get
+            {
+                return NR12[2] << 2 | NR12[1] << 1 | NR12[0];
+            }
+            set
+            {
+                _nr12[2] = (value >> 2) & 1;
+                _nr12[1] = (value >> 1) & 1;
+                _nr12[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH1EnvelopeDirection
+        {
+            // 0: volume decrease
+            // 1: volume increase
+            get { return NR12[3]; }
+            set { _nr12[3] = value; }
+        }
+        public int CH1Volume
+        {
+            // envelope initial volume
+            get
+            {
+                return NR12[7] << 3 |
+                       NR12[6] << 2 |
+                       NR12[5] << 1 |
+                       NR12[4];
+            }
+            set
+            {
+                _nr12[7] = (value >> 3) & 1;
+                _nr12[6] = (value >> 2) & 1;
+                _nr12[5] = (value >> 1) & 1;
+                _nr12[4] = (value >> 0) & 1;
+            }
+        }
+
+        // NR13 (0xFF13)
+        // NR14 (0xFF14)
+        public int CH1Wavelength
+        {
+            get
+            {
+                return NR14[2] << 10 |
+                       NR14[1] << 9 |
+                       NR14[0] << 8 |
+                       NR13;
+            }
+            set
+            {
+                NR14[2] = (value >> 10) & 1;
+                NR14[1] = (value >> 9) & 1;
+                NR14[0] = (value >> 8) & 1;
+                NR13 = (byte)(value & 0xFF);
+            }
+        }
+        public bool IsCH1LengthEnabled
+        {
+            get { return Convert.ToBoolean(NR14[6]); }
+            set { NR14[6] = Convert.ToInt32(value); }
+        }
+        public int CH1Trigger
+        {
+            // 1: Restart channel
+            get { return NR14[7]; }
+            set { NR14[7] = value; }
+        }
 
 
         // NR50 (0xFF24)
@@ -496,6 +582,9 @@ namespace GEM.Emulation
 
                 if (address == 0xFF10) return NR10;
                 if (address == 0xFF11) return NR11;
+                if (address == 0xFF12) return NR12;
+                if (address == 0xFF13) return NR13;
+                if (address == 0xFF14) return NR14;
 
                 if (address == 0xFF1A) return NR30;
                 if (address == 0xFF1B) return NR31;
@@ -564,6 +653,9 @@ namespace GEM.Emulation
 
                 if (address == 0xFF10) NR10 = value;
                 if (address == 0xFF11) NR11 = value;
+                if (address == 0xFF12) NR12 = value;
+                if (address == 0xFF13) NR13 = value;
+                if (address == 0xFF14) NR14 = value;
 
                 if (address == 0xFF1A) NR30 = value;
                 if (address == 0xFF1B) NR31 = value;
