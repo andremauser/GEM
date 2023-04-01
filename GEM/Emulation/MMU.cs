@@ -377,6 +377,7 @@ namespace GEM.Emulation
             get { return STAT[6]; }
             set { STAT[6] = value; }
         }
+        #endregion
 
         #endregion
 
