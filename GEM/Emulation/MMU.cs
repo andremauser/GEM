@@ -9,7 +9,6 @@ namespace GEM.Emulation
     {
 
         #region Fields
-
         byte[] _bootROM;
         byte[] _videoRAM;
         byte[] _workRAM;
@@ -18,11 +17,9 @@ namespace GEM.Emulation
         // Timer
         int _divCycleCount;
         int _timaCycleCount;
-
         #endregion
 
         #region Constructors
-
         public MMU()
         {
             _bootROM = new byte[] { 0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
@@ -49,11 +46,9 @@ namespace GEM.Emulation
             IME = true;
             IsBooting = true;
         }
-
         #endregion
 
         #region Properties
-
         public Cartridge Cartridge { get; set; }
         public bool IsBooting { get; set; }
         public bool IsCGB
@@ -65,7 +60,7 @@ namespace GEM.Emulation
         }
         public bool IME { get; set; }
 
-        // IO Registers
+        #region IO Registers
         public Register P1;     // 0xFF00
         public Register SB;     // 0xFF01
         public Register SC;     // 0xFF02
@@ -77,11 +72,18 @@ namespace GEM.Emulation
 
         public Register IF;     // 0xFF0F
 
+        public Register NR10;   // 0xFF10   Sound CH1 sweep
+        public Register NR11;   // 0xFF11   Sound CH1 length + duty cycle
+
         public Register NR30;   // 0xFF1A
         public Register NR31;   // 0xFF1B
         public Register NR32;   // 0xFF1C
         public Register NR33;   // 0xFF1D
         public Register NR34;   // 0xFF1E
+
+        public Register NR50;   // 0xFF24   Sound volume left/right
+        public Register NR51;   // 0xFF25   Sound mix to left/right
+        public Register NR52;   // 0xFF26   Sound on/off and status
 
         public Register LCDC;   // 0xFF40
         public Register STAT;   // 0xFF41
@@ -98,52 +100,202 @@ namespace GEM.Emulation
         public Register WX;     // 0xFF4B
 
         public Register IE;     // 0xFFFF
+        #endregion
 
-        // Channel 3: Wave
-        public bool IsChannel3Enabled
+        #region Bit Properties
+        // NR10 (0xFF10)
+        public int CH1SweepShifts
         {
-            get { return Convert.ToBoolean(NR30[7]); }
-            set { NR30[7] = Convert.ToInt32(value); }
-        }
-        public float Channel3Length
-        {
-            get { return (256 - NR31) * (1 / 256); } // in seconds
-        }
-        public int Channel3VolumeShift
-        {
+            // sweep slope / change rate (0-7)
             get
             {
-                int amount = 0;
-                switch (NR32[6] << 1 + NR32[5])
-                {
-                    case 0:
-                        amount = 4; // Mute
-                        break;
-                    case 1:
-                        amount = 0; // 100%
-                        break;
-                    case 2:
-                        amount = 1; // 50%
-                        break;
-                    case 3:
-                        amount = 2; // 25%
-                        break;
-                }
-                return amount;      // amount of right-shifts
+                return NR10[2] << 2 | NR10[1] << 1 | NR10[0];
+            }
+            set
+            {
+                NR10[2] = (value >> 2) & 1;
+                NR10[1] = (value >> 1) & 1;
+                NR10[0] = (value >> 0) & 1;
             }
         }
-        public int Channel3Frequency
+        public int CH1SweepIncDec
         {
+            // 0: Addition      (wavelength increase)
+            // 1: Subtraction   (wavelength decrease)
+            get { return NR10[3]; }
+            set { NR10[3] = value; }
+        }
+        public int CH1SweepTime
+        {
+            // sweep pace / step time (0-7)*(128Hz-tick)
             get
             {
-                int freq = (NR34[2] << 10) +
-                            (NR34[1] << 9) +
-                            (NR34[0] << 8) +
-                            NR33;
-                return 4194304 / (64 * (2048 - freq));  // in Hz
+                return NR10[6] << 2 | NR10[5] << 1 | NR10[4];
+            }
+            set
+            {
+                NR10[6] = (value >> 2) & 1;
+                NR10[5] = (value >> 1) & 1;
+                NR10[4] = (value >> 0) & 1;
             }
         }
 
+        // NR11 (0xFF11)
+        public int CH1LengthTimer
+        {
+            // initial value for length timer (0-63)
+            get
+            {
+                return  NR11[5] << 5 | 
+                        NR11[4] << 4 | 
+                        NR11[3] << 3 | 
+                        NR11[2] << 2 | 
+                        NR11[1] << 1 | 
+                        NR11[0];
+            }
+            set
+            {
+                NR11[5] = (value >> 5) & 1;
+                NR11[4] = (value >> 4) & 1;
+                NR11[3] = (value >> 3) & 1;
+                NR11[2] = (value >> 2) & 1;
+                NR11[1] = (value >> 1) & 1;
+                NR11[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH1WaveDuty
+        {
+            // wave duty (0-3)
+            get
+            {
+                return NR11[7] << 1 | NR11[6];
+            }
+            set
+            {
+                NR11[7] = (value >> 1) & 1;
+                NR11[6] = (value >> 0) & 1;
+            }
+        }
+
+
+
+        // NR50 (0xFF24)
+        public int VolumeRight
+        {
+            get
+            {
+                return NR50[2] << 2 | NR50[1] << 1 | NR50[0];
+            }
+            set
+            {
+                NR50[2] = (value >> 2) & 1;
+                NR50[1] = (value >> 1) & 1;
+                NR50[0] = (value >> 0) & 1;
+            }
+        }
+        public bool IsVinRight
+        {
+            get { return Convert.ToBoolean(NR50[3]); }
+            set { NR50[3] = Convert.ToInt32(value); }
+        }
+        public int VolumeLeft
+        {
+            get
+            {
+                return NR50[6] << 2 | NR50[5] << 1 | NR50[4];
+            }
+            set
+            {
+                NR50[6] = (value >> 2) & 1;
+                NR50[5] = (value >> 1) & 1;
+                NR50[4] = (value >> 0) & 1;
+            }
+        }
+        public bool IsVinLeft
+        {
+            get { return Convert.ToBoolean(NR50[7]); }
+            set { NR50[7] = Convert.ToInt32(value); }
+        }
+
+        // NR51 (0xFF25)
+        public bool IsCH1Right
+        {
+            get { return Convert.ToBoolean(NR51[0]); }
+            set { NR51[0] = Convert.ToInt32(value); }
+        }
+        public bool IsCH2Right
+        {
+            get { return Convert.ToBoolean(NR51[1]); }
+            set { NR51[1] = Convert.ToInt32(value); }
+        }
+        public bool IsCH3Right
+        {
+            get { return Convert.ToBoolean(NR51[2]); }
+            set { NR51[2] = Convert.ToInt32(value); }
+        }
+        public bool IsCH4Right
+        {
+            get { return Convert.ToBoolean(NR51[3]); }
+            set { NR51[3] = Convert.ToInt32(value); }
+        }
+        public bool IsCH1Left
+        {
+            get { return Convert.ToBoolean(NR51[4]); }
+            set { NR51[4] = Convert.ToInt32(value); }
+        }
+        public bool IsCH2Left
+        {
+            get { return Convert.ToBoolean(NR51[5]); }
+            set { NR51[5] = Convert.ToInt32(value); }
+        }
+        public bool IsCH3Left
+        {
+            get { return Convert.ToBoolean(NR51[6]); }
+            set { NR51[6] = Convert.ToInt32(value); }
+        }
+        public bool IsCH4Left
+        {
+            get { return Convert.ToBoolean(NR51[7]); }
+            set { NR51[7] = Convert.ToInt32(value); }
+        }
+
+        // NR52 (0xFF26)
+        public bool IsCH1On
+        {
+            get { return Convert.ToBoolean(NR52[0]); }
+            /* 
+             * read-only
+             * 
+             * set ON when:
+             * - triggered
+             * 
+             * set OFF when:
+             * - length timer expired
+             * - sweep overflow (CH1)
+             * - DAC turned off
+            */
+            set { NR52[0] = Convert.ToInt32(value); }
+        }
+        public bool IsCH2On
+        {
+            get { return Convert.ToBoolean(NR52[1]); }
+            set { NR52[1] = Convert.ToInt32(value); }
+        }
+        public bool IsCH3On
+        {
+            get { return Convert.ToBoolean(NR52[2]); }
+            set { NR52[2] = Convert.ToInt32(value); }
+        }
+        public bool IsCH4On
+        {
+            get { return Convert.ToBoolean(NR52[3]); }
+            set { NR52[3] = Convert.ToInt32(value); }
+        }
+        public bool IsSoundOn
+        {
+            get { return Convert.ToBoolean(NR52[7]); }
+            set { NR52[7] = Convert.ToInt32(value); }
+        }
 
         // LCDC (0xFF40)
         public bool IsBGEnabled
@@ -196,8 +348,8 @@ namespace GEM.Emulation
             }
             set
             {
-                STAT[1] = value >> 1;
-                STAT[0] = value & 1;
+                STAT[1] = (value >> 1) & 1;
+                STAT[0] = (value >> 0) & 1;
             }
         }
         public int LYCFlag
@@ -225,6 +377,7 @@ namespace GEM.Emulation
             get { return STAT[6]; }
             set { STAT[6] = value; }
         }
+        #endregion
 
         #endregion
 
@@ -341,11 +494,18 @@ namespace GEM.Emulation
 
                 if (address == 0xFF0F) return IF;
 
+                if (address == 0xFF10) return NR10;
+                if (address == 0xFF11) return NR11;
+
                 if (address == 0xFF1A) return NR30;
                 if (address == 0xFF1B) return NR31;
                 if (address == 0xFF1C) return NR32;
                 if (address == 0xFF1D) return NR33;
                 if (address == 0xFF1E) return NR34;
+
+                if (address == 0xFF24) return NR50;
+                if (address == 0xFF25) return NR51;
+                if (address == 0xFF26) return NR52;
 
                 if (address == 0xFF40) return LCDC;
                 if (address == 0xFF41) return STAT;
@@ -403,11 +563,18 @@ namespace GEM.Emulation
 
                 if (address == 0xFF0F) IF = value;
 
+                if (address == 0xFF10) NR10 = value;
+                if (address == 0xFF11) NR11 = value;
+
                 if (address == 0xFF1A) NR30 = value;
                 if (address == 0xFF1B) NR31 = value;
                 if (address == 0xFF1C) NR32 = value;
                 if (address == 0xFF1D) NR33 = value;
                 if (address == 0xFF1E) NR34 = value;
+
+                if (address == 0xFF24) NR50 = value;
+                if (address == 0xFF25) NR51 = value;
+                if (address == 0xFF26) NR52 = (byte)(value & 0b11110000); // bits 0-3 read-only
 
                 if (address == 0xFF40) LCDC = value;
                 if (address == 0xFF41) STAT = value;
@@ -435,7 +602,6 @@ namespace GEM.Emulation
         {
             return (ushort)(Read(address) + (Read((ushort)(address + 1)) << 8));
         }
-
         public void WriteWord(ushort address, ushort value)
         {
             Write(address, (byte)(value & 0xFF));

@@ -14,7 +14,7 @@ namespace GEM.Emulation
         private MMU _mmu;
         private CPU _cpu;
         private GPU _gpu;
-        //private SPU _spu;
+        private APU _apu;
         private int _cycleCount;
         private Texture2D _nullTexture;
 
@@ -37,7 +37,7 @@ namespace GEM.Emulation
             _mmu = new MMU();
             _gpu = new GPU(_mmu, graphicsDevice);
             _cpu = new CPU(_mmu);
-            //_spu = new SPU(_mmu);
+            _apu = new APU(_mmu);
             _cycleCount = 0;
             IsRunning = false;
             IsPowerOn= false;
@@ -165,7 +165,7 @@ namespace GEM.Emulation
                     _cycleCount += _cpu.InstructionCycles;
                     _mmu.UpdateTimers(_cpu.InstructionCycles);  // Timers
                     _gpu.Update(_cpu.InstructionCycles);        // GPU
-                    //_spu.Update(_cpu.InstructionCycles);        // SPU
+                    _apu.Update(_cpu.InstructionCycles);        // SPU
 
                     // SYNC //
                     if (_gpu.IsDrawTime && _cycleCount < 70224) _cycleCount = 70224 + _gpu.ModeClock;   // exits loop when screen is drawn
@@ -248,7 +248,7 @@ namespace GEM.Emulation
                 _cycleCount += _cpu.InstructionCycles;
                 _mmu.UpdateTimers(_cpu.InstructionCycles);      // Timers
                 _gpu.Update(_cpu.InstructionCycles);            // GPU
-                //_spu.Update(_cpu.InstructionCycles);        // SPU
+                _apu.Update(_cpu.InstructionCycles);            // SPU
             }
         }
 
