@@ -454,51 +454,24 @@ namespace GEM.Menu
 
             if (key == Keys.Down)
             {
-                if (_parentMenu == null) return;
-                int i = 0;
-                do
-                {
-                    i++;
-                    int nextIndex = (_menuIndex + i) % _parentMenu.SubMenu.Count;
-                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
-                } while (!Fokus.Enabled || !Fokus.Visible); // skip to next entry if control is disabled
+                navigationRoll(1);
             }
             if (key == Keys.Up)
             {
-                if (_parentMenu == null) return;
-                int i = 0;
-                do
-                {
-                    i++;
-                    int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex - i) % _parentMenu.SubMenu.Count;
-                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
-                } while (!Fokus.Enabled || !Fokus.Visible);
+                navigationRoll(-1);
             }
             if (key == Keys.Right)
             {
-                if (SubMenu.Count == 0) return;
-                if (!Panel.Visible) Open(null, EventArgs.Empty);
-                int i = 0;
-                do
-                {
-                    Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
-                    i++;
-                    i %= SubMenu.Count;
-                } while (!Fokus.Enabled || !Fokus.Visible);
+                navigationRight();
             }
             if (key == Keys.Left || key == Keys.Escape)
             {
-                if (_parentMenu == null || _parentMenu._parentMenu == null) return;
-                Fokus = _parentMenu;
-                Fokus.Close(null, EventArgs.Empty);
+                navigationLeft();
             }
 
             if (key == Keys.Enter || key == Keys.X)
             {
-                if (Fokus.Enabled && Fokus.Visible)
-                {
-                    Fokus._keyboardRequest = State.Press;
-                }
+                navigationPress();
             }
         }
         public void NavigationHandlerDown(Buttons btn)
@@ -508,50 +481,24 @@ namespace GEM.Menu
 
             if (btn == Buttons.DPadDown)
             {
-                if (_parentMenu == null) return;
-                int i = 0;
-                do
-                {
-                    i++;
-                    int nextIndex = (_menuIndex + i) % _parentMenu.SubMenu.Count;
-                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
-                } while (!Fokus.Enabled || !Fokus.Visible); // skip to next entry if control is disabled
+                navigationRoll(1);
             }
             if (btn == Buttons.DPadUp)
             {
-                if (_parentMenu == null) return;
-                int i = 0;
-                do
-                {
-                    i++;
-                    int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex - i) % _parentMenu.SubMenu.Count;
-                    Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
-                } while (!Fokus.Enabled || !Fokus.Visible);
+                navigationRoll(-1);
             }
             if (btn == Buttons.DPadRight)
             {
-                if (SubMenu.Count == 0) return;
-                int i = 0;
-                do
-                {
-                    Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
-                    i++;
-                    i %= SubMenu.Count;
-                } while (!Fokus.Enabled || !Fokus.Visible);
+                navigationRight();
             }
             if (btn == Buttons.DPadLeft || btn == Buttons.B)
             {
-                if (_parentMenu == null || _parentMenu._parentMenu == null) return;
-                Fokus = _parentMenu;
-                Fokus.Close(null, EventArgs.Empty);
+                navigationLeft();
             }
 
             if (btn == Buttons.A || btn == Buttons.Start)
             {
-                if (Fokus.Enabled && Fokus.Visible)
-                {
-                    Fokus._gamepadRequest = State.Press;
-                }
+                navigationPress();
             }
         }
         public void NavigationHandlerUp(Keys key)
@@ -658,6 +605,42 @@ namespace GEM.Menu
             ForeColor[State.Hover] = foreground;
             ForeColor[State.Press] = foreground;
             ForeColor[State.Disabled] = foreground;
+        }
+        private void navigationRoll(int step = 1)
+        {
+            if (_parentMenu == null) return;
+            int i = 0;
+            do
+            {
+                i++;
+                int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex + step * i) % _parentMenu.SubMenu.Count;
+                Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
+            } while (!Fokus.Enabled || !Fokus.Visible); // skip to next entry if control is disabled
+        }
+        private void navigationRight()
+        {
+            if (SubMenu.Count == 0) return;
+            if (!Panel.Visible) Open(null, EventArgs.Empty);
+            int i = 0;
+            do
+            {
+                Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
+                i++;
+                i %= SubMenu.Count;
+            } while (!Fokus.Enabled || !Fokus.Visible);
+        }
+        private void navigationLeft()
+        {
+            if (_parentMenu == null || _parentMenu._parentMenu == null) return;
+            Fokus = _parentMenu;
+            Fokus.Close(null, EventArgs.Empty);
+        }
+        private void navigationPress()
+        {
+            if (Fokus.Enabled && Fokus.Visible)
+            {
+                Fokus._keyboardRequest = State.Press;
+            }
         }
         #endregion
     }

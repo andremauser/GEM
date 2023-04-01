@@ -499,7 +499,8 @@ namespace GEM.Emulation
             foreach (var file in Directory.EnumerateFiles("roms/"))
             {
                 int dotPos = file.LastIndexOf('.');
-                if (file.Substring(dotPos, file.Length - dotPos) == ".gb")
+                string fileExt = file.Substring(dotPos, file.Length - dotPos);
+                if (fileExt == ".gb" || fileExt == ".gbc")
                 {
                     i++;
                     _romList.Add(file);

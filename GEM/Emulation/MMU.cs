@@ -377,7 +377,6 @@ namespace GEM.Emulation
             get { return STAT[6]; }
             set { STAT[6] = value; }
         }
-        #endregion
 
         #endregion
 
@@ -531,7 +530,6 @@ namespace GEM.Emulation
                 return 0xFF;
             }
         }
-
         public void Write(ushort address, byte value)
         {
             // Boot ROM
