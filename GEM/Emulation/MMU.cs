@@ -276,7 +276,7 @@ namespace GEM.Emulation
 
         // NR13 (0xFF13)
         // NR14 (0xFF14)
-        public int CH1Wavelength
+        public int CH1Frequency
         {
             get
             {
@@ -385,7 +385,7 @@ namespace GEM.Emulation
 
         // NR23 (0xFF18)
         // NR24 (0xFF19)
-        public int CH2Wavelength
+        public int CH2Frequency
         {
             get
             {
