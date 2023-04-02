@@ -38,7 +38,13 @@ namespace GEM.Emulation
         static public Texture2D _Pixel;
         static public SpriteFont _Font;
 
-         BaseControl OnScreenButtons;
+        Color onscreenColor = new Color(0.1f, 0.1f, 0.1f);
+        Color menuColor = new Color(0.1f, 0.1f, 0.1f);
+
+        BaseControl OnScreenButtons;
+        BaseControl DebugInformations;
+        MenuButton _ch1;
+        MenuButton _ch2;
 
         MenuButton _menu;
         int _openStartIndex = 0;
@@ -122,11 +128,8 @@ namespace GEM.Emulation
             MenuButton temp;
             MenuButton btn;
 
-            Color onscreenColor =   new Color(0.1f, 0.1f, 0.1f);
-            Color menuColor =       new Color(0.1f, 0.1f, 0.1f);
-
             #region onscreen buttons
-            
+
             OnScreenButtons = new BaseControl(null);
             _controls.Add(OnScreenButtons);
 
@@ -243,6 +246,27 @@ namespace GEM.Emulation
             OnScreenButtons.Add(btn);
             #endregion
 
+            #region debug infos
+
+            DebugInformations = new BaseControl(null);
+            _controls.Add(DebugInformations);
+
+            _ch1 = new MenuButton(DebugInformations, null, "CH1", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch1.Left = 180;
+            _ch1.Top = 0;
+            _ch1.Image.ResizeToParent();
+            _ch1.SetButtonColors(Color.Transparent, onscreenColor);
+            DebugInformations.Add(_ch1);
+
+            _ch2 = new MenuButton(DebugInformations, null, "CH2", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch2.Left = 180;
+            _ch2.Top = 60;
+            _ch2.Image.ResizeToParent();
+            _ch2.SetButtonColors(Color.Transparent, onscreenColor);
+            DebugInformations.Add(_ch2);
+
+            #endregion
+
             #region window buttons
             // maximize window
             temp = new MenuButton(image: "max") { Width = 60, Height = 60 };
@@ -351,9 +375,8 @@ namespace GEM.Emulation
 
             _gameboy.UpdateFrame();
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
-            drawEmulator(viewport, gbScreen);
 
-            _spriteBatch.DrawString(_Font, _gameboy.IsCH1On.ToString(), new Vector2(180, 0), Color.Red);
+            drawEmulator(viewport, gbScreen);
 
             _spriteBatch.End();
         }
@@ -393,6 +416,11 @@ namespace GEM.Emulation
                 //drawBackground  (screenLeft + screenWidth + 20, screenTop + 286);
                 //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
             }
+
+            _ch1.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH1On);
+            _ch1.SetButtonColors(Color.Transparent, _gameboy.IsCH1On?Color.White:onscreenColor);
+            _ch2.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH2On);
+            _ch2.SetButtonColors(Color.Transparent, _gameboy.IsCH2On ? Color.White : onscreenColor);
 
             foreach (BaseControl control in _controls)
             {

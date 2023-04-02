@@ -20,6 +20,8 @@ namespace GEM.Emulation
         // property fields
         Register _nr12;
         Register _nr14;
+        Register _nr22;
+        Register _nr24;
         #endregion
 
         #region Constructors
@@ -101,6 +103,34 @@ namespace GEM.Emulation
                 if (CH1Trigger == 1) IsCH1On = true;
             }
         }
+
+        public Register NR21;   // 0xFF16   Sound CH2 length + duty cycle
+        public Register NR22    // 0xFF17   Sound CH2 volume + envelope
+        {
+            get
+            {
+                return _nr22;
+            }
+            set
+            {
+                _nr22 = value;
+                if ((_nr22 & 0b11111000) == 0) IsCH2On = false; // turn DAC off
+            }
+        }
+        public Register NR23;   // 0xFF18   Sound CH2 wavelength low
+        public Register NR24    // 0xFF19   Sound CH2 wavelength high + control
+        {
+            get
+            {
+                return _nr24;
+            }
+            set
+            {
+                _nr24 = value;
+                if (CH2Trigger == 1) IsCH2On = true;
+            }
+        }
+
         public Register NR30;   // 0xFF1A
         public Register NR31;   // 0xFF1B
         public Register NR32;   // 0xFF1C
@@ -275,7 +305,115 @@ namespace GEM.Emulation
             set { _nr14[7] = value; }
         }
 
+        // NR21 (0xFF16)
+        public int CH2LengthTimer
+        {
+            // initial value for length timer (0-63)
+            get
+            {
+                return  NR21[5] << 5 |
+                        NR21[4] << 4 |
+                        NR21[3] << 3 |
+                        NR21[2] << 2 |
+                        NR21[1] << 1 |
+                        NR21[0];
+            }
+            set
+            {
+                NR21[5] = (value >> 5) & 1;
+                NR21[4] = (value >> 4) & 1;
+                NR21[3] = (value >> 3) & 1;
+                NR21[2] = (value >> 2) & 1;
+                NR21[1] = (value >> 1) & 1;
+                NR21[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH2WaveDuty
+        {
+            // wave duty (0-3)
+            get
+            {
+                return NR21[7] << 1 | NR21[6];
+            }
+            set
+            {
+                NR21[7] = (value >> 1) & 1;
+                NR21[6] = (value >> 0) & 1;
+            }
+        }
 
+        // NR22 (0xFF17)
+        public int CH2EnvelopeTime
+        {
+            // envelope pace / step time (0-7)*(64Hz-tick)
+            get
+            {
+                return NR22[2] << 2 | NR22[1] << 1 | NR22[0];
+            }
+            set
+            {
+                _nr22[2] = (value >> 2) & 1;
+                _nr22[1] = (value >> 1) & 1;
+                _nr22[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH2EnvelopeDirection
+        {
+            // 0: volume decrease
+            // 1: volume increase
+            get { return NR22[3]; }
+            set { _nr22[3] = value; }
+        }
+        public int CH2Volume
+        {
+            // envelope initial volume
+            get
+            {
+                return NR22[7] << 3 |
+                       NR22[6] << 2 |
+                       NR22[5] << 1 |
+                       NR22[4];
+            }
+            set
+            {
+                _nr22[7] = (value >> 3) & 1;
+                _nr22[6] = (value >> 2) & 1;
+                _nr22[5] = (value >> 1) & 1;
+                _nr22[4] = (value >> 0) & 1;
+            }
+        }
+
+        // NR23 (0xFF18)
+        // NR24 (0xFF19)
+        public int CH2Wavelength
+        {
+            get
+            {
+                return NR24[2] << 10 |
+                       NR24[1] << 9 |
+                       NR24[0] << 8 |
+                       NR23;
+            }
+            set
+            {
+                _nr24[2] = (value >> 10) & 1;
+                _nr24[1] = (value >> 9) & 1;
+                _nr24[0] = (value >> 8) & 1;
+                 NR23 = (byte)(value & 0xFF);
+            }
+        }
+        public bool IsCH2LengthEnabled
+        {
+            get { return Convert.ToBoolean(NR24[6]); }
+            set { _nr24[6] = Convert.ToInt32(value); }
+        }
+        public int CH2Trigger
+        {
+            // 1: Restart channel
+            get { return NR24[7]; }
+            set { _nr24[7] = value; }
+        }
+        
         // NR50 (0xFF24)
         public int VolumeRight
         {
@@ -597,6 +735,11 @@ namespace GEM.Emulation
                 if (address == 0xFF13) return NR13;
                 if (address == 0xFF14) return NR14;
 
+                if (address == 0xFF16) return NR21;
+                if (address == 0xFF17) return NR22;
+                if (address == 0xFF18) return NR23;
+                if (address == 0xFF19) return NR24;
+
                 if (address == 0xFF1A) return NR30;
                 if (address == 0xFF1B) return NR31;
                 if (address == 0xFF1C) return NR32;
@@ -667,6 +810,11 @@ namespace GEM.Emulation
                 if (address == 0xFF12) NR12 = value;
                 if (address == 0xFF13) NR13 = value;
                 if (address == 0xFF14) NR14 = value;
+
+                if (address == 0xFF16) NR21 = value;
+                if (address == 0xFF17) NR22 = value;
+                if (address == 0xFF18) NR23 = value;
+                if (address == 0xFF19) NR24 = value;
 
                 if (address == 0xFF1A) NR30 = value;
                 if (address == 0xFF1B) NR31 = value;

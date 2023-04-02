@@ -64,6 +64,13 @@ namespace GEM.Emulation
                 return _mmu.IsCH1On;
             }
         }
+        public bool IsCH2On
+        {
+            get
+            {
+                return _mmu.IsCH2On;
+            }
+        }
         #endregion
 
         #region Methods
