@@ -11,8 +11,14 @@ namespace GEM.Emulation
     {
         #region Fields
         MMU _mmu;
-        int _cycleCounter = 0;
+        int _frameSequencerCounter = 0;
         int _frameSequencer = 0;
+        int _ch1CycleCounter = 0;
+        int _ch1DutyStep = 0;
+        int _ch1Amplitude;
+        int _ch2CycleCounter = 0;
+        int _ch2DutyStep = 0;
+        int _ch2Amplitude;
         Register[] _waveDutyTable;
         #endregion
 
@@ -21,10 +27,10 @@ namespace GEM.Emulation
         {
             _mmu = mmu;
             _waveDutyTable = new Register[] {
-                new Register(0b00000001),   // 12.5 %
-                new Register(0b00000011),   // 25 %
-                new Register(0b00001111),   // 50 %
-                new Register(0b11111100)    // 75 %
+                new Register(0b10000000),   // 12.5 %
+                new Register(0b11000000),   // 25 %
+                new Register(0b11110000),   // 50 %
+                new Register(0b00111111)    // 75 %
             };
         }
         #endregion
@@ -36,42 +42,78 @@ namespace GEM.Emulation
         #region Methods
         public void Update(int instructionCycles)
         {
-            _cycleCounter += instructionCycles;
+            updateFrameSequencer(instructionCycles);
 
-            if (_cycleCounter >= 8192) // 512 Hz
-            {
-                frameSequencerStep();
-                _cycleCounter -= 8192;
-            }
+            updatePulseAmplitudes(instructionCycles);
+            
 
         }
 
-        private void frameSequencerStep()
+        private void updateFrameSequencer(int instructionCycles)
         {
-            _frameSequencer++;
-            _frameSequencer %= 7;
+            // clock sweep, envelope and length
+            _frameSequencerCounter += instructionCycles;
 
-            switch (_frameSequencer)
+            if (_frameSequencerCounter >= 8192) // 512 Hz
             {
-                case 0:
-                    lengthClock();
-                    break;
-                case 2:
-                    lengthClock();
-                    sweepClock();
-                    break;
-                case 4:
-                    lengthClock();
-                    break;
-                case 6:
-                    lengthClock();
-                    sweepClock();
-                    break;
-                case 7:
-                    envelopeClock();
-                    break;
-                default:
-                    break;
+                _frameSequencerCounter -= 8192;
+                _frameSequencer++;
+                _frameSequencer %= 7;
+
+                switch (_frameSequencer)
+                {
+                    case 0:
+                        lengthClock();
+                        break;
+                    case 2:
+                        lengthClock();
+                        sweepClock();
+                        break;
+                    case 4:
+                        lengthClock();
+                        break;
+                    case 6:
+                        lengthClock();
+                        sweepClock();
+                        break;
+                    case 7:
+                        envelopeClock();
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+        private void updatePulseAmplitudes(int instructionCycles)
+        {
+            // CH1
+            _ch1CycleCounter += instructionCycles;
+
+            int ch1StepCycles = (2048 - _mmu.CH1Frequency) * 4;
+
+            if (_ch1CycleCounter >= ch1StepCycles)
+            {
+                _ch1CycleCounter -= ch1StepCycles;
+
+                _ch1DutyStep++;
+                _ch1DutyStep %= 7;
+
+                _ch1Amplitude = _waveDutyTable[_mmu.CH1WaveDuty][_ch1DutyStep]; // amplitude is 0 or 1
+            }
+
+            // CH2
+            _ch2CycleCounter += instructionCycles;
+
+            int ch2StepCycles = (2048 - _mmu.CH2Frequency) * 4;
+
+            if (_ch2CycleCounter >= ch2StepCycles)
+            {
+                _ch2CycleCounter -= ch2StepCycles;
+
+                _ch2DutyStep++;
+                _ch2DutyStep %= 7;
+
+                _ch2Amplitude = _waveDutyTable[_mmu.CH2WaveDuty][_ch2DutyStep];  // amplitude is 0 or 1
             }
         }
 

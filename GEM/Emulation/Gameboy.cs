@@ -168,7 +168,11 @@ namespace GEM.Emulation
                     //  and
                     // EXECUTE //  
                     _cpu.InstructionSet[opCode]();              // PC is pushed forward by instruction
-                    if (_cpu.PC == 0x100) _mmu.IsBooting = false;
+                    if (_cpu.PC == 0x100)
+                    {
+                        _mmu.IsBooting = false;
+                        _cpu.A = 0x11; // unlock CGB functions
+                    }
 
                     // UPDATE //
                     _cycleCount += _cpu.InstructionCycles;
