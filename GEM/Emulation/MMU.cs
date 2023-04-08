@@ -22,6 +22,8 @@ namespace GEM.Emulation
         Register _nr14;
         Register _nr22;
         Register _nr24;
+        public EventHandler CH1TriggerEvent;
+        public EventHandler CH2TriggerEvent;
         #endregion
 
         #region Constructors
@@ -100,7 +102,12 @@ namespace GEM.Emulation
             set
             {
                 _nr14 = value;
-                if (CH1Trigger == 1) IsCH1On = true;
+                if (CH1Trigger == 1)
+                { 
+                    // trigger channel
+                    IsCH1On = true;
+                    CH1TriggerEvent?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 
@@ -127,7 +134,9 @@ namespace GEM.Emulation
             set
             {
                 _nr24 = value;
-                if (CH2Trigger == 1) IsCH2On = true;
+                // trigger channel
+                IsCH2On = true;
+                CH2TriggerEvent?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -159,6 +168,8 @@ namespace GEM.Emulation
         #endregion
 
         #region Bit Properties
+        // attention: Don't put logic in here! Bit properties only bypass to IO registers above
+
         // NR10 (0xFF10)
         public int CH1SweepShifts
         {
@@ -197,7 +208,7 @@ namespace GEM.Emulation
         }
 
         // NR11 (0xFF11)
-        public int CH1LengthTimer
+        public int CH1LengthData
         {
             // initial value for length timer (0-63)
             get
@@ -306,7 +317,7 @@ namespace GEM.Emulation
         }
 
         // NR21 (0xFF16)
-        public int CH2LengthTimer
+        public int CH2LengthData
         {
             // initial value for length timer (0-63)
             get

@@ -19,6 +19,9 @@ namespace GEM
         int _fpsFrameCounter;
         int _fps;
         static public ContentManager _Content;
+        static public int CPU_FREQ = 4194304;
+        static public int FRAME_CYCLES = 70224;
+        static public double FRAME_RATE = 1d * CPU_FREQ / FRAME_CYCLES;
         #endregion
 
         #region Constructors
@@ -31,7 +34,7 @@ namespace GEM
             IsMouseVisible = true; 
             Window.AllowUserResizing = false;
             IsFixedTimeStep = true;
-            TargetElapsedTime = System.TimeSpan.FromSeconds(70224d / 4194304); // set MonoGame frame rate to original DMG
+            TargetElapsedTime = System.TimeSpan.FromSeconds(1d / FRAME_RATE); // set MonoGame frame rate to original DMG
         }
         #endregion
 
