@@ -19,13 +19,17 @@ namespace GEM.Emulation
         int _ch1DutyIndex;
         int _ch1Amplitude;
         int _ch1SweepTimer;
+        int _ch1ShadowFreq;
+        bool _ch1SweepEnabled;
         int _ch1LengthTimer;
+        int _ch1EnvelopeTimer;
         int _ch1CurrentVolume;
         // ch 2
         int _ch2FreqTimer;
         int _ch2DutyIndex;
         int _ch2Amplitude;
         int _ch2LengthTimer;
+        int _ch2EnvelopeTimer;
         int _ch2CurrentVolume;
 
         Register[] _waveDutyTable;
@@ -40,7 +44,8 @@ namespace GEM.Emulation
         int _samplesPerBuffer;
         int _bufferSize;
         byte[] _buffer;
-        int _bufferIndex;
+        int _bufferIndex; 
+        float _emulatorFrequencyAdjust;
         #endregion
 
         #region Constructors
@@ -62,6 +67,7 @@ namespace GEM.Emulation
             _sampleCycles = 1f * Game1.CPU_FREQ / _sampleRate; // clock cycles for getting samples (~87)
             _bufferSize = _samplesPerBuffer * 2 * 2; // 2 = stereo, 2 = 2 byte per sample
             _buffer = new byte[_bufferSize];
+            _emulatorFrequencyAdjust = 1f; // manually adjust frequency / TODO: change via settings
 
             // subscribe trigger events
             _mmu.CH1TriggerEvent += ch1TriggerHandler;
@@ -96,7 +102,7 @@ namespace GEM.Emulation
             {
                 _frameSequencerTimer -= 8192;
                 _frameSequencer++;
-                _frameSequencer %= 7;
+                _frameSequencer %= 8;
 
                 switch (_frameSequencer)
                 {
@@ -127,7 +133,7 @@ namespace GEM.Emulation
             // channel 1
             _ch1FreqTimer += instructionCycles;
 
-            int ch1FreqCycles = (2048 - _mmu.CH1Frequency) * 4;
+            int ch1FreqCycles = (int)((2048 - _mmu.CH1Frequency) * 4 / _emulatorFrequencyAdjust); 
 
             if (_ch1FreqTimer >= ch1FreqCycles)
             {
@@ -142,7 +148,7 @@ namespace GEM.Emulation
             // channel 2
             _ch2FreqTimer += instructionCycles;
 
-            int ch2FreqCycles = (2048 - _mmu.CH2Frequency) * 4;
+            int ch2FreqCycles = (int)((2048 - _mmu.CH2Frequency) * 4 / _emulatorFrequencyAdjust);
 
             if (_ch2FreqTimer >= ch2FreqCycles)
             {
@@ -176,12 +182,91 @@ namespace GEM.Emulation
             }
         }
         private void sweepClock()   // 128 Hz
-        {            
-
+        {
+            // TODO: check sweep algorithm
+            if (_ch1SweepTimer > 0)
+            {
+                _ch1SweepTimer--;
+                if (_ch1SweepTimer == 0)
+                {
+                    _ch1SweepTimer = _mmu.CH1SweepTime;
+                    if (_ch1SweepTimer == 0) _ch1SweepTimer = 8;
+                    // frequency calculation
+                    if (_ch1SweepEnabled && _mmu.CH1SweepTime > 0)
+                    {
+                        int newFreq = calculateFreq();
+                        if (newFreq <= 2047 && _mmu.CH1SweepShifts > 0)
+                        {
+                            _mmu.CH1Frequency = newFreq;
+                            _ch1ShadowFreq = newFreq;
+                            // overflow check
+                            calculateFreq();
+                        }
+                    }
+                }
+            }
         }
         private void envelopeClock() // 64 Hz
         {
+            // channel 1
+            if (_mmu.CH1EnvelopeTime != 0)
+            {
+                if (_ch1EnvelopeTimer > 0)
+                {
+                    _ch1EnvelopeTimer--;
+                    if (_ch1EnvelopeTimer == 0)
+                    {
+                        _ch1EnvelopeTimer = _mmu.CH1EnvelopeTime;
+                        switch (_mmu.CH1EnvelopeDirection)
+                        {
+                            case 0: // decrease
+                                if (_ch1CurrentVolume > 0)
+                                {
+                                    _ch1CurrentVolume--;
+                                }
+                                break;
+                            case 1: // increase
+                                if (_ch1CurrentVolume < 15)
+                                {
+                                    _ch1CurrentVolume++;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
 
+            // channel 2
+            if (_mmu.CH2EnvelopeTime != 0)
+            {
+                if (_ch2EnvelopeTimer > 0)
+                {
+                    _ch2EnvelopeTimer--;
+                    if (_ch2EnvelopeTimer == 0)
+                    {
+                        _ch2EnvelopeTimer = _mmu.CH2EnvelopeTime;
+                        switch (_mmu.CH2EnvelopeDirection)
+                        {
+                            case 0: // decrease
+                                if (_ch2CurrentVolume > 0)
+                                {
+                                    _ch2CurrentVolume--;
+                                }
+                                break;
+                            case 1: // increase
+                                if (_ch2CurrentVolume < 15)
+                                {
+                                    _ch2CurrentVolume++;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
         }
 
         private void updateSampler(int instructionCycles)
@@ -270,6 +355,30 @@ namespace GEM.Emulation
             }
         }
 
+        private int calculateFreq()
+        {
+            // TODO: check sweep algorithm
+            if (_mmu.CH1SweepShifts == 0) return 0;
+
+            // calculate new sweep frequency
+            int newFreq = _ch1ShadowFreq >> _mmu.CH1SweepShifts;
+            switch (_mmu.CH1SweepDirection)
+            {
+                case 0: // increase
+                    newFreq = _ch1ShadowFreq + newFreq;
+                    break;
+                case 1: // decrease
+                    newFreq = _ch1ShadowFreq - newFreq;
+                    break;
+                default:
+                    break;
+            }
+            if (newFreq > 2047)
+            {
+                _mmu.IsCH1On = false; // disable channel
+            }
+            return newFreq;
+        }
 
         private void ch1TriggerHandler(Object sender, EventArgs e)
         {
@@ -277,6 +386,13 @@ namespace GEM.Emulation
             _ch1LengthTimer = 64 - _mmu.CH1LengthData;
             // initial volume
             _ch1CurrentVolume = _mmu.CH1VolumeStart;
+            _ch1EnvelopeTimer = _mmu.CH1EnvelopeTime;
+            // sweep
+            _ch1ShadowFreq = _mmu.CH1Frequency;
+            _ch1SweepTimer = _mmu.CH1SweepTime;
+            if (_ch1SweepTimer == 0) _ch1SweepTimer = 8;
+            _ch1SweepEnabled = _mmu.CH1SweepTime != 0 || _mmu.CH1SweepShifts != 0;
+            calculateFreq();
         }
         private void ch2TriggerHandler(Object sender, EventArgs e)
         {
@@ -284,6 +400,7 @@ namespace GEM.Emulation
             _ch2LengthTimer = 64 - _mmu.CH2LengthData;
             // initial volume
             _ch2CurrentVolume = _mmu.CH2VolumeStart;
+            _ch2EnvelopeTimer = _mmu.CH2EnvelopeTime;
         }
 
         #endregion

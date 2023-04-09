@@ -171,7 +171,7 @@ namespace GEM.Emulation
                     if (_cpu.PC == 0x100)
                     {
                         _mmu.IsBooting = false;
-                        _cpu.A = 0x11; // unlock CGB functions
+                        //_cpu.A = 0x11; // unlock CGB functions
                     }
 
                     // UPDATE //
