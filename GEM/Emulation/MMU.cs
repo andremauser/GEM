@@ -266,7 +266,7 @@ namespace GEM.Emulation
             get { return NR12[3]; }
             set { _nr12[3] = value; }
         }
-        public int CH1Volume
+        public int CH1VolumeStart
         {
             // envelope initial volume
             get
@@ -375,7 +375,7 @@ namespace GEM.Emulation
             get { return NR22[3]; }
             set { _nr22[3] = value; }
         }
-        public int CH2Volume
+        public int CH2VolumeStart
         {
             // envelope initial volume
             get

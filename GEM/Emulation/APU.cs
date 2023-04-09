@@ -12,25 +12,28 @@ namespace GEM.Emulation
         #region Fields
         MMU _mmu;
         // frame sequencer
-        int _frameSequencerTimer = 0;
-        int _frameSequencer = 0;
+        int _frameSequencerTimer;
+        int _frameSequencer;
         // ch 1
         int _ch1FreqTimer;
         int _ch1DutyIndex;
         int _ch1Amplitude;
         int _ch1SweepTimer;
         int _ch1LengthTimer;
+        int _ch1CurrentVolume;
         // ch 2
         int _ch2FreqTimer;
         int _ch2DutyIndex;
         int _ch2Amplitude;
         int _ch2LengthTimer;
+        int _ch2CurrentVolume;
 
         Register[] _waveDutyTable;
 
         // sound effect
-        const int SAMPLE_RATE = 48000;
-        const int FRAME_LATENCY = 1;
+        int _sampleRate;
+        int _bufferCount;
+        float _sampleCycles;
 
         float _sampleTimer;
         DynamicSoundEffectInstance _soundEffectInstance;
@@ -50,10 +53,17 @@ namespace GEM.Emulation
                 new Register(0b11110000),   // 50 %
                 new Register(0b00111111)    // 75 %
             };
-            _soundEffectInstance = new DynamicSoundEffectInstance(SAMPLE_RATE, AudioChannels.Stereo);
-            _samplesPerBuffer = (int)(SAMPLE_RATE / Game1.FRAME_RATE); // buffer is 1 frame
+
+            // init audio
+            _sampleRate = 48000;
+            _soundEffectInstance = new DynamicSoundEffectInstance(_sampleRate, AudioChannels.Stereo);
+            _samplesPerBuffer = (int)(_sampleRate / Game1.FRAME_RATE); // buffer size is 1 frame
+            _bufferCount = 1; // target buffer count = latency
+            _sampleCycles = 1f * Game1.CPU_FREQ / _sampleRate; // clock cycles for getting samples (~87)
             _bufferSize = _samplesPerBuffer * 2 * 2; // 2 = stereo, 2 = 2 byte per sample
             _buffer = new byte[_bufferSize];
+
+            // subscribe trigger events
             _mmu.CH1TriggerEvent += ch1TriggerHandler;
             _mmu.CH2TriggerEvent += ch2TriggerHandler;
         }
@@ -114,7 +124,7 @@ namespace GEM.Emulation
         }
         private void updatePulseAmplitudes(int instructionCycles)
         {
-            // CH1
+            // channel 1
             _ch1FreqTimer += instructionCycles;
 
             int ch1FreqCycles = (2048 - _mmu.CH1Frequency) * 4;
@@ -129,7 +139,7 @@ namespace GEM.Emulation
                 _ch1Amplitude = _waveDutyTable[_mmu.CH1WaveDuty][_ch1DutyIndex]; // amplitude is 0 or 1
             }
 
-            // CH2
+            // channel 2
             _ch2FreqTimer += instructionCycles;
 
             int ch2FreqCycles = (2048 - _mmu.CH2Frequency) * 4;
@@ -165,30 +175,10 @@ namespace GEM.Emulation
                 }
             }
         }
-
-        private void ch1TriggerHandler(Object sender, EventArgs e)
-        {
-            // initiate length timer
-            _ch1LengthTimer = 64 - _mmu.CH1LengthData;
-        }
-        private void ch2TriggerHandler(Object sender, EventArgs e)
-        {
-            // initiate length timer
-            _ch2LengthTimer = 64 - _mmu.CH2LengthData;
-        }
-
         private void sweepClock()   // 128 Hz
-        {
-            _ch1SweepTimer++;
-
-            if (_ch1SweepTimer >= _mmu.CH1SweepTime)
-            {
-                _ch1SweepTimer = 0;
-            }
-            
+        {            
 
         }
-
         private void envelopeClock() // 64 Hz
         {
 
@@ -196,43 +186,104 @@ namespace GEM.Emulation
 
         private void updateSampler(int instructionCycles)
         {
+            // get sample every ~87 clocks
             _sampleTimer += instructionCycles;
-            float sampleCycles = 1f * Game1.CPU_FREQ / SAMPLE_RATE;
-
-            if (_sampleTimer >= sampleCycles)
+            if (_sampleTimer >= _sampleCycles)
             {
-                _sampleTimer -= sampleCycles;
+                _sampleTimer -= _sampleCycles;
 
-                // fill buffer (quick and dirty)
-                if ((_bufferIndex + 4) >= _bufferSize)
+                // get channel amplitudes
+                float ch1AnalogOut = 0f;
+                float ch2AnalogOut = 0f;
+                if (_mmu.IsCH1On)
+                {
+                    int ch1DigitalOut =  _ch1Amplitude;             // range: 0 ... 1
+                    ch1DigitalOut *= _ch1CurrentVolume;             // range: 0 ... 15
+                    ch1AnalogOut = ch1DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+                if (_mmu.IsCH2On)
+                {
+                    int ch2DigitalOut =  _ch2Amplitude;             // range: 0 ... 1
+                    ch2DigitalOut *= _ch2CurrentVolume;             // range: 0 ... 15
+                    ch2AnalogOut = ch2DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+
+                // mixer left
+                int leftCount = 0;
+                float leftAnalog = 0;
+                if (_mmu.IsCH1Left)
+                {
+                    leftAnalog += ch1AnalogOut;
+                    leftCount++;
+                }
+                if (_mmu.IsCH2Left)
+                {
+                    leftAnalog += ch2AnalogOut;
+                    leftCount++;
+                }
+                leftAnalog /= leftCount;
+
+                // mixer right
+                int rightCount = 0;
+                float rightAnalog = 0;
+                if (_mmu.IsCH1Right)
+                {
+                    rightAnalog += ch1AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH2Right)
+                {
+                    rightAnalog += ch2AnalogOut;
+                    rightCount++;
+                }
+                rightAnalog /= rightCount;
+
+                // amplifier
+                leftAnalog *= (_mmu.VolumeLeft + 1) / 8f;
+                rightAnalog *= (_mmu.VolumeRight + 1) / 8f;
+
+                // emulator volume
+                float emulatorVolume = 0.1f; // TODO: change via settings
+                leftAnalog *= emulatorVolume;
+                rightAnalog*= emulatorVolume;
+
+                // output
+                short shortLeft = (short)(leftAnalog >= 0f ? leftAnalog * short.MaxValue : -1f * leftAnalog * short.MinValue);
+                short shortRight = (short)(rightAnalog >= 0f ? rightAnalog * short.MaxValue : -1f * rightAnalog * short.MinValue);
+
+                // fill buffer
+                _buffer[_bufferIndex++] = (byte)shortLeft;
+                _buffer[_bufferIndex++] = (byte)(shortLeft >> 8);
+                _buffer[_bufferIndex++] = (byte)shortRight;
+                _buffer[_bufferIndex++] = (byte)(shortRight >> 8);
+
+                // submit buffer and play
+                if (_bufferIndex >= _bufferSize)
                 {
                     _soundEffectInstance.SubmitBuffer(_buffer);
-                    if (_soundEffectInstance.PendingBufferCount >= FRAME_LATENCY)
+                    if (_soundEffectInstance.PendingBufferCount >= _bufferCount)
                     {
                         _soundEffectInstance.Play();
                     }
                     _bufferIndex = 0;
                 }
-                int ch1 = 0;
-                int ch2 = 0;
-                if (_mmu.IsCH1On)
-                {
-                    ch1 = _ch1Amplitude; // range:  0 ... 1 TODO: Mixer etc..
-                }
-                if (_mmu.IsCH2On)
-                {
-                    ch2 = _ch2Amplitude; // range:  0 ... 1 TODO: Mixer etc..
-                }
-                float sample = (ch1 + ch2) / 2f;
-                float floatSample = 2f * sample - 1;     // range: -1 ... 1
-                short shortSample = (short)(floatSample >= 0f ? floatSample * short.MaxValue : -1f * floatSample * short.MinValue);
-
-                _buffer[_bufferIndex + 0] = (byte)shortSample;
-                _buffer[_bufferIndex + 1] = (byte)(shortSample >> 8);
-                _buffer[_bufferIndex + 2] = (byte)shortSample;
-                _buffer[_bufferIndex + 3] = (byte)(shortSample >> 8);
-                _bufferIndex += 4;
             }
+        }
+
+
+        private void ch1TriggerHandler(Object sender, EventArgs e)
+        {
+            // initiate length timer
+            _ch1LengthTimer = 64 - _mmu.CH1LengthData;
+            // initial volume
+            _ch1CurrentVolume = _mmu.CH1VolumeStart;
+        }
+        private void ch2TriggerHandler(Object sender, EventArgs e)
+        {
+            // initiate length timer
+            _ch2LengthTimer = 64 - _mmu.CH2LengthData;
+            // initial volume
+            _ch2CurrentVolume = _mmu.CH2VolumeStart;
         }
 
         #endregion
