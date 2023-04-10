@@ -71,6 +71,20 @@ namespace GEM.Emulation
                 return _mmu.IsCH2On;
             }
         }
+        public bool IsCH3On
+        {
+            get
+            {
+                return _mmu.IsCH3On;
+            }
+        }
+        public bool IsCH4On
+        {
+            get
+            {
+                return _mmu.IsCH4On;
+            }
+        }
         #endregion
 
         #region Methods
@@ -122,6 +136,11 @@ namespace GEM.Emulation
             PauseToggle(this, EventArgs.Empty);
             StopAfterFrame = false;
             StopAfterStep = true;
+        }
+
+        public void SetVolume(float volume)
+        {
+            _apu.MasterVolume = volume;
         }
 
         public Texture2D GetScreen(Color[] palette)

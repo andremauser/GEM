@@ -660,6 +660,10 @@ namespace GEM.Emulation
             WY = 0;
             WX = 0;
             IE = 0;
+            IsCH1On = false;
+            IsCH2On = false;
+            IsCH3On = false;
+            IsCH4On = false;
         }
 
         public void UpdateTimers(int cycles)

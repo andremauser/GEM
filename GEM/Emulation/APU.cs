@@ -44,8 +44,9 @@ namespace GEM.Emulation
         int _samplesPerBuffer;
         int _bufferSize;
         byte[] _buffer;
-        int _bufferIndex; 
-        float _emulatorFrequencyAdjust;
+        int _bufferIndex;
+
+        public float MasterVolume;
         #endregion
 
         #region Constructors
@@ -67,7 +68,6 @@ namespace GEM.Emulation
             _sampleCycles = 1f * Game1.CPU_FREQ / _sampleRate; // clock cycles for getting samples (~87)
             _bufferSize = _samplesPerBuffer * 2 * 2; // 2 = stereo, 2 = 2 byte per sample
             _buffer = new byte[_bufferSize];
-            _emulatorFrequencyAdjust = 1f; // manually adjust frequency / TODO: change via settings
 
             // subscribe trigger events
             _mmu.CH1TriggerEvent += ch1TriggerHandler;
@@ -133,7 +133,7 @@ namespace GEM.Emulation
             // channel 1
             _ch1FreqTimer += instructionCycles;
 
-            int ch1FreqCycles = (int)((2048 - _mmu.CH1Frequency) * 4 / _emulatorFrequencyAdjust); 
+            int ch1FreqCycles = (2048 - _mmu.CH1Frequency) * 4; 
 
             if (_ch1FreqTimer >= ch1FreqCycles)
             {
@@ -148,7 +148,7 @@ namespace GEM.Emulation
             // channel 2
             _ch2FreqTimer += instructionCycles;
 
-            int ch2FreqCycles = (int)((2048 - _mmu.CH2Frequency) * 4 / _emulatorFrequencyAdjust);
+            int ch2FreqCycles = (2048 - _mmu.CH2Frequency) * 4;
 
             if (_ch2FreqTimer >= ch2FreqCycles)
             {
@@ -328,9 +328,8 @@ namespace GEM.Emulation
                 rightAnalog *= (_mmu.VolumeRight + 1) / 8f;
 
                 // emulator volume
-                float emulatorVolume = 0.1f; // TODO: change via settings
-                leftAnalog *= emulatorVolume;
-                rightAnalog*= emulatorVolume;
+                leftAnalog *= MasterVolume;
+                rightAnalog*= MasterVolume;
 
                 // output
                 short shortLeft = (short)(leftAnalog >= 0f ? leftAnalog * short.MaxValue : -1f * leftAnalog * short.MinValue);

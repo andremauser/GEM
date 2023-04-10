@@ -45,10 +45,15 @@ namespace GEM.Emulation
         BaseControl DebugInformations;
         MenuButton _ch1;
         MenuButton _ch2;
+        MenuButton _ch3;
+        MenuButton _ch4;
 
         MenuButton _menu;
         int _openStartIndex = 0;
         const int OPEN_ENTRIES = 12;
+
+        float[] _volumeList;
+        int _volumeIndex;
 
         #endregion
 
@@ -58,6 +63,7 @@ namespace GEM.Emulation
             _graphicsDevice = graphicsDevice;
             DebugMode = 0;
             _controls = new List<BaseControl>();
+            _volumeList = new float[] { 0f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
         }
         #endregion
 
@@ -72,6 +78,19 @@ namespace GEM.Emulation
                     return title;
                 }
                 return "(N/A)";
+            }
+        }
+        public int VolumeIndex 
+        { 
+            get
+            {
+                return _volumeIndex;
+            }
+            set
+            {
+                _volumeIndex = Math.Clamp(value, 0, _volumeList.Length-1);
+                // update volume
+                _gameboy.SetVolume(_volumeList[_volumeIndex]);
             }
         }
         #endregion
@@ -124,6 +143,7 @@ namespace GEM.Emulation
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
             updateRomList(null, EventArgs.Empty); // initial call to rom search - updated by click on "open rom"
+            VolumeIndex = 1;
 
             MenuButton temp;
             MenuButton btn;
@@ -265,6 +285,19 @@ namespace GEM.Emulation
             _ch2.SetButtonColors(Color.Transparent, onscreenColor);
             DebugInformations.Add(_ch2);
 
+            _ch3 = new MenuButton(DebugInformations, null, "CH3", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch3.Left = 180;
+            _ch3.Top = 120;
+            _ch3.Image.ResizeToParent();
+            _ch3.SetButtonColors(Color.Transparent, onscreenColor);
+            DebugInformations.Add(_ch3);
+
+            _ch4 = new MenuButton(DebugInformations, null, "CH4", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch4.Left = 180;
+            _ch4.Top = 180;
+            _ch4.Image.ResizeToParent();
+            _ch4.SetButtonColors(Color.Transparent, onscreenColor);
+            DebugInformations.Add(_ch4);
             #endregion
 
             #region window buttons
@@ -339,6 +372,10 @@ namespace GEM.Emulation
                 temp.ButtonData = i; // set button data to color index
                 temp.OnClick += setColorIndex;
             }
+            _menu["set"].AddClickMenu("volume");
+            _menu["set"]["volume"].AddClickMenu("vol +").OnClick += (o, e) => { VolumeIndex++; };
+            _menu["set"]["volume"].AddClickMenu("vol -").OnClick += (o, e) => { VolumeIndex--; };
+            _menu["set"]["volume"].AddClickMenu("mute").OnClick += (o, e) => { VolumeIndex = 0; };
             _menu["set"].AddClickMenu("screen buttons").OnClick += (o, e) => { OnScreenButtons.Visible = !OnScreenButtons.Visible; };
             _menu["set"].AddClickMenu("fullscreen").OnClick += toggleFullScreen;
             // quit
@@ -411,7 +448,6 @@ namespace GEM.Emulation
                         drawMouseMarker(pixelSize, screenLeft, screenTop);
                     }
                 }
-
                 //drawWindow      (screenLeft + screenWidth + 20, screenTop);
                 //drawBackground  (screenLeft + screenWidth + 20, screenTop + 286);
                 //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
@@ -421,6 +457,12 @@ namespace GEM.Emulation
             _ch1.SetButtonColors(Color.Transparent, _gameboy.IsCH1On?Color.White:onscreenColor);
             _ch2.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH2On);
             _ch2.SetButtonColors(Color.Transparent, _gameboy.IsCH2On ? Color.White : onscreenColor);
+            _ch3.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH3On);
+            _ch3.SetButtonColors(Color.Transparent, _gameboy.IsCH3On ? Color.White : onscreenColor);
+            _ch4.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH4On);
+            _ch4.SetButtonColors(Color.Transparent, _gameboy.IsCH4On ? Color.White : onscreenColor);
+
+            _menu["set"]["volume"].Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%");
 
             foreach (BaseControl control in _controls)
             {
