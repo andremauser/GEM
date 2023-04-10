@@ -36,6 +36,12 @@ namespace GEM.Emulation
         int _ch3LengthTimer;
         int _ch3SampleIndex;
         int _ch3Amplitude;
+        // ch 4
+        int _ch4FreqTimer;
+        int _ch4LengthTimer;
+        int _ch4Amplitude;
+        int _ch4EnvelopeTimer;
+        int _ch4CurrentVolume;
 
         Register[] _waveDutyTable;
 
@@ -153,32 +159,36 @@ namespace GEM.Emulation
 
             // channel 2
             _ch2FreqTimer += instructionCycles;
-
             int ch2FreqCycles = (2048 - _mmu.CH2Frequency) * 4;
-
             if (_ch2FreqTimer >= ch2FreqCycles)
             {
                 _ch2FreqTimer -= ch2FreqCycles;
-
                 _ch2DutyIndex++;
                 _ch2DutyIndex %= 8;
-
                 _ch2Amplitude = _waveDutyTable[_mmu.CH2WaveDuty][_ch2DutyIndex];  // amplitude is 0 or 1
             }
 
             // channel 3
             _ch3FreqTimer += instructionCycles;
-
             int ch3FreqCycles = (2048 - _mmu.CH3Frequency) * 2;
-
             if (_ch3FreqTimer >= ch3FreqCycles)
             {
                 _ch3FreqTimer -= ch3FreqCycles;
-
                 _ch3SampleIndex++;
                 _ch3SampleIndex %= 32;
-
                 _ch3Amplitude = _mmu.GetChannel3WaveRamValue(_ch3SampleIndex);  // amplitude is 0 ... 15
+            }
+
+            // channel 4
+            _ch4FreqTimer += instructionCycles;
+            int s = _mmu.CH4ClockShift;
+            float r = _mmu.CH4ClockDivider;
+            if (r == 0) r = 0.5f;
+            int ch4FreqCycles = -1;//TODO: insert calculation here!
+            if (_ch4FreqTimer >= ch4FreqCycles)
+            {
+                _ch4FreqTimer -= ch4FreqCycles;
+                _ch4Amplitude = 1;
             }
         }
 
@@ -208,6 +218,15 @@ namespace GEM.Emulation
                 if (_ch3LengthTimer == 0)
                 {
                     _mmu.IsCH3On = false;
+                }
+            }
+
+            if (_mmu.IsCH4LengthEnabled)
+            {
+                _ch4LengthTimer--;
+                if (_ch4LengthTimer == 0)
+                {
+                    _mmu.IsCH4On = false;
                 }
             }
         }
@@ -297,6 +316,37 @@ namespace GEM.Emulation
                     }
                 }
             }
+
+            // channel 4
+            if (_mmu.CH4EnvelopeTime != 0)
+            {
+                if (_ch4EnvelopeTimer > 0)
+                {
+                    _ch4EnvelopeTimer--;
+                    if (_ch4EnvelopeTimer == 0)
+                    {
+                        _ch4EnvelopeTimer = _mmu.CH4EnvelopeTime;
+                        switch (_mmu.CH4EnvelopeDirection)
+                        {
+                            case 0: // decrease
+                                if (_ch4CurrentVolume > 0)
+                                {
+                                    _ch4CurrentVolume--;
+                                }
+                                break;
+                            case 1: // increase
+                                if (_ch4CurrentVolume < 15)
+                                {
+                                    _ch4CurrentVolume++;
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                }
+            }
+
         }
 
         private void updateSampler(int instructionCycles)
@@ -345,6 +395,14 @@ namespace GEM.Emulation
                     ch3DigitalOut = (int)(ch3DigitalOut * volumeAdjust);
                     ch3AnalogOut = ch3DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
                 }
+                // channel 4
+                float ch4AnalogOut = 0f;
+                if (_mmu.IsCH4On)
+                {
+                    int ch4DigitalOut = _ch4Amplitude;              // range: 0 ... 1
+                    ch4DigitalOut *= _ch4CurrentVolume;             // range: 0 ... 15
+                    ch4AnalogOut = ch4DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
 
                 // mixer left
                 int leftCount = 0;
@@ -362,6 +420,11 @@ namespace GEM.Emulation
                 if (_mmu.IsCH3Left)
                 {
                     leftAnalog += ch3AnalogOut;
+                    leftCount++;
+                }
+                if (_mmu.IsCH4Left)
+                {
+                    leftAnalog += ch4AnalogOut;
                     leftCount++;
                 }
                 leftAnalog /= leftCount;
@@ -382,6 +445,11 @@ namespace GEM.Emulation
                 if (_mmu.IsCH3Right)
                 {
                     rightAnalog += ch3AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH4Right)
+                {
+                    rightAnalog += ch4AnalogOut;
                     rightCount++;
                 }
                 rightAnalog /= rightCount;
@@ -471,7 +539,11 @@ namespace GEM.Emulation
         }
         private void ch4TriggerHandler(Object sender, EventArgs e)
         {
-
+            // initiate length timer
+            _ch4LengthTimer = 64 - _mmu.CH4LengthData;
+            // initial volume
+            _ch4CurrentVolume = _mmu.CH4VolumeStart;
+            _ch4EnvelopeTimer = _mmu.CH4EnvelopeTime;
         }
 
         #endregion

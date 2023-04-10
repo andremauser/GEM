@@ -24,6 +24,8 @@ namespace GEM.Emulation
         Register _nr24;
         Register _nr30;
         Register _nr34;
+        Register _nr42;
+        Register _nr44;
         public EventHandler CH1TriggerEvent;
         public EventHandler CH2TriggerEvent;
         public EventHandler CH3TriggerEvent;
@@ -175,6 +177,37 @@ namespace GEM.Emulation
                 {
                     IsCH3On = true;
                     CH3TriggerEvent?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        public Register NR41;   // 0xFF20   Sound CH4 length
+        public Register NR42    // 0xFF21   Sound CH4 volume + envelope
+        {
+            get
+            {
+                return _nr42;
+            }
+            set
+            {
+                _nr42 = value;
+                if ((_nr42 & 0b11111000) == 0) IsCH4On = false; // turn DAC off
+            }
+        }
+        public Register NR43;   // 0xFF22   Sound CH4 frequency + randomness
+        public Register NR44    // 0xFF23   Sound CH4 control
+        {
+            get
+            {
+                return _nr44;
+            }
+            set
+            {
+                _nr44 = value;
+                if (CH4Trigger == 1)
+                {
+                    IsCH4On = true;
+                    CH4TriggerEvent?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
@@ -524,6 +557,123 @@ namespace GEM.Emulation
             set { _nr34[7] = value; }
         }
 
+        // NR41 (0xFF20)
+        public int CH4LengthData
+        {
+            // initial value for length timer (0-63)
+            get
+            {
+                return  NR41[5] << 5 |
+                        NR41[4] << 4 |
+                        NR41[3] << 3 |
+                        NR41[2] << 2 |
+                        NR41[1] << 1 |
+                        NR41[0];
+            }
+            set
+            {
+                NR41[5] = (value >> 5) & 1;
+                NR41[4] = (value >> 4) & 1;
+                NR41[3] = (value >> 3) & 1;
+                NR41[2] = (value >> 2) & 1;
+                NR41[1] = (value >> 1) & 1;
+                NR41[0] = (value >> 0) & 1;
+            }
+        }
+
+        // NR42 (0xFF21)
+        public int CH4EnvelopeTime
+        {
+            // envelope pace / step time (0-7)*(64Hz-tick)
+            get
+            {
+                return NR42[2] << 2 | NR42[1] << 1 | NR42[0];
+            }
+            set
+            {
+                _nr42[2] = (value >> 2) & 1;
+                _nr42[1] = (value >> 1) & 1;
+                _nr42[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH4EnvelopeDirection
+        {
+            // 0: volume decrease
+            // 1: volume increase
+            get { return NR42[3]; }
+            set { _nr42[3] = value; }
+        }
+        public int CH4VolumeStart
+        {
+            // envelope initial volume
+            get
+            {
+                return NR42[7] << 3 |
+                       NR42[6] << 2 |
+                       NR42[5] << 1 |
+                       NR42[4];
+            }
+            set
+            {
+                _nr42[7] = (value >> 3) & 1;
+                _nr42[6] = (value >> 2) & 1;
+                _nr42[5] = (value >> 1) & 1;
+                _nr42[4] = (value >> 0) & 1;
+            }
+        }
+
+        // NR43 (0xFF22)
+        public int CH4ClockDivider
+        {
+            get
+            {
+                return NR43[2] << 2 | NR43[1] << 1 | NR43[0];
+            }
+            set
+            {
+                NR43[2] = (value >> 2) & 1;
+                NR43[1] = (value >> 1) & 1;
+                NR43[0] = (value >> 0) & 1;
+            }
+        }
+        public int CH4LFSR
+        {
+            // 0: 15 bits
+            // 1:  7 bits
+            get { return NR43[3]; }
+            set { NR43[3] = value; }
+        }
+        public int CH4ClockShift
+        {
+            get
+            {
+                return NR43[7] << 3 |
+                       NR43[6] << 2 |
+                       NR43[5] << 1 |
+                       NR43[4];
+            }
+            set
+            {
+                NR43[7] = (value >> 3) & 1;
+                NR43[6] = (value >> 2) & 1;
+                NR43[5] = (value >> 1) & 1;
+                NR43[4] = (value >> 0) & 1;
+            }
+        }
+
+        // NR44 (0xFF23)
+        public bool IsCH4LengthEnabled
+        {
+            get { return Convert.ToBoolean(NR44[6]); }
+            set { _nr44[6] = Convert.ToInt32(value); }
+        }
+        public int CH4Trigger
+        {
+            // 1: Restart channel
+            get { return NR44[7]; }
+            set { _nr44[7] = value; }
+        }
+
         // NR50 (0xFF24)
         public int VolumeRight
         {
@@ -868,6 +1018,11 @@ namespace GEM.Emulation
                 if (address == 0xFF1D) return NR33;
                 if (address == 0xFF1E) return NR34;
 
+                if (address == 0xFF20) return NR41;
+                if (address == 0xFF21) return NR42;
+                if (address == 0xFF22) return NR43;
+                if (address == 0xFF23) return NR44;
+
                 if (address == 0xFF24) return NR50;
                 if (address == 0xFF25) return NR51;
                 if (address == 0xFF26) return NR52;
@@ -943,6 +1098,11 @@ namespace GEM.Emulation
                 if (address == 0xFF1C) NR32 = value;
                 if (address == 0xFF1D) NR33 = value;
                 if (address == 0xFF1E) NR34 = value;
+
+                if (address == 0xFF20) NR41 = value;
+                if (address == 0xFF21) NR42 = value;
+                if (address == 0xFF22) NR43 = value;
+                if (address == 0xFF23) NR44 = value;
 
                 if (address == 0xFF24) NR50 = value;
                 if (address == 0xFF25) NR51 = value;
