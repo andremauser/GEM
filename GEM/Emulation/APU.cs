@@ -31,6 +31,11 @@ namespace GEM.Emulation
         int _ch2LengthTimer;
         int _ch2EnvelopeTimer;
         int _ch2CurrentVolume;
+        // ch 3
+        int _ch3FreqTimer;
+        int _ch3LengthTimer;
+        int _ch3SampleIndex;
+        int _ch3Amplitude;
 
         Register[] _waveDutyTable;
 
@@ -72,6 +77,8 @@ namespace GEM.Emulation
             // subscribe trigger events
             _mmu.CH1TriggerEvent += ch1TriggerHandler;
             _mmu.CH2TriggerEvent += ch2TriggerHandler;
+            _mmu.CH3TriggerEvent += ch3TriggerHandler;
+            _mmu.CH4TriggerEvent += ch4TriggerHandler;
         }
         #endregion
 
@@ -85,7 +92,7 @@ namespace GEM.Emulation
             // update sweep, envelope and length
             updateFrameSequencer(instructionCycles);
             // update channel 1 and channel 2 amplitdes
-            updatePulseAmplitudes(instructionCycles);
+            updateChannelAmplitudes(instructionCycles);
             // TODO: update channel 3
             // TODO: update channel 4
             // TODO: mixer
@@ -128,20 +135,19 @@ namespace GEM.Emulation
                 }
             }
         }
-        private void updatePulseAmplitudes(int instructionCycles)
+        private void updateChannelAmplitudes(int instructionCycles)
         {
             // channel 1
             _ch1FreqTimer += instructionCycles;
-
             int ch1FreqCycles = (2048 - _mmu.CH1Frequency) * 4; 
-
             if (_ch1FreqTimer >= ch1FreqCycles)
             {
+                // reset timer
                 _ch1FreqTimer -= ch1FreqCycles;
-
+                // move to next duty step
                 _ch1DutyIndex++;
-                _ch1DutyIndex %= 7;
-
+                _ch1DutyIndex %= 8;
+                // get amplitude
                 _ch1Amplitude = _waveDutyTable[_mmu.CH1WaveDuty][_ch1DutyIndex]; // amplitude is 0 or 1
             }
 
@@ -155,9 +161,24 @@ namespace GEM.Emulation
                 _ch2FreqTimer -= ch2FreqCycles;
 
                 _ch2DutyIndex++;
-                _ch2DutyIndex %= 7;
+                _ch2DutyIndex %= 8;
 
                 _ch2Amplitude = _waveDutyTable[_mmu.CH2WaveDuty][_ch2DutyIndex];  // amplitude is 0 or 1
+            }
+
+            // channel 3
+            _ch3FreqTimer += instructionCycles;
+
+            int ch3FreqCycles = (2048 - _mmu.CH3Frequency) * 2;
+
+            if (_ch3FreqTimer >= ch3FreqCycles)
+            {
+                _ch3FreqTimer -= ch3FreqCycles;
+
+                _ch3SampleIndex++;
+                _ch3SampleIndex %= 32;
+
+                _ch3Amplitude = _mmu.GetChannel3WaveRamValue(_ch3SampleIndex);  // amplitude is 0 ... 15
             }
         }
 
@@ -180,6 +201,15 @@ namespace GEM.Emulation
                     _mmu.IsCH2On = false;
                 }
             }
+
+            if (_mmu.IsCH3LengthEnabled)
+            {
+                _ch3LengthTimer--;
+                if (_ch3LengthTimer == 0)
+                {
+                    _mmu.IsCH3On = false;
+                }
+            }
         }
         private void sweepClock()   // 128 Hz
         {
@@ -194,13 +224,13 @@ namespace GEM.Emulation
                     // frequency calculation
                     if (_ch1SweepEnabled && _mmu.CH1SweepTime > 0)
                     {
-                        int newFreq = calculateFreq();
+                        int newFreq = calcSweepFreq();
                         if (newFreq <= 2047 && _mmu.CH1SweepShifts > 0)
                         {
                             _mmu.CH1Frequency = newFreq;
                             _ch1ShadowFreq = newFreq;
                             // overflow check
-                            calculateFreq();
+                            calcSweepFreq();
                         }
                     }
                 }
@@ -278,19 +308,42 @@ namespace GEM.Emulation
                 _sampleTimer -= _sampleCycles;
 
                 // get channel amplitudes
+                // channel 1
                 float ch1AnalogOut = 0f;
-                float ch2AnalogOut = 0f;
                 if (_mmu.IsCH1On)
                 {
                     int ch1DigitalOut =  _ch1Amplitude;             // range: 0 ... 1
                     ch1DigitalOut *= _ch1CurrentVolume;             // range: 0 ... 15
                     ch1AnalogOut = ch1DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
                 }
+                // channel 2
+                float ch2AnalogOut = 0f;
                 if (_mmu.IsCH2On)
                 {
                     int ch2DigitalOut =  _ch2Amplitude;             // range: 0 ... 1
                     ch2DigitalOut *= _ch2CurrentVolume;             // range: 0 ... 15
                     ch2AnalogOut = ch2DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+                // channel 3
+                float ch3AnalogOut = 0f;
+                if (_mmu.IsCH3On)
+                {
+                    int ch3DigitalOut = _ch3Amplitude;              // range: 0 ... 15
+                    float volumeAdjust = 0;
+                    switch (_mmu.CH3VolumeSelect)
+                    {
+                        case 1:
+                            volumeAdjust = 1f;
+                            break;
+                        case 2:
+                            volumeAdjust = 0.5f; ;
+                            break;
+                        case 3:
+                            volumeAdjust = 0.25f;
+                            break;
+                    }
+                    ch3DigitalOut = (int)(ch3DigitalOut * volumeAdjust);
+                    ch3AnalogOut = ch3DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
                 }
 
                 // mixer left
@@ -306,6 +359,11 @@ namespace GEM.Emulation
                     leftAnalog += ch2AnalogOut;
                     leftCount++;
                 }
+                if (_mmu.IsCH3Left)
+                {
+                    leftAnalog += ch3AnalogOut;
+                    leftCount++;
+                }
                 leftAnalog /= leftCount;
 
                 // mixer right
@@ -319,6 +377,11 @@ namespace GEM.Emulation
                 if (_mmu.IsCH2Right)
                 {
                     rightAnalog += ch2AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH3Right)
+                {
+                    rightAnalog += ch3AnalogOut;
                     rightCount++;
                 }
                 rightAnalog /= rightCount;
@@ -354,7 +417,7 @@ namespace GEM.Emulation
             }
         }
 
-        private int calculateFreq()
+        private int calcSweepFreq()
         {
             // TODO: check sweep algorithm
             if (_mmu.CH1SweepShifts == 0) return 0;
@@ -391,7 +454,7 @@ namespace GEM.Emulation
             _ch1SweepTimer = _mmu.CH1SweepTime;
             if (_ch1SweepTimer == 0) _ch1SweepTimer = 8;
             _ch1SweepEnabled = _mmu.CH1SweepTime != 0 || _mmu.CH1SweepShifts != 0;
-            calculateFreq();
+            calcSweepFreq();
         }
         private void ch2TriggerHandler(Object sender, EventArgs e)
         {
@@ -400,6 +463,15 @@ namespace GEM.Emulation
             // initial volume
             _ch2CurrentVolume = _mmu.CH2VolumeStart;
             _ch2EnvelopeTimer = _mmu.CH2EnvelopeTime;
+        }
+        private void ch3TriggerHandler(Object sender, EventArgs e)
+        {
+            // initiate length timer
+            _ch3LengthTimer = 256 - _mmu.CH3LengthData;
+        }
+        private void ch4TriggerHandler(Object sender, EventArgs e)
+        {
+
         }
 
         #endregion

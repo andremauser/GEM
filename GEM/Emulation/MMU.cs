@@ -22,8 +22,12 @@ namespace GEM.Emulation
         Register _nr14;
         Register _nr22;
         Register _nr24;
+        Register _nr30;
+        Register _nr34;
         public EventHandler CH1TriggerEvent;
         public EventHandler CH2TriggerEvent;
+        public EventHandler CH3TriggerEvent;
+        public EventHandler CH4TriggerEvent;
         #endregion
 
         #region Constructors
@@ -92,8 +96,8 @@ namespace GEM.Emulation
                 if ((_nr12 & 0b11111000) == 0) IsCH1On = false; // turn DAC off
             }
         }
-        public Register NR13;   // 0xFF13   Sound CH1 wavelength low
-        public Register NR14    // 0xFF14   Sound CH1 wavelength high + control
+        public Register NR13;   // 0xFF13   Sound CH1 frequency low
+        public Register NR14    // 0xFF14   Sound CH1 frequency high + control
         {
             get
             {
@@ -124,8 +128,8 @@ namespace GEM.Emulation
                 if ((_nr22 & 0b11111000) == 0) IsCH2On = false; // turn DAC off
             }
         }
-        public Register NR23;   // 0xFF18   Sound CH2 wavelength low
-        public Register NR24    // 0xFF19   Sound CH2 wavelength high + control
+        public Register NR23;   // 0xFF18   Sound CH2 frequency low
+        public Register NR24    // 0xFF19   Sound CH2 frequency high + control
         {
             get
             {
@@ -133,18 +137,47 @@ namespace GEM.Emulation
             }
             set
             {
-                _nr24 = value;
-                // trigger channel
-                IsCH2On = true;
-                CH2TriggerEvent?.Invoke(this, EventArgs.Empty);
+                _nr24 = value; 
+                if (CH2Trigger == 1)
+                {
+                    // trigger channel
+                    IsCH2On = true;
+                    CH2TriggerEvent?.Invoke(this, EventArgs.Empty);
+                }
             }
         }
 
-        public Register NR30;   // 0xFF1A
-        public Register NR31;   // 0xFF1B
-        public Register NR32;   // 0xFF1C
-        public Register NR33;   // 0xFF1D
-        public Register NR34;   // 0xFF1E
+        public Register NR30    // 0xFF1A   Sound CH3 DAC
+        {
+            get
+            {
+                return _nr30;
+            }
+            set
+            {
+                _nr30 = value;
+                if (_nr30[7] == 0) IsCH3On = false; // turn DAC off
+            }
+        }
+        public Register NR31;   // 0xFF1B   Sound CH3 length
+        public Register NR32;   // 0xFF1C   Sound CH3 volume
+        public Register NR33;   // 0xFF1D   Sound CH3 frequency low
+        public Register NR34    // 0xFF1E   Sound CH3 frequency high + control
+        {
+            get
+            {
+                return _nr34;
+            }
+            set
+            {
+                _nr34 = value;
+                if (CH3Trigger == 1)
+                {
+                    IsCH3On = true;
+                    CH3TriggerEvent?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
 
         public Register NR50;   // 0xFF24   Sound volume left/right
         public Register NR51;   // 0xFF25   Sound mix to left/right
@@ -424,7 +457,73 @@ namespace GEM.Emulation
             get { return NR24[7]; }
             set { _nr24[7] = value; }
         }
-        
+
+        // NR31 (0xFF1B)
+        public int CH3LengthData
+        {
+            // initial value for length timer (0-255)
+            get
+            {
+                return NR31;
+            }
+            set
+            {
+                NR31 = (byte)value;
+            }
+        }
+
+        // NR32 (0xFF1C)
+        public int CH3VolumeSelect
+        {
+            /* 
+             * output level (0-3)
+             * 0: mute
+             * 1: 100%
+             * 2: 50% (>>1)
+             * 3: 25% (>>2)
+            */
+            get
+            {
+                return NR32[6] << 1 | NR32[5];
+            }
+            set
+            {
+                NR32[6] = (value >> 1) & 1;
+                NR32[5] = (value >> 0) & 1;
+            }
+        }
+
+        // NR34 (0xFF1D)
+        // NR33 (0xFF1E)
+        public int CH3Frequency
+        {
+            get
+            {
+                return NR34[2] << 10 |
+                       NR34[1] << 9 |
+                       NR34[0] << 8 |
+                       NR33;
+            }
+            set
+            {
+                _nr34[2] = (value >> 10) & 1;
+                _nr34[1] = (value >> 9) & 1;
+                _nr34[0] = (value >> 8) & 1;
+                NR33 = (byte)(value & 0xFF);
+            }
+        }
+        public bool IsCH3LengthEnabled
+        {
+            get { return Convert.ToBoolean(NR34[6]); }
+            set { _nr34[6] = Convert.ToInt32(value); }
+        }
+        public int CH3Trigger
+        {
+            // 1: Restart channel
+            get { return NR34[7]; }
+            set { _nr34[7] = value; }
+        }
+
         // NR50 (0xFF24)
         public int VolumeRight
         {
@@ -529,6 +628,14 @@ namespace GEM.Emulation
         }
         public bool IsCH3On
         {
+            /*
+             * set ON when:
+             * - triggered
+             * 
+             * set OFF when:
+             * - DAC turned off
+             * - length timer
+            */
             get { return Convert.ToBoolean(NR52[2]); }
             set { NR52[2] = Convert.ToInt32(value); }
         }
