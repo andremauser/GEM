@@ -194,11 +194,18 @@ namespace GEM.Emulation
                 // if width bit is set, also put in bit 6
                 if (_mmu.CH4WidthMode == 1) 
                 {
-                    _ch4LFSR &= 0b111111; //??
+                    _ch4LFSR &= 0b111111;
                     _ch4LFSR |= xorResult << 6;
                 }
                 // amplitude is inverted bit 0
-                _ch4Amplitude = ~(_ch4LFSR & 0b1);
+                if ((_ch4LFSR & 1) == 0)
+                {
+                    _ch4Amplitude = 1;
+                }
+                else
+                {
+                    _ch4Amplitude = 0;
+                }
             }
         }
 
