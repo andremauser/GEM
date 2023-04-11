@@ -7,7 +7,7 @@ Written in C# using [MonoGame](https://www.monogame.org/)
 
 Personal hobby and learning project inspired by [The Ultimate Game Boy Talk](https://www.youtube.com/watch?v=HyzD8pNlpwI)
 
-:warning::warning::warning: Early work in progress - no sound support, expect glitches and crashes :warning::warning::warning:
+:warning::warning::warning: Early work in progress - expect glitches and crashes :warning::warning::warning:
 
 ![screenshot01](screenshot01.png)
 
