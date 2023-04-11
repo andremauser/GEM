@@ -636,7 +636,7 @@ namespace GEM.Emulation
                 NR43[0] = (value >> 0) & 1;
             }
         }
-        public int CH4LFSR
+        public int CH4WidthMode
         {
             // 0: 15 bits
             // 1:  7 bits

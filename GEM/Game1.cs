@@ -38,6 +38,10 @@ namespace GEM
         }
         #endregion
 
+        #region Properties
+        
+        #endregion
+
         #region Methods
         protected override void Initialize()
         {

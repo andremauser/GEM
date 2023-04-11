@@ -42,6 +42,7 @@ namespace GEM.Emulation
         int _ch4Amplitude;
         int _ch4EnvelopeTimer;
         int _ch4CurrentVolume;
+        int _ch4LFSR;
 
         Register[] _waveDutyTable;
 
@@ -180,15 +181,24 @@ namespace GEM.Emulation
             }
 
             // channel 4
-            _ch4FreqTimer += instructionCycles;
-            int s = _mmu.CH4ClockShift;
-            float r = _mmu.CH4ClockDivider;
-            if (r == 0) r = 0.5f;
-            int ch4FreqCycles = -1;//TODO: insert calculation here!
-            if (_ch4FreqTimer >= ch4FreqCycles)
+            _ch4FreqTimer -= instructionCycles;
+            if (_ch4FreqTimer <= 0)
             {
-                _ch4FreqTimer -= ch4FreqCycles;
-                _ch4Amplitude = 1;
+                int s = _mmu.CH4ClockShift;
+                int r = _mmu.CH4ClockDivider;
+                // set new frequency
+                _ch4FreqTimer = (r > 0 ? (r << 4) : 8) << s;
+                int xorResult = (_ch4LFSR & 0b01) ^ ((_ch4LFSR & 0b10) >> 1);
+                // shift right and put result in bit 14
+                _ch4LFSR = (_ch4LFSR >> 1) | (xorResult << 14);
+                // if width bit is set, also put in bit 6
+                if (_mmu.CH4WidthMode == 1) 
+                {
+                    _ch4LFSR &= 0b111111; //??
+                    _ch4LFSR |= xorResult << 6;
+                }
+                // amplitude is inverted bit 0
+                _ch4Amplitude = ~(_ch4LFSR & 0b1);
             }
         }
 
@@ -544,6 +554,8 @@ namespace GEM.Emulation
             // initial volume
             _ch4CurrentVolume = _mmu.CH4VolumeStart;
             _ch4EnvelopeTimer = _mmu.CH4EnvelopeTime;
+            // set LFSR
+            _ch4LFSR = 0xFFFF; // all bits set to 1
         }
 
         #endregion

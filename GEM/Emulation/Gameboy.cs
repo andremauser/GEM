@@ -138,6 +138,16 @@ namespace GEM.Emulation
             StopAfterStep = true;
         }
 
+        public void Pause()
+        {
+            IsRunning = false;
+        }
+        public void Resume()
+        {
+            IsRunning = true;
+        }
+
+
         public void SetVolume(float volume)
         {
             _apu.MasterVolume = volume;
@@ -175,7 +185,7 @@ namespace GEM.Emulation
         // ---
         public void UpdateFrame()
         {
-            if (IsRunning)
+            if (IsRunning && Game1._Instance.IsActive)
             {
                 // compute 70.224 OpCodes for 1 frame (456 T-Cycles per line @ 154 lines)
                 while (_cycleCount < 70224)

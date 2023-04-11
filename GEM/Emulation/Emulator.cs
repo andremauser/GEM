@@ -31,6 +31,7 @@ namespace GEM.Emulation
         Color _pixelMarkerColor;
 
         int DebugMode;
+        bool _debugShowAudioIndicators;
 
         List<string> _romList = new List<string>();
         List<BaseControl> _controls;
@@ -43,6 +44,7 @@ namespace GEM.Emulation
 
         BaseControl OnScreenButtons;
         BaseControl DebugInformations;
+        BaseControl AudioIcons;
         MenuButton _ch1;
         MenuButton _ch2;
         MenuButton _ch3;
@@ -271,33 +273,36 @@ namespace GEM.Emulation
             DebugInformations = new BaseControl(null);
             _controls.Add(DebugInformations);
 
-            _ch1 = new MenuButton(DebugInformations, null, "CH1", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            AudioIcons = new BaseControl(null);
+            DebugInformations.Add(AudioIcons);
+
+            _ch1 = new MenuButton(AudioIcons, null, "CH1", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
             _ch1.Left = 180;
             _ch1.Top = 0;
             _ch1.Image.ResizeToParent();
             _ch1.SetButtonColors(Color.Transparent, onscreenColor);
-            DebugInformations.Add(_ch1);
+            AudioIcons.Add(_ch1);
 
-            _ch2 = new MenuButton(DebugInformations, null, "CH2", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch2 = new MenuButton(AudioIcons, null, "CH2", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
             _ch2.Left = 180;
             _ch2.Top = 60;
             _ch2.Image.ResizeToParent();
             _ch2.SetButtonColors(Color.Transparent, onscreenColor);
-            DebugInformations.Add(_ch2);
+            AudioIcons.Add(_ch2);
 
-            _ch3 = new MenuButton(DebugInformations, null, "CH3", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch3 = new MenuButton(AudioIcons, null, "CH3", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
             _ch3.Left = 180;
             _ch3.Top = 120;
             _ch3.Image.ResizeToParent();
             _ch3.SetButtonColors(Color.Transparent, onscreenColor);
-            DebugInformations.Add(_ch3);
+            AudioIcons.Add(_ch3);
 
-            _ch4 = new MenuButton(DebugInformations, null, "CH4", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
+            _ch4 = new MenuButton(AudioIcons, null, "CH4", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
             _ch4.Left = 180;
             _ch4.Top = 180;
             _ch4.Image.ResizeToParent();
             _ch4.SetButtonColors(Color.Transparent, onscreenColor);
-            DebugInformations.Add(_ch4);
+            AudioIcons.Add(_ch4);
             #endregion
 
             #region window buttons
@@ -336,7 +341,7 @@ namespace GEM.Emulation
             // add menu entries
             _menu.AddClickMenu("cart").Label.Caption = "game";
             _menu.AddClickMenu("set").Label.Caption = "settings";
-            _menu.AddClickMenu("debug").Enabled = false;
+            _menu.AddClickMenu("debug");
             _menu.AddClickMenu("quit");
             // cart
             MenuButton romBrowser = _menu["cart"].AddClickMenu("open rom");
@@ -378,6 +383,9 @@ namespace GEM.Emulation
             _menu["set"]["volume"].AddClickMenu("mute").OnClick += (o, e) => { VolumeIndex = 0; };
             _menu["set"].AddClickMenu("screen buttons").OnClick += (o, e) => { OnScreenButtons.Visible = !OnScreenButtons.Visible; };
             _menu["set"].AddClickMenu("fullscreen").OnClick += toggleFullScreen;
+            // debug
+            _menu["debug"].AddClickMenu("audio");
+            _menu["debug"]["audio"].AddClickMenu("show").OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
             // quit
             _menu["quit"].AddClickMenu("quit GEM").OnClick += exit;
 
@@ -454,7 +462,7 @@ namespace GEM.Emulation
             }
 
             _ch1.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH1On);
-            _ch1.SetButtonColors(Color.Transparent, _gameboy.IsCH1On?Color.White:onscreenColor);
+            _ch1.SetButtonColors(Color.Transparent, _gameboy.IsCH1On ? Color.White : onscreenColor);
             _ch2.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH2On);
             _ch2.SetButtonColors(Color.Transparent, _gameboy.IsCH2On ? Color.White : onscreenColor);
             _ch3.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH3On);
@@ -462,7 +470,12 @@ namespace GEM.Emulation
             _ch4.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH4On);
             _ch4.SetButtonColors(Color.Transparent, _gameboy.IsCH4On ? Color.White : onscreenColor);
 
+            
+            AudioIcons.Visible = _debugShowAudioIndicators;
+            
+
             _menu["set"]["volume"].Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%");
+            _menu["debug"]["audio"]["show"].Label.Caption = "icons: " + (_debugShowAudioIndicators ? "ON" : "OFF");
 
             foreach (BaseControl control in _controls)
             {
