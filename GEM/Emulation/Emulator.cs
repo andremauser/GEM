@@ -45,10 +45,7 @@ namespace GEM.Emulation
         BaseControl OnScreenButtons;
         BaseControl DebugInformations;
         BaseControl AudioIcons;
-        MenuButton _ch1;
-        MenuButton _ch2;
-        MenuButton _ch3;
-        MenuButton _ch4;
+        MenuButton[] _channels;
 
         MenuButton _menu;
         int _openStartIndex = 0;
@@ -66,6 +63,7 @@ namespace GEM.Emulation
             DebugMode = 0;
             _controls = new List<BaseControl>();
             _volumeList = new float[] { 0f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
+            _channels = new MenuButton[4];
         }
         #endregion
 
@@ -153,6 +151,7 @@ namespace GEM.Emulation
             #region onscreen buttons
 
             OnScreenButtons = new BaseControl(null);
+            OnScreenButtons.Visible = false; // hide OnScreenButtons on start
             _controls.Add(OnScreenButtons);
 
             // dpad
@@ -273,36 +272,21 @@ namespace GEM.Emulation
             DebugInformations = new BaseControl(null);
             _controls.Add(DebugInformations);
 
+            // sound channel icons
             AudioIcons = new BaseControl(null);
             DebugInformations.Add(AudioIcons);
+            for (int i = 0; i < 4; i++)
+            {
+                _channels[i] = new MenuButton(AudioIcons, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
+                _channels[i].Left = 180;
+                _channels[i].Top = i * _channels[i].Height;
+                _channels[i].Image.ResizeToParent();
+                _channels[i].SetButtonColors(Color.Transparent, onscreenColor);
+                _channels[i].ButtonData = i;
+                _channels[i].OnClick += MasterSwitchHandler;
+                AudioIcons.Add(_channels[i]);
+            }
 
-            _ch1 = new MenuButton(AudioIcons, null, "CH1", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
-            _ch1.Left = 180;
-            _ch1.Top = 0;
-            _ch1.Image.ResizeToParent();
-            _ch1.SetButtonColors(Color.Transparent, onscreenColor);
-            AudioIcons.Add(_ch1);
-
-            _ch2 = new MenuButton(AudioIcons, null, "CH2", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
-            _ch2.Left = 180;
-            _ch2.Top = 60;
-            _ch2.Image.ResizeToParent();
-            _ch2.SetButtonColors(Color.Transparent, onscreenColor);
-            AudioIcons.Add(_ch2);
-
-            _ch3 = new MenuButton(AudioIcons, null, "CH3", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
-            _ch3.Left = 180;
-            _ch3.Top = 120;
-            _ch3.Image.ResizeToParent();
-            _ch3.SetButtonColors(Color.Transparent, onscreenColor);
-            AudioIcons.Add(_ch3);
-
-            _ch4 = new MenuButton(AudioIcons, null, "CH4", MenuType.StandAlone, "sound", 2) { Width = 60, Height = 60 };
-            _ch4.Left = 180;
-            _ch4.Top = 180;
-            _ch4.Image.ResizeToParent();
-            _ch4.SetButtonColors(Color.Transparent, onscreenColor);
-            AudioIcons.Add(_ch4);
             #endregion
 
             #region window buttons
@@ -386,6 +370,12 @@ namespace GEM.Emulation
             // debug
             _menu["debug"].AddClickMenu("audio");
             _menu["debug"]["audio"].AddClickMenu("show").OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
+            for (int i = 0; i < 4; i++)
+            {
+                MenuButton tmp = _menu["debug"]["audio"].AddClickMenu("CH" + (i + 1).ToString());
+                tmp.ButtonData = i;
+                tmp.OnClick += MasterSwitchHandler;
+            }
             // quit
             _menu["quit"].AddClickMenu("quit GEM").OnClick += exit;
 
@@ -461,21 +451,32 @@ namespace GEM.Emulation
                 //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
             }
 
-            _ch1.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH1On);
-            _ch1.SetButtonColors(Color.Transparent, _gameboy.IsCH1On ? Color.White : onscreenColor);
-            _ch2.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH2On);
-            _ch2.SetButtonColors(Color.Transparent, _gameboy.IsCH2On ? Color.White : onscreenColor);
-            _ch3.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH3On);
-            _ch3.SetButtonColors(Color.Transparent, _gameboy.IsCH3On ? Color.White : onscreenColor);
-            _ch4.Image.ImageIndex = Convert.ToInt32(_gameboy.IsCH4On);
-            _ch4.SetButtonColors(Color.Transparent, _gameboy.IsCH4On ? Color.White : onscreenColor);
+            for (int i = 0; i < 4; i++)
+            {
+                if (_gameboy.MasterSwitch[i])
+                {
+                    // MasterSwitch ON
+                    _channels[i].Image.ImageIndex = _gameboy.IsChannelOutput[i] ? 2 : 1;
+                    _channels[i].SetButtonColors(Color.Transparent, _gameboy.IsChannelOn[i] ? Color.White : onscreenColor);
+                }
+                else
+                {
+                    // Masterswitch OFF
+                    _channels[i].Image.ImageIndex = 0;
+                    _channels[i].SetButtonColors(Color.Transparent, Color.Firebrick);
+                }
+            }
 
             
             AudioIcons.Visible = _debugShowAudioIndicators;
             
-
+            // update menu captions
             _menu["set"]["volume"].Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%");
             _menu["debug"]["audio"]["show"].Label.Caption = "icons: " + (_debugShowAudioIndicators ? "ON" : "OFF");
+            for (int i = 0; i < 4; i++)
+            {
+                _menu["debug"]["audio"]["CH" + (i + 1).ToString()].Label.Caption = "ch" + (i + 1).ToString() + ": " + (_gameboy.MasterSwitch[i] ? "ON" : "OFF");
+            }
 
             foreach (BaseControl control in _controls)
             {
@@ -629,6 +630,13 @@ namespace GEM.Emulation
             }
             parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
         }
+
+        public void MasterSwitchHandler(Object sender, EventArgs e)
+        {
+            MenuButton btn = (MenuButton)sender;
+            _gameboy.MasterSwitch[btn.ButtonData] = !_gameboy.MasterSwitch[btn.ButtonData];
+        }
+
         #endregion
     }
 }

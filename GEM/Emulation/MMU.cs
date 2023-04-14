@@ -73,6 +73,14 @@ namespace GEM.Emulation
         }
         public bool IME { get; set; }
 
+        public bool[] IsChannelOn
+        {
+            get
+            {
+                return new bool[] { IsCH1On,  IsCH2On, IsCH3On, IsCH4On };
+            }
+        }
+
         #region IO Registers
         public Register P1;     // 0xFF00
         public Register SB;     // 0xFF01

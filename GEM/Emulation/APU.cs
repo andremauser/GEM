@@ -23,14 +23,12 @@ namespace GEM.Emulation
         bool _ch1SweepEnabled;
         int _ch1LengthTimer;
         int _ch1EnvelopeTimer;
-        int _ch1CurrentVolume;
         // ch 2
         int _ch2FreqTimer;
         int _ch2DutyIndex;
         int _ch2Amplitude;
         int _ch2LengthTimer;
         int _ch2EnvelopeTimer;
-        int _ch2CurrentVolume;
         // ch 3
         int _ch3FreqTimer;
         int _ch3LengthTimer;
@@ -41,8 +39,9 @@ namespace GEM.Emulation
         int _ch4LengthTimer;
         int _ch4Amplitude;
         int _ch4EnvelopeTimer;
-        int _ch4CurrentVolume;
         int _ch4LFSR;
+
+        float[] _channelVolume = { 0, 0, 0, 0};
 
         Register[] _waveDutyTable;
 
@@ -59,6 +58,7 @@ namespace GEM.Emulation
         int _bufferIndex;
 
         public float MasterVolume;
+        public bool[] MasterSwitch = {true, true, true, true}; // channel 1-4 master switch
         #endregion
 
         #region Constructors
@@ -90,20 +90,24 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-
+        public bool[] IsChannelOutput
+        {
+            get
+            {
+                return new bool[] { _mmu.IsCH1On && (_channelVolume[0] > 0),
+                                    _mmu.IsCH2On && (_channelVolume[1] > 0), 
+                                    _mmu.IsCH3On && (_channelVolume[2] > 0), 
+                                    _mmu.IsCH4On && (_channelVolume[3] > 0) };
+            }
+        }
+        
         #endregion
 
         #region Methods
         public void Update(int instructionCycles)
         {
-            // update sweep, envelope and length
             updateFrameSequencer(instructionCycles);
-            // update channel 1 and channel 2 amplitdes
             updateChannelAmplitudes(instructionCycles);
-            // TODO: update channel 3
-            // TODO: update channel 4
-            // TODO: mixer
-            // update sampler
             updateSampler(instructionCycles);
         }
 
@@ -208,6 +212,141 @@ namespace GEM.Emulation
                 }
             }
         }
+        private void updateSampler(int instructionCycles)
+        {
+            // get sample every ~87 clocks
+            _sampleTimer += instructionCycles;
+            if (_sampleTimer >= _sampleCycles)
+            {
+                _sampleTimer -= _sampleCycles;
+
+                // get channel amplitudes
+                // channel 1
+                float ch1AnalogOut = 0f;
+                if (_mmu.IsCH1On)
+                {
+                    int ch1DigitalOut = _ch1Amplitude;             // range: 0 ... 1
+                    ch1DigitalOut *= (int)_channelVolume[0];        // range: 0 ... 15
+                    ch1AnalogOut = ch1DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+                // channel 2
+                float ch2AnalogOut = 0f;
+                if (_mmu.IsCH2On)
+                {
+                    int ch2DigitalOut = _ch2Amplitude;             // range: 0 ... 1
+                    ch2DigitalOut *= (int)_channelVolume[1];        // range: 0 ... 15
+                    ch2AnalogOut = ch2DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+                // channel 3
+                float ch3AnalogOut = 0f;
+                if (_mmu.IsCH3On)
+                {
+                    int ch3DigitalOut = _ch3Amplitude;              // range: 0 ... 15
+                    _channelVolume[2] = 0;
+                    switch (_mmu.CH3VolumeSelect)
+                    {
+                        case 1:
+                            _channelVolume[2] = 1f;
+                            break;
+                        case 2:
+                            _channelVolume[2] = 0.5f; ;
+                            break;
+                        case 3:
+                            _channelVolume[2] = 0.25f;
+                            break;
+                    }
+                    ch3DigitalOut = (int)(ch3DigitalOut * _channelVolume[2]);
+                    ch3AnalogOut = ch3DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+                // channel 4
+                float ch4AnalogOut = 0f;
+                if (_mmu.IsCH4On)
+                {
+                    int ch4DigitalOut = _ch4Amplitude;              // range: 0 ... 1
+                    ch4DigitalOut *= (int)_channelVolume[3];        // range: 0 ... 15
+                    ch4AnalogOut = ch4DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
+                }
+
+                // mixer left
+                int leftCount = 0;
+                float leftAnalog = 0;
+                if (_mmu.IsCH1Left && MasterSwitch[0])
+                {
+                    leftAnalog += ch1AnalogOut;
+                    leftCount++;
+                }
+                if (_mmu.IsCH2Left && MasterSwitch[1])
+                {
+                    leftAnalog += ch2AnalogOut;
+                    leftCount++;
+                }
+                if (_mmu.IsCH3Left && MasterSwitch[2])
+                {
+                    leftAnalog += ch3AnalogOut;
+                    leftCount++;
+                }
+                if (_mmu.IsCH4Left && MasterSwitch[3])
+                {
+                    leftAnalog += ch4AnalogOut;
+                    leftCount++;
+                }
+                leftAnalog /= leftCount;
+
+                // mixer right
+                int rightCount = 0;
+                float rightAnalog = 0;
+                if (_mmu.IsCH1Right && MasterSwitch[0])
+                {
+                    rightAnalog += ch1AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH2Right && MasterSwitch[1])
+                {
+                    rightAnalog += ch2AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH3Right && MasterSwitch[2])
+                {
+                    rightAnalog += ch3AnalogOut;
+                    rightCount++;
+                }
+                if (_mmu.IsCH4Right && MasterSwitch[3])
+                {
+                    rightAnalog += ch4AnalogOut;
+                    rightCount++;
+                }
+                rightAnalog /= rightCount;
+
+                // amplifier
+                leftAnalog *= (_mmu.VolumeLeft + 1) / 8f;
+                rightAnalog *= (_mmu.VolumeRight + 1) / 8f;
+
+                // emulator volume
+                leftAnalog *= MasterVolume;
+                rightAnalog *= MasterVolume;
+
+                // output
+                short shortLeft = (short)(leftAnalog >= 0f ? leftAnalog * short.MaxValue : -1f * leftAnalog * short.MinValue);
+                short shortRight = (short)(rightAnalog >= 0f ? rightAnalog * short.MaxValue : -1f * rightAnalog * short.MinValue);
+
+                // fill buffer
+                _buffer[_bufferIndex++] = (byte)shortLeft;
+                _buffer[_bufferIndex++] = (byte)(shortLeft >> 8);
+                _buffer[_bufferIndex++] = (byte)shortRight;
+                _buffer[_bufferIndex++] = (byte)(shortRight >> 8);
+
+                // submit buffer and play
+                if (_bufferIndex >= _bufferSize)
+                {
+                    _soundEffectInstance.SubmitBuffer(_buffer);
+                    if (_soundEffectInstance.PendingBufferCount >= _bufferCount)
+                    {
+                        _soundEffectInstance.Play();
+                    }
+                    _bufferIndex = 0;
+                }
+            }
+        }
 
         private void lengthClock()  // 256 Hz
         {
@@ -286,15 +425,15 @@ namespace GEM.Emulation
                         switch (_mmu.CH1EnvelopeDirection)
                         {
                             case 0: // decrease
-                                if (_ch1CurrentVolume > 0)
+                                if (_channelVolume[0] > 0)
                                 {
-                                    _ch1CurrentVolume--;
+                                    _channelVolume[0]--;
                                 }
                                 break;
                             case 1: // increase
-                                if (_ch1CurrentVolume < 15)
+                                if (_channelVolume[0] < 15)
                                 {
-                                    _ch1CurrentVolume++;
+                                    _channelVolume[0]++;
                                 }
                                 break;
                             default:
@@ -316,15 +455,15 @@ namespace GEM.Emulation
                         switch (_mmu.CH2EnvelopeDirection)
                         {
                             case 0: // decrease
-                                if (_ch2CurrentVolume > 0)
+                                if (_channelVolume[1] > 0)
                                 {
-                                    _ch2CurrentVolume--;
+                                    _channelVolume[1]--;
                                 }
                                 break;
                             case 1: // increase
-                                if (_ch2CurrentVolume < 15)
+                                if (_channelVolume[1] < 15)
                                 {
-                                    _ch2CurrentVolume++;
+                                    _channelVolume[1]++;
                                 }
                                 break;
                             default:
@@ -346,15 +485,15 @@ namespace GEM.Emulation
                         switch (_mmu.CH4EnvelopeDirection)
                         {
                             case 0: // decrease
-                                if (_ch4CurrentVolume > 0)
+                                if (_channelVolume[3] > 0)
                                 {
-                                    _ch4CurrentVolume--;
+                                    _channelVolume[3]--;
                                 }
                                 break;
                             case 1: // increase
-                                if (_ch4CurrentVolume < 15)
+                                if (_channelVolume[3] < 15)
                                 {
-                                    _ch4CurrentVolume++;
+                                    _channelVolume[3]++;
                                 }
                                 break;
                             default:
@@ -366,145 +505,8 @@ namespace GEM.Emulation
 
         }
 
-        private void updateSampler(int instructionCycles)
-        {
-            // get sample every ~87 clocks
-            _sampleTimer += instructionCycles;
-            if (_sampleTimer >= _sampleCycles)
-            {
-                _sampleTimer -= _sampleCycles;
-
-                // get channel amplitudes
-                // channel 1
-                float ch1AnalogOut = 0f;
-                if (_mmu.IsCH1On)
-                {
-                    int ch1DigitalOut =  _ch1Amplitude;             // range: 0 ... 1
-                    ch1DigitalOut *= _ch1CurrentVolume;             // range: 0 ... 15
-                    ch1AnalogOut = ch1DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
-                }
-                // channel 2
-                float ch2AnalogOut = 0f;
-                if (_mmu.IsCH2On)
-                {
-                    int ch2DigitalOut =  _ch2Amplitude;             // range: 0 ... 1
-                    ch2DigitalOut *= _ch2CurrentVolume;             // range: 0 ... 15
-                    ch2AnalogOut = ch2DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
-                }
-                // channel 3
-                float ch3AnalogOut = 0f;
-                if (_mmu.IsCH3On)
-                {
-                    int ch3DigitalOut = _ch3Amplitude;              // range: 0 ... 15
-                    float volumeAdjust = 0;
-                    switch (_mmu.CH3VolumeSelect)
-                    {
-                        case 1:
-                            volumeAdjust = 1f;
-                            break;
-                        case 2:
-                            volumeAdjust = 0.5f; ;
-                            break;
-                        case 3:
-                            volumeAdjust = 0.25f;
-                            break;
-                    }
-                    ch3DigitalOut = (int)(ch3DigitalOut * volumeAdjust);
-                    ch3AnalogOut = ch3DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
-                }
-                // channel 4
-                float ch4AnalogOut = 0f;
-                if (_mmu.IsCH4On)
-                {
-                    int ch4DigitalOut = _ch4Amplitude;              // range: 0 ... 1
-                    ch4DigitalOut *= _ch4CurrentVolume;             // range: 0 ... 15
-                    ch4AnalogOut = ch4DigitalOut / 15f * 2f - 1;    // range: -1 ... 1
-                }
-
-                // mixer left
-                int leftCount = 0;
-                float leftAnalog = 0;
-                if (_mmu.IsCH1Left)
-                {
-                    leftAnalog += ch1AnalogOut;
-                    leftCount++;
-                }
-                if (_mmu.IsCH2Left)
-                {
-                    leftAnalog += ch2AnalogOut;
-                    leftCount++;
-                }
-                if (_mmu.IsCH3Left)
-                {
-                    leftAnalog += ch3AnalogOut;
-                    leftCount++;
-                }
-                if (_mmu.IsCH4Left)
-                {
-                    leftAnalog += ch4AnalogOut;
-                    leftCount++;
-                }
-                leftAnalog /= leftCount;
-
-                // mixer right
-                int rightCount = 0;
-                float rightAnalog = 0;
-                if (_mmu.IsCH1Right)
-                {
-                    rightAnalog += ch1AnalogOut;
-                    rightCount++;
-                }
-                if (_mmu.IsCH2Right)
-                {
-                    rightAnalog += ch2AnalogOut;
-                    rightCount++;
-                }
-                if (_mmu.IsCH3Right)
-                {
-                    rightAnalog += ch3AnalogOut;
-                    rightCount++;
-                }
-                if (_mmu.IsCH4Right)
-                {
-                    rightAnalog += ch4AnalogOut;
-                    rightCount++;
-                }
-                rightAnalog /= rightCount;
-
-                // amplifier
-                leftAnalog *= (_mmu.VolumeLeft + 1) / 8f;
-                rightAnalog *= (_mmu.VolumeRight + 1) / 8f;
-
-                // emulator volume
-                leftAnalog *= MasterVolume;
-                rightAnalog*= MasterVolume;
-
-                // output
-                short shortLeft = (short)(leftAnalog >= 0f ? leftAnalog * short.MaxValue : -1f * leftAnalog * short.MinValue);
-                short shortRight = (short)(rightAnalog >= 0f ? rightAnalog * short.MaxValue : -1f * rightAnalog * short.MinValue);
-
-                // fill buffer
-                _buffer[_bufferIndex++] = (byte)shortLeft;
-                _buffer[_bufferIndex++] = (byte)(shortLeft >> 8);
-                _buffer[_bufferIndex++] = (byte)shortRight;
-                _buffer[_bufferIndex++] = (byte)(shortRight >> 8);
-
-                // submit buffer and play
-                if (_bufferIndex >= _bufferSize)
-                {
-                    _soundEffectInstance.SubmitBuffer(_buffer);
-                    if (_soundEffectInstance.PendingBufferCount >= _bufferCount)
-                    {
-                        _soundEffectInstance.Play();
-                    }
-                    _bufferIndex = 0;
-                }
-            }
-        }
-
         private int calcSweepFreq()
         {
-            // TODO: check sweep algorithm
             if (_mmu.CH1SweepShifts == 0) return 0;
 
             // calculate new sweep frequency
@@ -532,7 +534,7 @@ namespace GEM.Emulation
             // initiate length timer
             _ch1LengthTimer = 64 - _mmu.CH1LengthData;
             // initial volume
-            _ch1CurrentVolume = _mmu.CH1VolumeStart;
+            _channelVolume[0] = _mmu.CH1VolumeStart;
             _ch1EnvelopeTimer = _mmu.CH1EnvelopeTime;
             // sweep
             _ch1ShadowFreq = _mmu.CH1Frequency;
@@ -546,7 +548,7 @@ namespace GEM.Emulation
             // initiate length timer
             _ch2LengthTimer = 64 - _mmu.CH2LengthData;
             // initial volume
-            _ch2CurrentVolume = _mmu.CH2VolumeStart;
+            _channelVolume[1] = _mmu.CH2VolumeStart;
             _ch2EnvelopeTimer = _mmu.CH2EnvelopeTime;
         }
         private void ch3TriggerHandler(Object sender, EventArgs e)
@@ -559,7 +561,7 @@ namespace GEM.Emulation
             // initiate length timer
             _ch4LengthTimer = 64 - _mmu.CH4LengthData;
             // initial volume
-            _ch4CurrentVolume = _mmu.CH4VolumeStart;
+            _channelVolume[3] = _mmu.CH4VolumeStart;
             _ch4EnvelopeTimer = _mmu.CH4EnvelopeTime;
             // set LFSR
             _ch4LFSR = 0xFFFF; // all bits set to 1

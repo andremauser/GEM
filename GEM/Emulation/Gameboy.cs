@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Threading.Channels;
 
 namespace GEM.Emulation
 {
@@ -57,34 +58,32 @@ namespace GEM.Emulation
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
         public bool SwitchedOn { get; private set; }
-        public bool IsCH1On 
+        public bool[] IsChannelOn
         {
             get
             {
-                return _mmu.IsCH1On;
+                return _mmu.IsChannelOn;
             }
         }
-        public bool IsCH2On
+        public bool[] MasterSwitch
         {
             get
             {
-                return _mmu.IsCH2On;
+                return _apu.MasterSwitch;
+            }
+            set
+            {
+                _apu.MasterSwitch = value;
             }
         }
-        public bool IsCH3On
+        public bool[] IsChannelOutput
         {
             get
             {
-                return _mmu.IsCH3On;
+                return _apu.IsChannelOutput;
             }
         }
-        public bool IsCH4On
-        {
-            get
-            {
-                return _mmu.IsCH4On;
-            }
-        }
+        
         #endregion
 
         #region Methods
