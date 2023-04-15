@@ -46,13 +46,13 @@ namespace GEM
         protected override void Initialize()
         {
             _emulator = new Emulator(GraphicsDevice);
-            _Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
+            //_Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
             _Graphics.PreferredBackBufferWidth = 1280;
             _Graphics.PreferredBackBufferHeight = 720;
             _Graphics.ApplyChanges(); 
 
             //save on quit
-            Exiting += _emulator.ShutDown;
+            Exiting += _emulator.ShutDownHandler;
             
 
             base.Initialize();

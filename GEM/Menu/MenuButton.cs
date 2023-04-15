@@ -595,16 +595,22 @@ namespace GEM.Menu
             // else: Idle
             State = State.Idle;
         }
-        public void SetButtonColors(Color background, Color foreground)
+        public void SetButtonColors(Color? background, Color? foreground)
         {
-            BackColor[State.Idle] = background;
-            BackColor[State.Hover] = background;
-            BackColor[State.Press] = background;
-            BackColor[State.Disabled] = background;
-            ForeColor[State.Idle] = foreground;
-            ForeColor[State.Hover] = foreground;
-            ForeColor[State.Press] = foreground;
-            ForeColor[State.Disabled] = foreground;
+            if (background != null)
+            {
+                BackColor[State.Idle] = (Color)background;
+                BackColor[State.Hover] = (Color)background;
+                BackColor[State.Press] = (Color)background;
+                BackColor[State.Disabled] = (Color)background;
+            }
+            if (foreground != null)
+            {
+                ForeColor[State.Idle] = (Color)foreground;
+                ForeColor[State.Hover] = (Color)foreground;
+                ForeColor[State.Press] = (Color)foreground;
+                ForeColor[State.Disabled] = (Color)foreground;
+            }
         }
         private void navigationRoll(int step = 1)
         {
