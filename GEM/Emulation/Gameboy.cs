@@ -146,7 +146,6 @@ namespace GEM.Emulation
             IsRunning = true;
         }
 
-
         public void SetVolume(float volume)
         {
             _apu.MasterVolume = volume;
@@ -213,7 +212,6 @@ namespace GEM.Emulation
 
                     // INTERRUPTS
                     checkInterrupts();
-
 
                     IsRunning &= !StopAfterStep;
                     if (!IsRunning) break;

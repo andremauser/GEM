@@ -127,11 +127,43 @@ namespace GEM.Emulation
                 },
                 new Color[]
                 {
-                    // Grey
-                    new Color(255, 255, 255),
-                    new Color(192, 192, 192),
-                    new Color(105, 106, 106),
-                    new Color(7, 9, 9)
+                    // Game and Watch
+                    new Color(0xef, 0xee, 0xe8),
+                    new Color(0xb0, 0xb3, 0xa6),
+                    new Color(0x53, 0x5b, 0x4e),
+                    new Color(0x06, 0x16, 0x0f)
+                },
+                new Color[]
+                {
+                    // Zelda SGB
+                    new Color(0xff, 0xff, 0xb5),
+                    new Color(0x7b, 0xc6, 0x7b),
+                    new Color(0x6b, 0x8c, 0x42),
+                    new Color(0x5a, 0x39, 0x21)
+                },
+                new Color[]
+                {
+                    // Pokemon SGB
+                    new Color(0xff, 0xef, 0xff),
+                    new Color(0xf7, 0xb5, 0x8c),
+                    new Color(0x84, 0x73, 0x9c),
+                    new Color(0x18, 0x10, 0x10)
+                },
+                new Color[]
+                {
+                    // Megaman SGB
+                    new Color(0xce, 0xce, 0xce),
+                    new Color(0x6f, 0x9e, 0xdf),
+                    new Color(0x42, 0x67, 0x8e),
+                    new Color(0x10, 0x25, 0x33)
+                },
+                new Color[]
+                {
+                    // Standard SGB
+                    new Color(0xf7, 0xe7, 0xc6),
+                    new Color(0xd6, 0x8e, 0x49),
+                    new Color(0xa6, 0x37, 0x25),
+                    new Color(0x33, 0x1e, 0x50)
                 },
                 new Color[]
                 {
@@ -323,8 +355,8 @@ namespace GEM.Emulation
             _menu.Panel.VerticalAlign = Align.Bottom;
             _menu.KeyBinding = Keys.LeftControl;
             _menu.BtnBinding = Buttons.LeftShoulder;
-            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Fokus.Close(o, e); };
-            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; Fokus = null; };
+            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Fokus.Close(o, e); };
+            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; Fokus = null; };
             _menu.ForeColor[State.Idle] = _menuColor;
             _controls.Add(_menu);
             // add menu entries

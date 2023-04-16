@@ -87,6 +87,7 @@ namespace GEM.Emulation
                     case 0x01: break;   // MBC1
                     case 0x02:          // MBC1+RAM
                     case 0x03:          // MBC1+RAM+BATTERY
+                    case 0x10:          // MBC3
                     case 0x1B:          // MBC5+RAM+BATTERY
                         len = 0xC000;
                         break;
@@ -112,6 +113,7 @@ namespace GEM.Emulation
                     case 0x03:  // MBC1+RAM+BATTERY
                         if (_bankMode == 01) return _data[pos + (_romBank & 0x60) * 0x4000];
                         return _data[pos];
+                    case 0x10:  // MBC3
                     case 0x1B:  // MBC5+RAM+BATTERY
                         return _data[pos];
                 }
@@ -127,6 +129,7 @@ namespace GEM.Emulation
                     case 0x01:  // MBC1
                     case 0x02:  // MBC1+RAM
                     case 0x03:  // MBC1+RAM+BATTERY
+                    case 0x10:  // MBC3
                     case 0x1B:  // MBC5+RAM+BATTERY
                         return _data[pos - 0x4000 + _romBank * 0x4000];
                 }
@@ -168,6 +171,7 @@ namespace GEM.Emulation
                         if ((value & 0x1F) == 0) value++;
                         _romBank = (_romBank & 0x60) + (value & 0x1F);
                         break;
+                    case 0x10:  // MBC3
                     case 0x1B:  // MBC5+RAM+BATTERY
                         _romBank = value & 0x7F;
                         break;
@@ -207,7 +211,10 @@ namespace GEM.Emulation
         public void WriteRAM(ushort pos, byte value)
         {
             // RAM Bank 0-n
-            _ram[pos + _ramBank * 0x2000] = value;
+            if (_isRamEnabled)
+            {
+                _ram[pos + _ramBank * 0x2000] = value;
+            }
         }
 
         public void SaveToFile()
