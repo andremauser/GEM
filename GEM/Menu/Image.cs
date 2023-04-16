@@ -19,7 +19,7 @@ namespace GEM.Menu
 
             // default values
             ForeColor = Color.White;
-            Width = _image.Width;
+            Width = _image.Width / imagesPerRow;
             Height = _image.Height;
         }
         public Image(BaseControl parent, Texture2D image, int imagesPerRow = 1) : base(parent)
@@ -30,7 +30,7 @@ namespace GEM.Menu
 
             // default values
             ForeColor = Color.White;
-            Width = _image.Width;
+            Width = _image.Width / imagesPerRow;
             Height = _image.Height;
         }
         #endregion

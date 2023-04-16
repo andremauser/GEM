@@ -300,15 +300,15 @@ namespace GEM.Menu
         {
             return AddMenu(name, new MenuButton(Panel, this, name, menuType, image) { Width = width, Height = height});
         }
-        public MenuButton AddHoverMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT)
+        public MenuButton AddHoverMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, int imagesPerRow = 1)
         {
-            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Hover, image) { Width = width, Height = height });
+            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Hover, image, imagesPerRow) { Width = width, Height = height });
             if (tmp.Image != null) tmp.Image.ResizeToParent();
             return tmp;
         }
-        public MenuButton AddClickMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT)
+        public MenuButton AddClickMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, int imagesPerRow = 1)
         {
-            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Click, image) { Width = width, Height = height });
+            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Click, image, imagesPerRow) { Width = width, Height = height });
             if (tmp.Image != null) tmp.Image.ResizeToParent();
             return tmp;
         }

@@ -409,9 +409,9 @@ namespace GEM.Emulation
             _menu["debug"]["audio"].AddClickMenu("show").OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
             for (int i = 0; i < 4; i++)
             {
-                MenuButton tmp = _menu["debug"]["audio"].AddClickMenu("CH" + (i + 1).ToString());
-                tmp.ButtonData = i;
-                tmp.OnClick += AudioSwitchHandler;
+                temp = _menu["debug"]["audio"].AddClickMenu("CH" + (i + 1).ToString());
+                temp.ButtonData = i;
+                temp.OnClick += AudioSwitchHandler;
             }
             _menu["debug"].AddClickMenu("grid").OnClick += (o, e) => { _showGrid = !_showGrid; };
             // quit
