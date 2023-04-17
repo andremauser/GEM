@@ -1,6 +1,7 @@
 ﻿using GEM.Emulation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using System;
 using System.Collections.Generic;
 
 namespace GEM.Menu
@@ -25,6 +26,8 @@ namespace GEM.Menu
         protected float _rotation;
         bool _enabled;
         bool _visible;
+
+        public event EventHandler OnDraw;
         #endregion
 
         #region Constructors
@@ -200,6 +203,7 @@ namespace GEM.Menu
             if (!Visible) return;
             foreach (BaseControl control in _controls)
             {
+                control.OnDraw?.Invoke(control, EventArgs.Empty);
                 control.Draw(spriteBatch);
             }
         }
@@ -217,6 +221,10 @@ namespace GEM.Menu
         public Panel AddPanel()
         {
             return (Panel)Add(new Panel(this));
+        }
+        public SwitchControl AddSwitch(string caption)
+        {
+            return (SwitchControl)Add(new SwitchControl(this, caption));
         }
         public Image AddImage(string image, int imagesPerRow = 1)
         {

@@ -7,31 +7,31 @@ namespace GEM.Menu
     internal class Image : BaseControl
     {
         #region Fields
-        Texture2D _image;
+        public Texture2D Texture;
         #endregion
 
         #region Constructors
         public Image(BaseControl parent, string image, int imagesPerRow = 1) : base(parent)
         {
             // load image
-            _image = Game1._Content.Load<Texture2D>(image);
+            Texture = Game1._Content.Load<Texture2D>(image);
             ImagesPerRow = imagesPerRow;
 
             // default values
             ForeColor = Color.White;
-            Width = _image.Width / imagesPerRow;
-            Height = _image.Height;
+            Width = Texture.Width / imagesPerRow;
+            Height = Texture.Height;
         }
         public Image(BaseControl parent, Texture2D image, int imagesPerRow = 1) : base(parent)
         {
             // image from texture2d
-            _image = image;
+            Texture = image;
             ImagesPerRow = imagesPerRow;
 
             // default values
             ForeColor = Color.White;
-            Width = _image.Width / imagesPerRow;
-            Height = _image.Height;
+            Width = Texture.Width / imagesPerRow;
+            Height = Texture.Height;
         }
         #endregion
 
@@ -43,7 +43,7 @@ namespace GEM.Menu
         {
             get
             {
-                return (float)_image.Width / ImagesPerRow / _image.Height;
+                return (float)Texture.Width / ImagesPerRow / Texture.Height;
             }
         }
         #endregion
@@ -53,12 +53,12 @@ namespace GEM.Menu
         {
             if (!Visible) return;
             Rectangle destinationRectangle = new Rectangle(PosX + Width / 2, PosY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
-            int drawWidth = (int)(_image.Height * TextureAspectRatio);
-            int drawLeft = (drawWidth * ImageIndex) % _image.Width;
-            Rectangle sourceRectangle = new Rectangle(drawLeft, 0, drawWidth, _image.Height); // use full texture
-            Vector2 origin = new Vector2(drawWidth / 2f, _image.Height / 2f); // rotation around center of texture
+            int drawWidth = (int)(Texture.Height * TextureAspectRatio);
+            int drawLeft = (drawWidth * ImageIndex) % Texture.Width;
+            Rectangle sourceRectangle = new Rectangle(drawLeft, 0, drawWidth, Texture.Height); // use full texture
+            Vector2 origin = new Vector2(drawWidth / 2f, Texture.Height / 2f); // rotation around center of texture
 
-            spriteBatch.Draw(_image, destinationRectangle, sourceRectangle, ForeColor, -_rotation, origin, SpriteEffects.None, 1.0f);
+            spriteBatch.Draw(Texture, destinationRectangle, sourceRectangle, ForeColor, -_rotation, origin, SpriteEffects.None, 1.0f);
 
             base.Draw(spriteBatch);
         }
