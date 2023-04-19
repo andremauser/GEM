@@ -17,7 +17,7 @@ namespace GEM.Menu
     {
         #region Fields
         public BaseControl Parent;
-        protected List<BaseControl> _controls;
+        public List<BaseControl> Controls;
         protected Texture2D _pixel;
         Align _horizontalAlign;
         Align _verticalAlign;
@@ -34,7 +34,7 @@ namespace GEM.Menu
         public BaseControl(BaseControl parent)
         {
             Parent = parent;
-            _controls = new List<BaseControl>();
+            Controls = new List<BaseControl>();
             _pixel = Emulator._Pixel;
             HorizontalAlign = Align.Center;
             VerticalAlign = Align.Center;
@@ -59,7 +59,7 @@ namespace GEM.Menu
             {
                 _width = value;
                 UpdateAlignPosition();
-                foreach (BaseControl child in _controls)
+                foreach (BaseControl child in Controls)
                 {
                     child.UpdateAlignPosition();
                 }
@@ -75,7 +75,7 @@ namespace GEM.Menu
             {
                 _height = value;
                 UpdateAlignPosition();
-                foreach (BaseControl child in _controls)
+                foreach (BaseControl child in Controls)
                 {
                     child.UpdateAlignPosition();
                 }
@@ -190,7 +190,7 @@ namespace GEM.Menu
             // update-calculations (defined in inherited class)
 
             // embedded controls should be updated first (e.g. click priority from top to bottom)
-            foreach (BaseControl control in _controls)
+            foreach (BaseControl control in Controls)
             {
                 control.Update();
             }
@@ -201,7 +201,7 @@ namespace GEM.Menu
 
             // embedded controls drawn last (from bottom to top)
             if (!Visible) return;
-            foreach (BaseControl control in _controls)
+            foreach (BaseControl control in Controls)
             {
                 control.OnDraw?.Invoke(control, EventArgs.Empty);
                 control.Draw(spriteBatch);
@@ -210,7 +210,7 @@ namespace GEM.Menu
 
         public BaseControl Add(BaseControl control)
         {
-            _controls.Add(control);
+            Controls.Add(control);
             control.Parent = this;
             return control;
         }
@@ -275,6 +275,7 @@ namespace GEM.Menu
         {
             _rotation = degree / 180f * MathHelper.Pi;
         }
+                
         #endregion
     }
 }

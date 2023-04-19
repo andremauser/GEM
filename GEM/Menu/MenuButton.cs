@@ -98,7 +98,7 @@ namespace GEM.Menu
             Input.OnMouseUp += MouseUpHandler;
 
             // default values
-            applyDefaultColors();
+            ApplyDefaultColors();
             Width = DEFAULT_WIDTH;
             Height = DEFAULT_HEIGHT;
             // set submenu anchor point (size of panel is 0)
@@ -114,7 +114,14 @@ namespace GEM.Menu
         public MenuButton this[string name]
         {
             // submenu access by name
-            get { return SubMenu[name]; }
+            get
+            {
+                if (SubMenu.ContainsKey(name))
+                {
+                    return SubMenu[name];
+                } 
+                return null;
+            }
             set { SubMenu[name] = value; }
         }
         public State State 
@@ -517,7 +524,7 @@ namespace GEM.Menu
         }
 
         // private helper methods
-        private void applyDefaultColors()
+        public void ApplyDefaultColors()
         {
             BackColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
             BackColor[State.Hover] = new Color(0.2f, 0.2f, 0.2f, 1f);
@@ -545,6 +552,7 @@ namespace GEM.Menu
         }
         private bool isMouseOver()
         {
+            //if (!Game1._Instance.IsMouseVisible) return false;
             int x = Input.MousePosX;
             int y = Input.MousePosY;
             bool hover = false;

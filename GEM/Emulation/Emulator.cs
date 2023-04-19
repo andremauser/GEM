@@ -30,16 +30,12 @@ namespace GEM.Emulation
 
         // colors
         Color[][] _emuPalette;
-        Color _onscreenColor = new Color(0.1f, 0.1f, 0.1f);
+        Color _onscreenColor = Color.White;// new Color(0.1f, 0.1f, 0.1f);
         Color _menuColor = new Color(0.1f, 0.1f, 0.1f);
         Color _gridColorDark;
         Color _gridColorLight;
         Color _pixelMarkerTextColor;
         Color _pixelMarkerColor;
-        static public Color _Dark;
-        static public Color _MediumDark;
-        static public Color _MediumLight;
-        static public Color _Light;
 
         // states
         int _emuColorIndex;
@@ -57,7 +53,6 @@ namespace GEM.Emulation
         List<string> _romList = new List<string>();
         List<BaseControl> _controls;
         float[] _volumeList;
-        MenuButton[] _audioIcons;
         MenuButton _menu;
 
         #endregion
@@ -68,7 +63,6 @@ namespace GEM.Emulation
             _graphicsDevice = graphicsDevice;
             _controls = new List<BaseControl>();
             _volumeList = new float[] { 0f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
-            _audioIcons = new MenuButton[4];
         }
         #endregion
 
@@ -204,7 +198,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadUp;
             btn.OnPress += (o, e) => _gameboy.IsButton_Up = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Up = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _dpad.Add(btn);
 
             // down
@@ -217,7 +211,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadDown;
             btn.OnPress += (o, e) => _gameboy.IsButton_Down = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Down = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _dpad.Add(btn);
 
             // right
@@ -229,7 +223,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadRight;
             btn.OnPress += (o, e) => _gameboy.IsButton_Right = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Right = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _dpad.Add(btn);
 
             // left
@@ -242,7 +236,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.DPadLeft;
             btn.OnPress += (o, e) => _gameboy.IsButton_Left = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Left = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _dpad.Add(btn);
 
 
@@ -260,7 +254,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.B;
             btn.OnPress += (o, e) => _gameboy.IsButton_A = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_A = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _btns.Add(btn);
 
             // B
@@ -273,7 +267,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.A;
             btn.OnPress += (o, e) => _gameboy.IsButton_B = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_B = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _btns.Add(btn);
 
             // start
@@ -286,7 +280,7 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Start;
             btn.OnPress += (o, e) => _gameboy.IsButton_Start = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _onScreenButtonsBase.Add(btn);
 
             // select
@@ -299,8 +293,9 @@ namespace GEM.Emulation
             btn.BtnBinding = Buttons.Back;
             btn.OnPress += (o, e) => _gameboy.IsButton_Select = true;
             btn.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
-            btn.SetButtonColors(Color.Transparent, _onscreenColor);
+            btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _onScreenButtonsBase.Add(btn);
+
             #endregion
 
             #region debug infos
@@ -311,23 +306,50 @@ namespace GEM.Emulation
             // sound channel icons
             _audioIconsBase = new BaseControl(null);
             _debugInformationsBase.Add(_audioIconsBase);
+            // vol plus
+            temp = new MenuButton(_audioIconsBase, null, "volplus", MenuType.StandAlone, "volplus", 1) { Width = 60, Height = 60 };
+            temp.Left = 120;
+            temp.Top = 0;
+            temp.Image.ResizeToParent();
+            temp.OnClick += (o, e) => { VolumeIndex++; };
+            temp.ApplyDefaultColors();
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.BackColor[State.Disabled] = Color.Transparent;
+            temp.ForeColor[State.Idle] = _menuColor;
+            temp.ForeColor[State.Disabled] = _menuColor;
+            _audioIconsBase.Add(temp);
+            // vol minus
+            temp = new MenuButton(_audioIconsBase, null, "volminus", MenuType.StandAlone, "volminus", 1) { Width = 60, Height = 60 };
+            temp.Left = 60;
+            temp.Top = 0;
+            temp.Image.ResizeToParent();
+            temp.OnClick += (o, e) => { VolumeIndex--; };
+            temp.ApplyDefaultColors();
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.BackColor[State.Disabled] = Color.Transparent;
+            temp.ForeColor[State.Idle] = _menuColor;
+            temp.ForeColor[State.Disabled] = _menuColor;
+            _audioIconsBase.Add(temp);
+            // channels
             for (int i = 0; i < 4; i++)
             {
-                _audioIcons[i] = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
-                _audioIcons[i].Left = 180;
-                _audioIcons[i].Top = i * _audioIcons[i].Height;
-                _audioIcons[i].Image.ResizeToParent();
-                _audioIcons[i].SetButtonColors(Color.Transparent, _onscreenColor);
-                _audioIcons[i].BackColor[State.Hover] = new Color(0.2f, 0.2f, 0.2f, 1f);
-                _audioIcons[i].BackColor[State.Press] = Color.DarkViolet;
-                _audioIcons[i].ButtonData = i;
-                _audioIcons[i].OnClick += AudioSwitchHandler;
-                _audioIconsBase.Add(_audioIcons[i]);
+                temp = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
+                temp.Left = 180;
+                temp.Top = i * temp.Height;
+                temp.Image.ResizeToParent();
+                temp.ButtonData = i;
+                temp.OnClick += audioSwitchHandler;
+                temp.ApplyDefaultColors();
+                temp.BackColor[State.Idle] = Color.Transparent;
+                temp.BackColor[State.Disabled] = Color.Transparent;
+                temp.OnDraw += audioIconsHandler;
+                _audioIconsBase.Add(temp);
             }
 
             #endregion
 
             #region window buttons
+            /*
             // maximize window
             temp = new MenuButton(image: "max") { Width = 60, Height = 60 };
             temp.Image.ResizeToParent();
@@ -345,6 +367,7 @@ namespace GEM.Emulation
             temp.ForeColor[State.Idle] = _menuColor;
             temp.OnClick += exitHandler;
             _controls.Add(temp);
+            */
             #endregion
 
             #region menu
@@ -364,7 +387,9 @@ namespace GEM.Emulation
             _menu.AddClickMenu("game");
             _menu.AddClickMenu("graphics");
             _menu.AddClickMenu("audio");
+            _menu.AddClickMenu("controls");
             _menu.AddClickMenu("quit");
+
             // cart
             MenuButton romBrowser = _menu["game"].AddClickMenu("open rom");
             romBrowser.OnOpen += updateRomListHandler;
@@ -399,41 +424,44 @@ namespace GEM.Emulation
                 temp.ButtonData = i; // set button data to color index
                 temp.OnClick += setPaletteButtonHandler;
             }
-            temp = _menu["graphics"].AddClickMenu("buttons");
-            temp.AddSwitch("buttons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
-            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
-            temp = _menu["graphics"].AddClickMenu("fullscreen");
-            temp.AddSwitch("fscreen").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.IsFullScreen); };
-            temp.OnClick += fullscreenHandler;
             temp = _menu["graphics"].AddClickMenu("grid");
             temp.AddSwitch("grid").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_showGrid); };
             temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
+            temp = _menu["graphics"].AddClickMenu("fullscreen");
+            temp.AddSwitch("fscreen").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.IsFullScreen); };
+            temp.OnClick += fullscreenHandler;
+            temp = _menu["graphics"].AddClickMenu("vsync");
+            temp.AddSwitch("vsync").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.SynchronizeWithVerticalRetrace); };
+            temp.OnClick += vsyncHandler;
             // audio
-            _menu["audio"].AddClickMenu("volume");
-            _menu["audio"]["volume"].AddClickMenu("vol +").OnClick += (o, e) => { VolumeIndex++; };
-            _menu["audio"]["volume"].AddClickMenu("vol -").OnClick += (o, e) => { VolumeIndex--; };
-            _menu["audio"]["volume"].AddClickMenu("mute").OnClick += (o, e) => { VolumeIndex = 0; };
+            _menu["audio"].AddClickMenu("volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%"); };
+            _menu["audio"]["volume"].AddClickMenu("vol +", "volplus").OnClick += (o, e) => { VolumeIndex++; };
+            _menu["audio"]["volume"].AddClickMenu("vol -", "volminus").OnClick += (o, e) => { VolumeIndex--; };
             temp = _menu["audio"].AddClickMenu("show");
             temp.AddSwitch("icons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_debugShowAudioIndicators); };
             temp.OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
+            _menu["audio"].AddClickMenu("channels");
             for (int i = 0; i < 4; i++)
             {
-                temp = _menu["audio"].AddClickMenu("CH" + (i + 1).ToString());
+                temp = _menu["audio"]["channels"].AddClickMenu("CH" + (i + 1).ToString());
                 temp.ButtonData = i;
                 temp.AddSwitch("ch" + (i + 1).ToString()).OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_gameboy.MasterSwitch[((MenuButton)((SwitchControl)o).Parent).ButtonData]); };
-                temp.OnClick += AudioSwitchHandler;
+                temp.OnClick += audioSwitchHandler;
                 
             }
+            // controls
+            temp = _menu["controls"].AddClickMenu("buttons");
+            temp.AddSwitch("buttons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
+            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
+
+            temp = _menu["controls"].AddClickMenu("mouse");
+            temp.AddSwitch("mouse").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Instance.IsMouseVisible); };
+            temp.OnClick += (o, e) => { Game1._Instance.IsMouseVisible = !Game1._Instance.IsMouseVisible; };
             // quit
             _menu["quit"].AddClickMenu("quit GEM").OnClick += exitHandler;
 
             #endregion
 
-        }
-
-        private void Temp_OnDraw(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         public void Update(Viewport viewport)
@@ -453,8 +481,6 @@ namespace GEM.Emulation
             // update emulator
             _gameboy.UpdateFrame();
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
-            updateAudioIcons();
-            updateMenuCaptions();
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
@@ -489,31 +515,6 @@ namespace GEM.Emulation
             parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
         }
 
-        // Update Methods
-        private void updateAudioIcons()
-        {
-            _audioIconsBase.Visible = _debugShowAudioIndicators;
-            for (int i = 0; i < 4; i++)
-            {
-                if (_gameboy.MasterSwitch[i])
-                {
-                    // MasterSwitch ON
-                    _audioIcons[i].Image.ImageIndex = _gameboy.IsChannelOutput[i] ? 2 : 1;
-                    _audioIcons[i].SetButtonColors(null, _gameboy.IsChannelOn[i] ? Color.White : _onscreenColor);
-                }
-                else
-                {
-                    // Masterswitch OFF
-                    _audioIcons[i].Image.ImageIndex = 0;
-                    _audioIcons[i].SetButtonColors(null, _onscreenColor);
-                }
-            }
-        }
-        private void updateMenuCaptions()
-        {
-            _menu["audio"]["volume"].Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%");
-        }
-
         // Draw Methods
         private void drawEmulator(Viewport viewport, Texture2D screen)
         {
@@ -541,11 +542,9 @@ namespace GEM.Emulation
                     drawMouseMarker(pixelSize, screenLeft, screenTop);
                 }
             }
-            
-            //drawWindow(1050, 100);
-            //drawBackground  (screenLeft + screenWidth + 20, screenTop + 286);
-            //drawTileset     (screenLeft + screenWidth + 20, screenTop + 576);
-            
+
+            // update audio icon visibility
+            _audioIconsBase.Visible = _debugShowAudioIndicators;
 
             foreach (BaseControl control in _controls)
             {
@@ -554,6 +553,7 @@ namespace GEM.Emulation
         }
         private void drawMouseMarker(float size, int left, int top)
         {
+            if (!Game1._Instance.IsMouseVisible) return;
             int pixelX = (int)((Input.MousePosX - left) / size);
             int pixelY = (int)((Input.MousePosY - top) / size);
             int pixelPosX = (int)(left + size * pixelX);
@@ -637,6 +637,11 @@ namespace GEM.Emulation
         {
             Game1._Graphics.ToggleFullScreen();
         }
+        private void vsyncHandler(object sender, EventArgs e)
+        {
+            Game1._Graphics.SynchronizeWithVerticalRetrace = !Game1._Graphics.SynchronizeWithVerticalRetrace;
+            Game1._Graphics.ApplyChanges();
+        }
         private void exitHandler(object sender, EventArgs e)
         {
             Game1._Instance.Exit();
@@ -676,10 +681,37 @@ namespace GEM.Emulation
             }
             _menu.Close(null, EventArgs.Empty);
         }
-        private void AudioSwitchHandler(Object sender, EventArgs e)
+        private void audioSwitchHandler(Object sender, EventArgs e)
         {
             MenuButton btn = (MenuButton)sender;
             _gameboy.MasterSwitch[btn.ButtonData] = !_gameboy.MasterSwitch[btn.ButtonData];
+        }
+        private void audioIconsHandler(object sender, EventArgs e)
+        {
+            int i = ((MenuButton)sender).ButtonData;
+            if (_gameboy.MasterSwitch[i])
+            {
+                // MasterSwitch ON
+                ((MenuButton)sender).Image.ImageIndex = _gameboy.IsChannelOutput[i] ? 2 : 1;
+
+                if (_gameboy.IsChannelOn[i])
+                {
+                    ((MenuButton)sender).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][1];
+                    ((MenuButton)sender).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][1];
+                }
+                else
+                {
+                    ((MenuButton)sender).ForeColor[State.Idle] = _menuColor;
+                    ((MenuButton)sender).ForeColor[State.Disabled] = _menuColor;
+                }
+            }
+            else
+            {
+                // Masterswitch OFF
+                ((MenuButton)sender).Image.ImageIndex = 0;
+                ((MenuButton)sender).ForeColor[State.Idle] = _menuColor;
+                ((MenuButton)sender).ForeColor[State.Disabled] = _menuColor;
+            }
         }
         #endregion
     }

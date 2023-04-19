@@ -24,8 +24,8 @@ namespace GEM.Menu
             }
 
             // add to controls
-            _controls.Add(_switchImage);
-            _controls.Add(Caption);
+            Controls.Add(_switchImage);
+            Controls.Add(Caption);
 
             // size
             Width = parent.Width;

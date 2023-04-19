@@ -268,54 +268,44 @@ namespace GEM.Emulation
                 }
 
                 // mixer left
-                int leftCount = 0;
                 float leftAnalog = 0;
                 if (_mmu.IsCH1Left && MasterSwitch[0])
                 {
                     leftAnalog += ch1AnalogOut;
-                    leftCount++;
                 }
                 if (_mmu.IsCH2Left && MasterSwitch[1])
                 {
                     leftAnalog += ch2AnalogOut;
-                    leftCount++;
                 }
                 if (_mmu.IsCH3Left && MasterSwitch[2])
                 {
                     leftAnalog += ch3AnalogOut;
-                    leftCount++;
                 }
                 if (_mmu.IsCH4Left && MasterSwitch[3])
                 {
                     leftAnalog += ch4AnalogOut;
-                    leftCount++;
                 }
-                leftAnalog /= leftCount;
+                leftAnalog /= 4;
 
                 // mixer right
-                int rightCount = 0;
                 float rightAnalog = 0;
                 if (_mmu.IsCH1Right && MasterSwitch[0])
                 {
                     rightAnalog += ch1AnalogOut;
-                    rightCount++;
                 }
                 if (_mmu.IsCH2Right && MasterSwitch[1])
                 {
                     rightAnalog += ch2AnalogOut;
-                    rightCount++;
                 }
                 if (_mmu.IsCH3Right && MasterSwitch[2])
                 {
                     rightAnalog += ch3AnalogOut;
-                    rightCount++;
                 }
                 if (_mmu.IsCH4Right && MasterSwitch[3])
                 {
                     rightAnalog += ch4AnalogOut;
-                    rightCount++;
                 }
-                rightAnalog /= rightCount;
+                rightAnalog /= 4;
 
                 // amplifier
                 leftAnalog *= (_mmu.VolumeLeft + 1) / 8f;

@@ -36,14 +36,14 @@ namespace GEM.Menu
                 {
                     case Direction.Vertical:
                         int w = 0;
-                        foreach (BaseControl control in _controls)
+                        foreach (BaseControl control in Controls)
                         {
                             w = Math.Max(w, control.Width);
                         }
                         return w;
                     case Direction.Horizontal:
                         w = 0;
-                        foreach(BaseControl control in _controls)
+                        foreach(BaseControl control in Controls)
                         {
                             w += control.Width;
                         }
@@ -60,14 +60,14 @@ namespace GEM.Menu
                 {
                     case Direction.Horizontal:
                         int h = 0;
-                        foreach (BaseControl control in _controls)
+                        foreach (BaseControl control in Controls)
                         {
                             h = Math.Max(h, control.Height);
                         }
                         return h;
                     case Direction.Vertical:
                         h = 0;
-                        foreach (BaseControl control in _controls)
+                        foreach (BaseControl control in Controls)
                         {
                             h += control.Height;
                         }
@@ -87,12 +87,12 @@ namespace GEM.Menu
             {
                 // order controls vertically
                 int top = 0;
-                for (int i = 0; i < _controls.Count; i++)
+                for (int i = 0; i < Controls.Count; i++)
                 {
-                    _controls[i].Top = top;
-                    top += _controls[i].Height;
+                    Controls[i].Top = top;
+                    top += Controls[i].Height;
 
-                    _controls[i].Left = 0;
+                    Controls[i].Left = 0;
                 }
             }
 
@@ -100,12 +100,12 @@ namespace GEM.Menu
             {
                 // order controls horizontally
                 int left = 0;
-                for (int i = 0; i < _controls.Count; i++)
+                for (int i = 0; i < Controls.Count; i++)
                 {
-                    _controls[i].Left = left;
-                    left += _controls[i].Width;
+                    Controls[i].Left = left;
+                    left += Controls[i].Width;
 
-                    _controls[i].Top = 0;
+                    Controls[i].Top = 0;
                 }
             }
         }

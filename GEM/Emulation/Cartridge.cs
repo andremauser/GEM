@@ -52,6 +52,7 @@ namespace GEM.Emulation
         {
             if (file == null)
                 return;
+            Reset();
 
             // Game file
             if (File.Exists(file))
