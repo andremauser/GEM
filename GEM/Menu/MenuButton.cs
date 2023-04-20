@@ -216,7 +216,7 @@ namespace GEM.Menu
                     Input.OnKeyDown -= _fokus.NavigationHandlerDown;
                     Input.OnKeyUp -= _fokus.NavigationHandlerUp;
                     Input.OnButtonDown -= _fokus.NavigationHandlerDown;
-                    Input.OnButtonDown -= _fokus.NavigationHandlerUp;
+                    Input.OnButtonUp -= _fokus.NavigationHandlerUp;
                 }
                 if (value == null)
                 {
@@ -232,7 +232,7 @@ namespace GEM.Menu
                     Input.OnKeyDown += _fokus.NavigationHandlerDown;
                     Input.OnKeyUp += _fokus.NavigationHandlerUp;
                     Input.OnButtonDown += _fokus.NavigationHandlerDown;
-                    Input.OnButtonDown += _fokus.NavigationHandlerUp;
+                    Input.OnButtonUp += _fokus.NavigationHandlerUp;
                 }
             }
         }
@@ -478,7 +478,10 @@ namespace GEM.Menu
 
             if (key == Keys.Enter || key == Keys.X)
             {
-                navigationPress();
+                if (Fokus.Enabled && Fokus.Visible)
+                {
+                    Fokus._keyboardRequest = State.Press;
+                }
             }
         }
         public void NavigationHandlerDown(Buttons btn)
@@ -505,7 +508,10 @@ namespace GEM.Menu
 
             if (btn == Buttons.A || btn == Buttons.Start)
             {
-                navigationPress();
+                if (Fokus.Enabled && Fokus.Visible)
+                {
+                    Fokus._gamepadRequest = State.Press;
+                }
             }
         }
         public void NavigationHandlerUp(Keys key)
@@ -648,13 +654,6 @@ namespace GEM.Menu
             if (_parentMenu == null || _parentMenu._parentMenu == null) return;
             Fokus = _parentMenu;
             Fokus.Close(null, EventArgs.Empty);
-        }
-        private void navigationPress()
-        {
-            if (Fokus.Enabled && Fokus.Visible)
-            {
-                Fokus._keyboardRequest = State.Press;
-            }
         }
         #endregion
     }
