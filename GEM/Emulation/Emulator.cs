@@ -54,6 +54,7 @@ namespace GEM.Emulation
         List<BaseControl> _controls;
         float[] _volumeList;
         MenuButton _menu;
+        MenuButton _toolTip;
 
         #endregion
 
@@ -174,6 +175,10 @@ namespace GEM.Emulation
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
             updateRomListHandler(null, EventArgs.Empty); // initial call to rom search - updated by click on "open rom"
+
+            _toolTip = new MenuButton(null, null, "", MenuType.StandAlone) { Enabled = false, Top = 680, Height = 40};
+            _toolTip.Width = _toolTip.Label.Width;
+            _controls.Add(_toolTip);
 
             MenuButton temp;
             MenuButton btn;
@@ -379,16 +384,16 @@ namespace GEM.Emulation
             _menu.Panel.VerticalAlign = Align.Bottom;
             _menu.KeyBinding = Keys.LeftControl;
             _menu.BtnBinding = Buttons.LeftShoulder;
-            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; Fokus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Fokus.Close(o, e); };
-            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; Fokus = null; };
+            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Focus.Close(o, e); };
+            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; Focus = null; };
             _menu.ForeColor[State.Idle] = _menuColor;
             _controls.Add(_menu);
             // add menu entries
-            _menu.AddClickMenu("game");
-            _menu.AddClickMenu("graphics");
-            _menu.AddClickMenu("audio");
-            _menu.AddClickMenu("controls");
-            _menu.AddClickMenu("quit");
+            _menu.AddClickMenu("game").ToolTip="game cartridge";
+            _menu.AddClickMenu("graphics").ToolTip = "video settings";
+            _menu.AddClickMenu("audio").ToolTip = "audio settings";
+            _menu.AddClickMenu("controls").ToolTip = "input settings";
+            _menu.AddClickMenu("quit").ToolTip = "quit emulator";
 
             // cart
             MenuButton romBrowser = _menu["game"].AddClickMenu("open rom");
@@ -469,7 +474,7 @@ namespace GEM.Emulation
             // update input
             Input.Update();
 
-            // update control states
+            // update controls' states
             foreach (BaseControl control in _controls)
             {
                 control.Update();
@@ -481,6 +486,10 @@ namespace GEM.Emulation
             // update emulator
             _gameboy.UpdateFrame();
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
+
+            // update tooltip
+            _toolTip.Label.Caption = Focus != null ? Focus.ToolTip : "";
+            _toolTip.Width = _toolTip.Label.Width;
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);

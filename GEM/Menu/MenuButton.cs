@@ -32,8 +32,8 @@ namespace GEM.Menu
         public event EventHandler OnPress;
         public event EventHandler OnRelease;
         public event EventHandler OnClick;
-        public event EventHandler OnFokus;
-        public event EventHandler OnFokusOut;
+        public event EventHandler OnFocus;
+        public event EventHandler OnFocusOut;
         // menu structure events
         public event EventHandler OnOpen;
         public event EventHandler OnClose;
@@ -49,7 +49,8 @@ namespace GEM.Menu
         State _state = State.Idle;
         Keys _keyBinding;
         Buttons _buttonBinding;
-        static MenuButton _fokus;
+        string _toolTip;
+        static MenuButton _focus;
         // button functionality
         bool _clickStarted = false;
         State _gamepadRequest;
@@ -79,19 +80,19 @@ namespace GEM.Menu
                 case MenuType.Click:
                     // submenu open on click
                     OnClick += ToggleMenu;
-                    OnFokus += OpenIfSideOpen;
+                    OnFocus += OpenIfSideOpen;
                     break;
                 case MenuType.Hover:
                     // submenu open on hover
-                    OnFokus += Open;
+                    OnFocus += Open;
                     OnClick += ToggleMenu;
                     break;
                 default:
                     break;
             }
-            OnFokus += CloseSideMenus;
-            OnFokus += CloseSubSubmenus;
-            OnFokusOut += (o, e) => { _clickStarted = false; _keyboardRequest = State.Idle; _gamepadRequest = State.Idle; };
+            OnFocus += CloseSideMenus;
+            OnFocus += CloseSubSubmenus;
+            OnFocusOut += (o, e) => { _clickStarted = false; _keyboardRequest = State.Idle; _gamepadRequest = State.Idle; };
 
             // bind mouse events
             Input.OnMouseDown += MouseDownHandler;
@@ -137,7 +138,8 @@ namespace GEM.Menu
                 // hover
                 if (value == State.Hover && _state == State.Idle)
                 {
-                    OnFokus?.Invoke(this, EventArgs.Empty);
+                    OnFocus?.Invoke(this, EventArgs.Empty);
+                    Focus = this;
                 }
                 // press
                 if (value == State.Press && _state != State.Press)
@@ -159,7 +161,7 @@ namespace GEM.Menu
                 // hover out
                 if (value == State.Idle && _state != State.Idle)
                 {
-                    OnFokusOut?.Invoke(this, EventArgs.Empty);
+                    OnFocusOut?.Invoke(this, EventArgs.Empty);
                 }
                 // set value
                 _state = value;
@@ -199,41 +201,54 @@ namespace GEM.Menu
                 Input.OnButtonUp += ButtonUpHandler;
             }
         }
-        public static MenuButton Fokus
+        public static MenuButton Focus
         {
             get
             {
-                return _fokus;
+                return _focus;
             }
             set
             {
-                if (_fokus != null)
+                // last focus
+                if (_focus != null)
                 {
-                    if (value != _fokus)
+                    if (value != _focus)
                     {
-                        _fokus.OnFokusOut?.Invoke(_fokus, EventArgs.Empty);
+                        _focus.OnFocusOut?.Invoke(_focus, EventArgs.Empty);
                     }
-                    Input.OnKeyDown -= _fokus.NavigationHandlerDown;
-                    Input.OnKeyUp -= _fokus.NavigationHandlerUp;
-                    Input.OnButtonDown -= _fokus.NavigationHandlerDown;
-                    Input.OnButtonUp -= _fokus.NavigationHandlerUp;
+                    Input.OnKeyDown -= _focus.NavigationHandlerDown;
+                    Input.OnKeyUp -= _focus.NavigationHandlerUp;
+                    Input.OnButtonDown -= _focus.NavigationHandlerDown;
+                    Input.OnButtonUp -= _focus.NavigationHandlerUp;
                 }
+                // new focus
                 if (value == null)
                 {
-                    _fokus = null;
+                    _focus = null;
                     return;
                 }
                 if (value.Parent != null)
                 {
-                    _fokus = value;
+                    _focus = value;
                 }
-                if (_fokus != null && value.Visible)
+                if (_focus != null && value.Visible)
                 {
-                    Input.OnKeyDown += _fokus.NavigationHandlerDown;
-                    Input.OnKeyUp += _fokus.NavigationHandlerUp;
-                    Input.OnButtonDown += _fokus.NavigationHandlerDown;
-                    Input.OnButtonUp += _fokus.NavigationHandlerUp;
+                    Input.OnKeyDown += _focus.NavigationHandlerDown;
+                    Input.OnKeyUp += _focus.NavigationHandlerUp;
+                    Input.OnButtonDown += _focus.NavigationHandlerDown;
+                    Input.OnButtonUp += _focus.NavigationHandlerUp;
                 }
+            }
+        }
+        public string ToolTip 
+        { 
+            get
+            {
+                return _toolTip != null ? _toolTip : "";
+            }
+            set
+            {
+                _toolTip = value;
             }
         }
         #endregion
@@ -344,7 +359,7 @@ namespace GEM.Menu
         }
         public void Open(object sender, EventArgs e)
         {
-            Fokus = this;
+            Focus = this;
             Panel.Visible = true;
             OnOpen?.Invoke(this, EventArgs.Empty);
         }
@@ -435,7 +450,7 @@ namespace GEM.Menu
                 if (!isMouseOverR())
                 { 
                     Close(this, EventArgs.Empty);
-                    Fokus = null;
+                    Focus = null;
                 }
             }
         }
@@ -457,7 +472,7 @@ namespace GEM.Menu
         public void NavigationHandlerDown(Keys key)
         {
             // only continue if fokus on current control
-            if (Fokus != this) return;
+            if (Focus != this) return;
 
             if (key == Keys.Down)
             {
@@ -478,16 +493,16 @@ namespace GEM.Menu
 
             if (key == Keys.Enter || key == Keys.X)
             {
-                if (Fokus.Enabled && Fokus.Visible)
+                if (Focus.Enabled && Focus.Visible)
                 {
-                    Fokus._keyboardRequest = State.Press;
+                    Focus._keyboardRequest = State.Press;
                 }
             }
         }
         public void NavigationHandlerDown(Buttons btn)
         {
             // only continue if fokus on current control
-            if (Fokus != this) return;
+            if (Focus != this) return;
 
             if (btn == Buttons.DPadDown)
             {
@@ -508,9 +523,9 @@ namespace GEM.Menu
 
             if (btn == Buttons.A || btn == Buttons.Start)
             {
-                if (Fokus.Enabled && Fokus.Visible)
+                if (Focus.Enabled && Focus.Visible)
                 {
-                    Fokus._gamepadRequest = State.Press;
+                    Focus._gamepadRequest = State.Press;
                 }
             }
         }
@@ -518,14 +533,14 @@ namespace GEM.Menu
         {
             if (key == Keys.Enter || key == Keys.X)
             {
-                Fokus._keyboardRequest = State.Idle;
+                Focus._keyboardRequest = State.Idle;
             }
         }
         public void NavigationHandlerUp(Buttons btn)
         {
             if (btn == Buttons.A || btn == Buttons.Start)
             {
-                Fokus._gamepadRequest = State.Idle;
+                Focus._gamepadRequest = State.Idle;
             }
         }
 
@@ -601,7 +616,7 @@ namespace GEM.Menu
             if (_gamepadRequest == State.Hover ||
                 _keyboardRequest == State.Hover ||
                 _mouseRequest == State.Hover ||
-                Fokus == this)
+                Focus == this)
             {
                 State = State.Hover;
                 return;
@@ -634,8 +649,8 @@ namespace GEM.Menu
             {
                 i++;
                 int nextIndex = (_parentMenu.SubMenu.Count + _menuIndex + step * i) % _parentMenu.SubMenu.Count;
-                Fokus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
-            } while (!Fokus.Enabled || !Fokus.Visible); // skip to next entry if control is disabled
+                Focus = _parentMenu.SubMenu.Values.ToArray<MenuButton>()[nextIndex];
+            } while (!Focus.Enabled || !Focus.Visible); // skip to next entry if control is disabled
         }
         private void navigationRight()
         {
@@ -644,16 +659,25 @@ namespace GEM.Menu
             int i = 0;
             do
             {
-                Fokus = SubMenu.Values.ToArray<MenuButton>()[i];
+                Focus = SubMenu.Values.ToArray<MenuButton>()[i];
                 i++;
                 i %= SubMenu.Count;
-            } while (!Fokus.Enabled || !Fokus.Visible);
+            } while (!Focus.Enabled || !Focus.Visible);
         }
         private void navigationLeft()
         {
-            if (_parentMenu == null || _parentMenu._parentMenu == null) return;
-            Fokus = _parentMenu;
-            Fokus.Close(null, EventArgs.Empty);
+            MenuButton close;
+            if (_parentMenu != null)
+            {
+                Focus = _parentMenu;
+                close = _parentMenu;
+            }
+            else
+            {
+                Focus = null;
+                close = (MenuButton)Parent.Parent;
+            }
+            close.Close(null, EventArgs.Empty);
         }
         #endregion
     }
