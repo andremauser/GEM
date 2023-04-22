@@ -58,6 +58,7 @@ namespace GEM.Menu
         State _mouseRequest;
         public int ButtonData;
         Image _arrow;
+        MenuType _menuType;
         #endregion
 
         #region Constructors
@@ -75,6 +76,7 @@ namespace GEM.Menu
             _arrow.Visible = false;
             Panel = AddPanel();
             Panel.Visible = false;
+            _menuType = menuType;
             switch (menuType)
             {
                 case MenuType.Click:
@@ -139,7 +141,7 @@ namespace GEM.Menu
                 if (value == State.Hover && _state == State.Idle)
                 {
                     OnFocus?.Invoke(this, EventArgs.Empty);
-                    Focus = this;
+                    if (_menuType != MenuType.StandAlone) Focus = this;
                 }
                 // press
                 if (value == State.Press && _state != State.Press)

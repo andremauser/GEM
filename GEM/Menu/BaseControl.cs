@@ -201,9 +201,9 @@ namespace GEM.Menu
 
             // embedded controls drawn last (from bottom to top)
             if (!Visible) return;
+            OnDraw?.Invoke(this, EventArgs.Empty);
             foreach (BaseControl control in Controls)
             {
-                control.OnDraw?.Invoke(control, EventArgs.Empty);
                 control.Draw(spriteBatch);
             }
         }
@@ -249,7 +249,7 @@ namespace GEM.Menu
                         Left = (Parent.Width - Width) / 2;
                         break;
                     case Align.Right:
-                        Left = Parent.Width - Width;
+                        Left = Parent.Width - Width - 0;
                         break;
                 }
                 switch (VerticalAlign)

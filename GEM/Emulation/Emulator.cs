@@ -5,10 +5,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using static GEM.Menu.MenuButton;
 
 namespace GEM.Emulation
 {
@@ -189,6 +187,12 @@ namespace GEM.Emulation
 
             _toolTip = new MenuButton(null, null, "", MenuType.StandAlone) { Enabled = false, Top = 680, Height = 40};
             _toolTip.Width = _toolTip.Label.Width;
+            _toolTip.OnDraw += (o, e) =>
+            {
+                // update tooltip line
+                _toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
+                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 20;
+            };
             _controls.Add(_toolTip);
 
             MenuButton temp;
@@ -395,8 +399,8 @@ namespace GEM.Emulation
             _menu.Panel.VerticalAlign = Align.Bottom;
             _menu.KeyBinding = Keys.LeftControl;
             _menu.BtnBinding = Buttons.LeftShoulder;
-            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; Focus.Close(o, e); };
-            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; Focus = null; };
+            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
+            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
             _menu.ForeColor[State.Idle] = _menuColor;
             _controls.Add(_menu);
             // add menu entries
@@ -410,14 +414,18 @@ namespace GEM.Emulation
             MenuButton romBrowser = _menu["game"].AddClickMenu("open rom");
             romBrowser.OnOpen += updateRomListHandler;
             romBrowser.OnOpen += (o, e) => { fillOpenDialog(romBrowser); };
-            _menu["game"]["open rom"].AddClickMenu("up", "arrow", 300, 40).OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(_menu["game"]["open rom"]); };
-            _menu["game"]["open rom"]["up"].Image.SetRotation(90);
+            temp = _menu["game"]["open rom"].AddClickMenu("up", "arrow", 300, 40);
+            temp.OnClick += (o, e) => { _openStartIndex -= OPEN_ENTRIES; fillOpenDialog(_menu["game"]["open rom"]); MenuButton.Focus = _menu["game"]["open rom"].SubMenu.Values.ToArray<MenuButton>()[OPEN_ENTRIES]; };
+            temp.Image.SetRotation(90);
+            temp.ToolTip = "scroll up";
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
                 _menu["game"]["open rom"].AddClickMenu(i.ToString(), null, 300, 40).OnClick += openRomHandler; // add empty entry dummies
             }
-            _menu["game"]["open rom"].AddClickMenu("down", "arrow", 300, 40).OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["game"]["open rom"]); };
-            _menu["game"]["open rom"]["down"].Image.SetRotation(-90);
+            temp = _menu["game"]["open rom"].AddClickMenu("down", "arrow", 300, 40);
+            temp.OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["game"]["open rom"]); MenuButton.Focus = _menu["game"]["open rom"].SubMenu.Values.ToArray<MenuButton>()[1]; };
+            temp.Image.SetRotation(-90);
+            temp.ToolTip = "scroll down";
             _menu["game"].AddClickMenu("reset rom").OnClick += _gameboy.Reset;
             _menu["game"].AddClickMenu("exit rom").OnClick += _gameboy.EjectCartridge;
             // graphics
@@ -455,8 +463,12 @@ namespace GEM.Emulation
             temp.OnClick += vsyncHandler;
             // audio
             _menu["audio"].AddClickMenu("volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%"); };
-            _menu["audio"]["volume"].AddClickMenu("vol +", "volplus").OnClick += (o, e) => { VolumeIndex++; };
-            _menu["audio"]["volume"].AddClickMenu("vol -", "volminus").OnClick += (o, e) => { VolumeIndex--; };
+            temp = _menu["audio"]["volume"].AddClickMenu("vol +", "volplus");
+            temp.OnClick += (o, e) => { VolumeIndex++; };
+            temp.ToolTip = "volume up";
+            temp = _menu["audio"]["volume"].AddClickMenu("vol -", "volminus");
+            temp.OnClick += (o, e) => { VolumeIndex--; };
+            temp.ToolTip = "volume down";
             temp = _menu["audio"].AddClickMenu("show");
             temp.AddSwitch("icons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_debugShowAudioIndicators); };
             temp.ToolTip = "show audio channel icons";
@@ -503,10 +515,6 @@ namespace GEM.Emulation
             // update emulator
             _gameboy.UpdateFrame();
             Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[_emuColorIndex]);
-
-            // update tooltip
-            _toolTip.Label.Caption = Focus != null ? Focus.ToolTip : "";
-            _toolTip.Width = Focus != null ? _toolTip.Label.Width + 20 : 0;
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
