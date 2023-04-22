@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Text;
 
 namespace GEM.Emulation
@@ -34,6 +35,25 @@ namespace GEM.Emulation
         public static int MousePosX { get; private set; }
         public static int MousePosY { get; private set; }
         public static bool IsLeftButtonPressed { get; private set; }
+        public static Vector2 LastMousePosition { get; set; }
+        public static Vector2 CurrentMousePosition
+        {
+            get
+            {
+                return new Vector2(MousePosX, MousePosY);
+            }
+        }
+        public static bool IsMouseVisible
+        {
+            get
+            {
+                return Game1._Instance.IsMouseVisible;
+            }
+            set
+            {
+                Game1._Instance.IsMouseVisible = value;
+            }
+        }
         #endregion
 
         #region Methods
@@ -46,6 +66,13 @@ namespace GEM.Emulation
             MousePosX = mouseState.X;
             MousePosY = mouseState.Y;
             IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
+            if (!IsMouseVisible)
+            {
+                if (Vector2.Distance(CurrentMousePosition, LastMousePosition) > 10)
+                {
+                    IsMouseVisible = true;
+                }
+            }
 
             invokeKeyboardEvents(keyboardState);
             invokeGamepadEvents(gamePadState);
@@ -56,6 +83,12 @@ namespace GEM.Emulation
         {
             // keyboard events
             Keys[] pressedKeys = keyboardState.GetPressedKeys();
+            if (pressedKeys.Count() > 0)
+            {
+                // hide mouse
+                IsMouseVisible = false;
+                LastMousePosition = CurrentMousePosition;
+            }
             if (_lastPressedKeys != null)
             {
                 // key down
@@ -86,6 +119,12 @@ namespace GEM.Emulation
 
             // gamepad events
             Buttons[] pressedButtons = GetPressedButtons(gamepadState);
+            if (pressedButtons.Count() > 0)
+            {
+                // hide mouse
+                IsMouseVisible = false;
+                LastMousePosition = CurrentMousePosition;
+            }
             if (_lastPressedButtons != null)
             {
                 // button down

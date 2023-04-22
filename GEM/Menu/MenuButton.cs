@@ -244,7 +244,7 @@ namespace GEM.Menu
         { 
             get
             {
-                return _toolTip != null ? _toolTip : "";
+                return _toolTip != null ? _toolTip : Label.Caption;
             }
             set
             {
@@ -573,7 +573,7 @@ namespace GEM.Menu
         }
         private bool isMouseOver()
         {
-            //if (!Game1._Instance.IsMouseVisible) return false;
+            if (!Input.IsMouseVisible) return false;
             int x = Input.MousePosX;
             int y = Input.MousePosY;
             bool hover = false;

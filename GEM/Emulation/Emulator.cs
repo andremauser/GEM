@@ -30,7 +30,7 @@ namespace GEM.Emulation
 
         // colors
         Color[][] _emuPalette;
-        Color _onscreenColor = Color.White;// new Color(0.1f, 0.1f, 0.1f);
+        string[] _emuPaletteNames;
         Color _menuColor = new Color(0.1f, 0.1f, 0.1f);
         Color _gridColorDark;
         Color _gridColorLight;
@@ -169,6 +169,17 @@ namespace GEM.Emulation
                     new Color(54, 93, 72),
                     new Color(42, 69, 59)
                 },
+            };
+            _emuPaletteNames = new string[]
+            {
+                "Green",
+                "Yellow",
+                "Game and Watch",
+                "Zelda SGB",
+                "Pokemon SGB",
+                "Megaman SGB",
+                "Default SGB",
+                "Original DMG"
             };
             _gridColorDark = new Color(0, 0, 0, 128);
             _gridColorLight = new Color(0, 0, 0, 32);
@@ -389,11 +400,11 @@ namespace GEM.Emulation
             _menu.ForeColor[State.Idle] = _menuColor;
             _controls.Add(_menu);
             // add menu entries
-            _menu.AddClickMenu("game").ToolTip="game cartridge";
-            _menu.AddClickMenu("graphics").ToolTip = "video settings";
-            _menu.AddClickMenu("audio").ToolTip = "audio settings";
-            _menu.AddClickMenu("controls").ToolTip = "input settings";
-            _menu.AddClickMenu("quit").ToolTip = "quit emulator";
+            _menu.AddClickMenu("game");
+            _menu.AddClickMenu("graphics");
+            _menu.AddClickMenu("audio");
+            _menu.AddClickMenu("controls");
+            _menu.AddClickMenu("quit");
 
             // cart
             MenuButton romBrowser = _menu["game"].AddClickMenu("open rom");
@@ -415,6 +426,7 @@ namespace GEM.Emulation
             {
                 temp = _menu["graphics"]["palette"].AddClickMenu("color" + i.ToString());
                 temp.Label.Caption = "";
+                if (_emuPaletteNames.Count() > i) temp.ToolTip = _emuPaletteNames[i];
                 Panel colorPanel = temp.AddPanel();
                 colorPanel.Direction = Direction.Horizontal;
                 for (int j = 0; j < 4; j++)
@@ -431,12 +443,15 @@ namespace GEM.Emulation
             }
             temp = _menu["graphics"].AddClickMenu("grid");
             temp.AddSwitch("grid").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_showGrid); };
+            temp.ToolTip = "show pixel grid";
             temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
             temp = _menu["graphics"].AddClickMenu("fullscreen");
             temp.AddSwitch("fscreen").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.IsFullScreen); };
+            temp.ToolTip = "toggle fullscreen mode";
             temp.OnClick += fullscreenHandler;
             temp = _menu["graphics"].AddClickMenu("vsync");
             temp.AddSwitch("vsync").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.SynchronizeWithVerticalRetrace); };
+            temp.ToolTip = "toggle vsync";
             temp.OnClick += vsyncHandler;
             // audio
             _menu["audio"].AddClickMenu("volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%"); };
@@ -444,6 +459,7 @@ namespace GEM.Emulation
             _menu["audio"]["volume"].AddClickMenu("vol -", "volminus").OnClick += (o, e) => { VolumeIndex--; };
             temp = _menu["audio"].AddClickMenu("show");
             temp.AddSwitch("icons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_debugShowAudioIndicators); };
+            temp.ToolTip = "show audio channel icons";
             temp.OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
             _menu["audio"].AddClickMenu("channels");
             for (int i = 0; i < 4; i++)
@@ -452,16 +468,17 @@ namespace GEM.Emulation
                 temp.ButtonData = i;
                 temp.AddSwitch("ch" + (i + 1).ToString()).OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_gameboy.MasterSwitch[((MenuButton)((SwitchControl)o).Parent).ButtonData]); };
                 temp.OnClick += audioSwitchHandler;
-                
             }
+            _menu["audio"]["channels"]["CH1"].ToolTip = "channel 1: square wave 1";
+            _menu["audio"]["channels"]["CH2"].ToolTip = "channel 2: square wave 2";
+            _menu["audio"]["channels"]["CH3"].ToolTip = "channel 3: custom wave";
+            _menu["audio"]["channels"]["CH4"].ToolTip = "channel 4: noise";
             // controls
             temp = _menu["controls"].AddClickMenu("buttons");
             temp.AddSwitch("buttons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
+            temp.ToolTip = "show onscreen buttons";
             temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
 
-            temp = _menu["controls"].AddClickMenu("mouse");
-            temp.AddSwitch("mouse").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Instance.IsMouseVisible); };
-            temp.OnClick += (o, e) => { Game1._Instance.IsMouseVisible = !Game1._Instance.IsMouseVisible; };
             // quit
             _menu["quit"].AddClickMenu("quit GEM").OnClick += exitHandler;
 
@@ -489,7 +506,7 @@ namespace GEM.Emulation
 
             // update tooltip
             _toolTip.Label.Caption = Focus != null ? Focus.ToolTip : "";
-            _toolTip.Width = _toolTip.Label.Width;
+            _toolTip.Width = Focus != null ? _toolTip.Label.Width + 20 : 0;
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
@@ -511,6 +528,7 @@ namespace GEM.Emulation
                     parent[i.ToString()].ButtonData = index;
                     string fullName = _romList[index];
                     string fileName = fullName.Substring(fullName.LastIndexOf("/") + 1);
+                    parent[i.ToString()].ToolTip = fileName;
                     parent[i.ToString()].Label.Caption = fileName.Substring(0, Math.Min(fileName.Length, 26));
                     parent[i.ToString()].Label.HorizontalAlign = Align.Left;
                     parent[i.ToString()].Label.Left = 20;
