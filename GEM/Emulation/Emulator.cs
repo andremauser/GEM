@@ -547,6 +547,12 @@ namespace GEM.Emulation
                     parent[i.ToString()].Label.Caption = "";
                 }
             }
+            if (_romList.Count == 0)
+            {
+                parent["0"].Enabled = true;
+                parent["0"].Label.Caption = "no roms found";
+                parent["0"].ToolTip = "put rom files in /roms folder";
+            }
             parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
         }
 
