@@ -1,18 +1,27 @@
-![icon](/GEM/icon.ico)
+<img align="left" width="80" height="80" src="GEM/icon.ico" alt="icon">
 
 # GEM
-GB Emulator Multiplatform
+**Game Boy Emulator Multiplatform**
 
-Written in C# using [MonoGame](https://www.monogame.org/)
+GEM is a Game Boy emulator written in C# using [MonoGame](https://www.monogame.org/) framework.
 
-Personal hobby and learning project inspired by [The Ultimate Game Boy Talk](https://www.youtube.com/watch?v=HyzD8pNlpwI)
+This is a personal hobby and learning project inspired by [The Ultimate Game Boy Talk](https://media.ccc.de/v/33c3-8029-the_ultimate_game_boy_talk) by Michael Steil.
 
-:warning::warning::warning: Early work in progress - expect glitches and crashes :warning::warning::warning:
+## Disclaimer
+- :warning: Work in progress - expect glitches and crashes 
+- :warning: Executable seems to cause virus alerts on windows
 
-![screenshot01](screenshot01.png)
+## Screenshots
+<img width=50% height=50% src="screenshot01.png" alt="screenshot01">
 
-![screenshot02](screenshot02.png)
+<img width=50% height=50% src="screenshot02.png" alt="screenshot02">
 
-![screenshot03](screenshot03.png)
+## References
+GameBoy is well documented and there are many great reference pages out there. This is a small selection of those which helped me most:
+- [Pan Docs](https://gbdev.io/pandocs/About.html) - Game Boy documentation since 1995
+- [Imran Nazar](http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU) - Game Boy Emulation in JavaScript
+- [OpCodes](https://gbdev.io/gb-opcodes/optables/) - CPU instruction table
 
-![screenshot04](screenshot04.png)
+Sound:
+- [Nightshade](https://nightshade256.github.io/2021/03/27/gb-sound-emulation.html) - Game Boy Sound Emulation
+- [David Gouveia](https://www.david-gouveia.com/creating-a-basic-synth-in-xna-part-i) - Sound in XNA
