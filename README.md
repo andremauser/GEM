@@ -12,9 +12,9 @@ This is a personal hobby and learning project inspired by [The Ultimate Game Boy
 - :warning: Executable seems to cause virus alerts on windows
 
 ## Screenshots
-<img width=50% height=50% src="screenshot01.png" alt="screenshot01">
+<img src="screenshot01.png" alt="screenshot01">
 
-<img width=50% height=50% src="screenshot02.png" alt="screenshot02">
+<img src="screenshot02.png" alt="screenshot02">
 
 ## References
 GameBoy is well documented and there are many great reference pages out there. This is a small selection of those which helped me most:
