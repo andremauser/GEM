@@ -17,7 +17,7 @@ This is a personal hobby and learning project inspired by [The Ultimate Game Boy
 <img src="screenshot02.png" alt="screenshot02">
 
 ## References
-GameBoy is well documented and there are many great reference pages out there. This is a small selection of those which helped me most:
+Game Boy is well documented and there are many great reference pages out there. This is a small selection of those which helped me most:
 - [Pan Docs](https://gbdev.io/pandocs/About.html) - Game Boy documentation since 1995
 - [Imran Nazar](http://imrannazar.com/GameBoy-Emulation-in-JavaScript:-The-CPU) - Game Boy Emulation in JavaScript
 - [OpCodes](https://gbdev.io/gb-opcodes/optables/) - CPU instruction table
