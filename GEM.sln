@@ -9,6 +9,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Platforms", "Platforms", "{
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GEM.Desktop", "GEM.Desktop\GEM.Desktop.csproj", "{E738BB0F-FD1D-4536-BBF7-A0B95A928AE6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GEM.Droid", "GEM.Droid\GEM.Droid.csproj", "{1E461929-24EF-430A-B671-CA32130DA0DA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,17 +21,25 @@ Global
 		{E738BB0F-FD1D-4536-BBF7-A0B95A928AE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E738BB0F-FD1D-4536-BBF7-A0B95A928AE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E738BB0F-FD1D-4536-BBF7-A0B95A928AE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1E461929-24EF-430A-B671-CA32130DA0DA}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E738BB0F-FD1D-4536-BBF7-A0B95A928AE6} = {EEA00713-6E2C-488F-AEF8-6B47C9207144}
+		{1E461929-24EF-430A-B671-CA32130DA0DA} = {EEA00713-6E2C-488F-AEF8-6B47C9207144}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0B618FE3-F0DA-43D0-919F-2CF528971D02}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		GEM\GEM.projitems*{1e461929-24ef-430a-b671-ca32130da0da}*SharedItemsImports = 5
 		GEM\GEM.projitems*{a0cdbd0e-3a41-42b7-9425-a838bc2c7383}*SharedItemsImports = 13
 		GEM\GEM.projitems*{e738bb0f-fd1d-4536-bbf7-a0b95a928ae6}*SharedItemsImports = 5
 	EndGlobalSection

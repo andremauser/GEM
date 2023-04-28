@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,6 +57,7 @@ namespace GEM.Menu
         State _gamepadRequest;
         State _keyboardRequest;
         State _mouseRequest;
+        State _touchRequest;
         public int ButtonData;
         Image _arrow;
         MenuType _menuType;
@@ -258,7 +260,7 @@ namespace GEM.Menu
         #region Methods
         public override void Update()
         {
-            if ( Visible)
+            if (Visible)
             {
                 // mouse hover
                 if (isMouseOver() && _mouseRequest == State.Idle && !Input.IsLeftButtonPressed)
@@ -268,6 +270,32 @@ namespace GEM.Menu
                 if (!isMouseOver() && _mouseRequest != State.Press)
                 {
                     _mouseRequest = State.Idle;
+                }
+
+                // touch input
+                foreach (TouchLocation touch in Input.TouchCollection)
+                {
+                    if (touch.State == TouchLocationState.Pressed)
+                    {
+                        if (isTouchOver(touch))
+                        {
+                            _touchRequest = State.Press;
+                            _clickStarted = true;
+                        }
+                        // close menu on click outside
+                        if (_parentMenu == null)
+                        {
+                            if (!isTouchOverR(touch))
+                            {
+                                Close(this, EventArgs.Empty);
+                                Focus = null;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _touchRequest = State.Idle;
+                    }
                 }
             }
 
@@ -609,7 +637,8 @@ namespace GEM.Menu
             // Press
             if (_gamepadRequest == State.Press ||
                 _keyboardRequest == State.Press ||
-                _mouseRequest == State.Press)
+                _mouseRequest == State.Press ||
+                _touchRequest == State.Press)
             {
                 State = State.Press;
                 return;
@@ -680,6 +709,30 @@ namespace GEM.Menu
                 close = (MenuButton)Parent.Parent;
             }
             close.Close(null, EventArgs.Empty);
+        }
+        private bool isTouchOver(TouchLocation touch)
+        {
+            int x = (int)touch.Position.X;
+            int y = (int)touch.Position.Y;
+            bool hover = false;
+            if (x > PosX && x < (PosX + Width) && y > PosY && y < (PosY + Height))
+            {
+                hover = true;
+            }
+            return hover;
+        }
+        private bool isTouchOverR(TouchLocation touch)
+        {
+            // recursive hover check
+            bool hover = isTouchOver(touch);
+            if (Panel.Visible)
+            {
+                foreach (MenuButton sub in SubMenu.Values)
+                {
+                    hover |= sub.isTouchOverR(touch);
+                }
+            }
+            return hover;
         }
         #endregion
     }

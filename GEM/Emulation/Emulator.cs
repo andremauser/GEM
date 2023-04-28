@@ -694,6 +694,9 @@ namespace GEM.Emulation
         }
         private void updateRomListHandler(object sender, EventArgs e)
         {
+#if __ANDROID__
+            return;
+#endif
             if (!Directory.Exists("roms/"))
                 Directory.CreateDirectory("roms/");
             int i = 0;
@@ -754,6 +757,6 @@ namespace GEM.Emulation
                 ((MenuButton)sender).ForeColor[State.Disabled] = _menuColor;
             }
         }
-        #endregion
+#endregion
     }
 }

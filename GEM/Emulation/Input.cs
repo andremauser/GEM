@@ -1,6 +1,7 @@
 ﻿using GEM.Menu;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -54,6 +55,7 @@ namespace GEM.Emulation
                 Game1._Instance.IsMouseVisible = value;
             }
         }
+        public static TouchCollection TouchCollection { get; private set; }
         #endregion
 
         #region Methods
@@ -66,6 +68,7 @@ namespace GEM.Emulation
             MousePosX = mouseState.X;
             MousePosY = mouseState.Y;
             IsLeftButtonPressed = mouseState.LeftButton.HasFlag(ButtonState.Pressed);
+            // reactivate mouse
             if (!IsMouseVisible)
             {
                 if (Vector2.Distance(CurrentMousePosition, LastMousePosition) > 10)
@@ -77,6 +80,8 @@ namespace GEM.Emulation
             invokeKeyboardEvents(keyboardState);
             invokeGamepadEvents(gamePadState);
             invokeMouseEvents(mouseState);
+
+            TouchCollection = TouchPanel.GetState();
         }
 
         static void invokeKeyboardEvents(KeyboardState keyboardState)
