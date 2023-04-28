@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>6efba8a9-a407-4029-bdd0-651d22a87386</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>GEM</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <MonoGameContentReference Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\APU.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Cartridge.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\CPU.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Emulator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Gameboy.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\GPU.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Input.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Layer.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\MMU.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Register.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Sprite.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\BaseControl.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\Image.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\Label.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\MenuButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\Panel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\SwitchControl.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="$(MSBuildThisFileDirectory)Content\arrow.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\btna.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\btnb.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\dpad.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\max.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\menu.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\quit.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\raw\cart.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\sound.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\stasel.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\switch.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\volminus.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\volplus.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)Content\Console.spritefont" />
+    <None Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\arrow.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\btna.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\btnb.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\dpad.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\max.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\menu.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\quit.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\sound.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\stasel.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\switch.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\volminus.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)Content\raw\volplus.xcf" />
+  </ItemGroup>
+</Project>
