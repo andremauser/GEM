@@ -1,4 +1,4 @@
-<img align="left" width="80" height="80" src="GEM.Desktop/icon.ico" alt="icon">
+<img align="left" width="80" height="80" src="GEM.Desktop/Icon.ico" alt="icon">
 
 # GEM
 **Game Boy Emulator Multiplatform**
