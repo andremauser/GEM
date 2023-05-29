@@ -53,7 +53,10 @@ namespace GEM.Emulation
         float[] _volumeList;
         MenuButton _menu;
         MenuButton _toolTip;
-
+        int _screenWidth;
+        int _screenHeight;
+        int _screenLeft;
+        int _screenTop; 
         #endregion
 
         #region Constructors
@@ -323,6 +326,16 @@ namespace GEM.Emulation
             _debugInformationsBase = new BaseControl(null);
             _controls.Add(_debugInformationsBase);
 
+
+            // fps
+            temp = new MenuButton(_debugInformationsBase, null, "fps", MenuType.StandAlone) { Width = 60, Height = 60 };
+            temp.Left = 1040;
+            temp.Top = 0;
+            temp.SetButtonColors(Color.Transparent, null);
+            temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = Game1._Instance.FPS.ToString(); };
+            _debugInformationsBase.Add(temp);
+
+
             // sound channel icons
             _audioIconsBase = new BaseControl(null);
             _debugInformationsBase.Add(_audioIconsBase);
@@ -563,24 +576,24 @@ namespace GEM.Emulation
             float pixelSize = MathHelper.Min(viewport.Height / 144f,
                                              viewport.Width / 160f);
 
-            int screenWidth = (int)pixelSize * 160;
-            int screenHeight = (int)pixelSize * 144;
-            int screenLeft = (viewport.Width - screenWidth) / 2;
-            int screenTop = (viewport.Height - screenHeight) / 2;
+            _screenWidth = (int)pixelSize * 160;
+            _screenHeight = (int)pixelSize * 144;
+            _screenLeft = (viewport.Width - _screenWidth) / 2;
+            _screenTop = (viewport.Height - _screenHeight) / 2;
 
             // Draw Screen
-            _spriteBatch.Draw(screen, new Rectangle(screenLeft, screenTop, screenWidth, screenHeight), Color.White);
+            _spriteBatch.Draw(screen, new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), Color.White);
 
             // Draw Grid
             if (_showGrid)
             {
-                drawGrid(pixelSize, screenLeft, screenTop, screenWidth, screenHeight);
-                if (Input.MousePosX >= screenLeft &&
-                    Input.MousePosX < screenLeft + screenWidth &&
-                    Input.MousePosY >= screenTop &&
-                    Input.MousePosY < screenTop + screenHeight)
+                drawGrid(pixelSize, _screenLeft, _screenTop, _screenWidth, _screenHeight);
+                if (Input.MousePosX >= _screenLeft &&
+                    Input.MousePosX < _screenLeft + _screenWidth &&
+                    Input.MousePosY >= _screenTop &&
+                    Input.MousePosY < _screenTop + _screenHeight)
                 {
-                    drawMouseMarker(pixelSize, screenLeft, screenTop);
+                    drawMouseMarker(pixelSize, _screenLeft, _screenTop);
                 }
             }
 

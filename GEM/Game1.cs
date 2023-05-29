@@ -17,7 +17,6 @@ namespace GEM
         Emulator _emulator;
         float _fpsSecondCounter;
         int _fpsFrameCounter;
-        int _fps;
         static public ContentManager _Content;
         static public int CPU_FREQ = 4194304;
         static public int FRAME_CYCLES = 70224;
@@ -39,7 +38,7 @@ namespace GEM
         #endregion
 
         #region Properties
-        
+        public int FPS { get; private set; } 
         #endregion
 
         #region Methods
@@ -79,11 +78,11 @@ namespace GEM
             _fpsFrameCounter++;
             if (_fpsSecondCounter >= 1)
             {
-                _fps = _fpsFrameCounter;
+                FPS = _fpsFrameCounter;
                 _fpsFrameCounter = 0;
                 _fpsSecondCounter = 0;
             }
-            Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, _fps, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
+            Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, FPS, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
         }
         #endregion
 
