@@ -56,7 +56,9 @@ namespace GEM.Emulation
         int _screenWidth;
         int _screenHeight;
         int _screenLeft;
-        int _screenTop; 
+        int _screenTop;
+
+        Random _random = new Random();
         #endregion
 
         #region Constructors
@@ -182,6 +184,7 @@ namespace GEM.Emulation
                 "Default SGB",
                 "Original DMG"
             };
+            _emuColorIndex = _random.Next(_emuPalette.Length);
             _gridColorDark = new Color(0, 0, 0, 128);
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
@@ -195,6 +198,7 @@ namespace GEM.Emulation
                 // update tooltip line
                 _toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
                 _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 20;
+                _toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
             };
             _controls.Add(_toolTip);
 
@@ -210,6 +214,7 @@ namespace GEM.Emulation
             // dpad
             BaseControl _dpad = new BaseControl(null) { Left = 120, Top = 400 };
             _onScreenButtonsBase.Add(_dpad);
+            _dpad.OnDraw += (o, e) => { ((BaseControl)o).Top = Game1._Graphics.GraphicsDevice.Viewport.Height / 2;  };
 
             // up
             btn = new MenuButton(_dpad, null, "up", MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
@@ -266,6 +271,11 @@ namespace GEM.Emulation
             // buttons A, B
             BaseControl _btns = new BaseControl(null) { Left = 1150, Top = 400 };
             _onScreenButtonsBase.Add(_btns);
+            _btns.OnDraw += (o, e) => 
+            { 
+                ((BaseControl)o).Top = Game1._Graphics.GraphicsDevice.Viewport.Height / 2;
+                ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - 120;
+            };
 
             // A
             btn = new MenuButton(_btns, null, "A", MenuType.StandAlone, "btna", 4) { Width = 100, Height = 100 };
@@ -305,6 +315,11 @@ namespace GEM.Emulation
             btn.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
             btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _onScreenButtonsBase.Add(btn);
+            btn.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = Game1._Graphics.GraphicsDevice.Viewport.Height - ((BaseControl)o).Height;
+                ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - 240;
+            };
 
             // select
             btn = new MenuButton(null, null, "Select", MenuType.StandAlone, "stasel", 4) { Width = 100, Height = 100 };
@@ -318,6 +333,10 @@ namespace GEM.Emulation
             btn.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
             btn.OnDraw += (o, e) => { ((MenuButton)o).SetButtonColors(Color.Transparent, _emuPalette[_emuColorIndex][2]); };
             _onScreenButtonsBase.Add(btn);
+            btn.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = Game1._Graphics.GraphicsDevice.Viewport.Height - ((BaseControl)o).Height;
+            };
 
             #endregion
 
@@ -331,17 +350,34 @@ namespace GEM.Emulation
             temp = new MenuButton(_debugInformationsBase, null, "fps", MenuType.StandAlone) { Width = 60, Height = 60 };
             temp.Left = 1040;
             temp.Top = 0;
-            temp.SetButtonColors(Color.Transparent, null);
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.BackColor[State.Press] = temp.BackColor[State.Hover]; // disable press
             temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = Game1._Instance.FPS.ToString(); };
+            temp.OnDraw += (o, e) => { ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - ((BaseControl)o).Width; };
+            temp.OnDraw += (o, e) => { ((MenuButton)o).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2]; };
             _debugInformationsBase.Add(temp);
 
 
             // sound channel icons
             _audioIconsBase = new BaseControl(null);
             _debugInformationsBase.Add(_audioIconsBase);
+            // vol %
+            temp = new MenuButton(_debugInformationsBase, null, "vol", MenuType.StandAlone) { Width = 60, Height = 60 };
+            temp.Left = 160;
+            temp.Top = 0;
+            temp.BackColor[State.Idle] = Color.Transparent;
+            temp.BackColor[State.Disabled] = Color.Transparent;
+            temp.BackColor[State.Press] = temp.BackColor[State.Hover]; // disable press
+            temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = _volumeList[_volumeIndex].ToString("0%"); };
+            temp.OnDraw += (o, e) =>
+            {
+                ((MenuButton)o).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2];
+                ((MenuButton)o).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][2];
+            };
+            _audioIconsBase.Add(temp);
             // vol plus
             temp = new MenuButton(_audioIconsBase, null, "volplus", MenuType.StandAlone, "volplus", 1) { Width = 60, Height = 60 };
-            temp.Left = 120;
+            temp.Left = 220;
             temp.Top = 0;
             temp.Image.ResizeToParent();
             temp.OnClick += (o, e) => { VolumeIndex++; };
@@ -351,9 +387,14 @@ namespace GEM.Emulation
             temp.ForeColor[State.Idle] = _menuColor;
             temp.ForeColor[State.Disabled] = _menuColor;
             _audioIconsBase.Add(temp);
+            temp.OnDraw += (o, e) =>
+            {
+                ((MenuButton)o).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2];
+                ((MenuButton)o).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][2];
+            };
             // vol minus
             temp = new MenuButton(_audioIconsBase, null, "volminus", MenuType.StandAlone, "volminus", 1) { Width = 60, Height = 60 };
-            temp.Left = 60;
+            temp.Left = 100;
             temp.Top = 0;
             temp.Image.ResizeToParent();
             temp.OnClick += (o, e) => { VolumeIndex--; };
@@ -363,12 +404,19 @@ namespace GEM.Emulation
             temp.ForeColor[State.Idle] = _menuColor;
             temp.ForeColor[State.Disabled] = _menuColor;
             _audioIconsBase.Add(temp);
+            temp.OnDraw += (o, e) =>
+            {
+                ((MenuButton)o).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2];
+                ((MenuButton)o).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][2];
+            };
             // channels
             for (int i = 0; i < 4; i++)
             {
                 temp = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
-                temp.Left = 180;
-                temp.Top = i * temp.Height;
+                //temp.Left = 180;
+                //temp.Top = i * temp.Height;
+                temp.Left = 320 + i * temp.Width;
+                temp.Top = 0;
                 temp.Image.ResizeToParent();
                 temp.ButtonData = i;
                 temp.OnClick += audioSwitchHandler;
@@ -416,6 +464,7 @@ namespace GEM.Emulation
             _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
             _menu.ForeColor[State.Idle] = _menuColor;
             _controls.Add(_menu);
+            _menu.OnDraw += (o, e) => { ((MenuButton)o).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2]; };
             // add menu entries
             _menu.AddClickMenu("game");
             _menu.AddClickMenu("graphics");
@@ -758,16 +807,16 @@ namespace GEM.Emulation
                 }
                 else
                 {
-                    ((MenuButton)sender).ForeColor[State.Idle] = _menuColor;
-                    ((MenuButton)sender).ForeColor[State.Disabled] = _menuColor;
+                    ((MenuButton)sender).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][2];
+                    ((MenuButton)sender).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][2];
                 }
             }
             else
             {
                 // Masterswitch OFF
                 ((MenuButton)sender).Image.ImageIndex = 0;
-                ((MenuButton)sender).ForeColor[State.Idle] = _menuColor;
-                ((MenuButton)sender).ForeColor[State.Disabled] = _menuColor;
+                ((MenuButton)sender).ForeColor[State.Idle] = _emuPalette[_emuColorIndex][3];
+                ((MenuButton)sender).ForeColor[State.Disabled] = _emuPalette[_emuColorIndex][3];
             }
         }
 #endregion

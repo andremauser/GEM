@@ -30,8 +30,8 @@ namespace GEM
             _Instance = this;
             Content.RootDirectory = "Content";
             _Content = Content;
-            IsMouseVisible = true; 
-            Window.AllowUserResizing = false;
+            IsMouseVisible = true;
+            Window.AllowUserResizing = true;// false;
             IsFixedTimeStep = true;
             TargetElapsedTime = System.TimeSpan.FromSeconds(1d / FRAME_RATE); // set MonoGame frame rate to original DMG
         }
@@ -46,7 +46,7 @@ namespace GEM
         {
             _emulator = new Emulator(GraphicsDevice);
             //_Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _Graphics.PreferredBackBufferWidth = 1280;
+            _Graphics.PreferredBackBufferWidth = 800;// 1280;
             _Graphics.PreferredBackBufferHeight = 720;
             _Graphics.ApplyChanges(); 
 
@@ -82,7 +82,8 @@ namespace GEM
                 _fpsFrameCounter = 0;
                 _fpsSecondCounter = 0;
             }
-            Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, FPS, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
+            //Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, FPS, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
+            Window.Title = string.Format("GEM - {0}", _emulator.CartridgeTitle);
         }
         #endregion
 
