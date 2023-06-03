@@ -10,9 +10,9 @@ namespace GEM.Droid
         Label = "@string/app_name",
         MainLauncher = true,
         Icon = "@drawable/icon",
-        AlwaysRetainTaskState = true,
+        AlwaysRetainTaskState = false,
         LaunchMode = LaunchMode.SingleInstance,
-        ScreenOrientation = ScreenOrientation.Landscape,
+        ScreenOrientation = ScreenOrientation.User,
         ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.Keyboard | ConfigChanges.KeyboardHidden | ConfigChanges.ScreenSize
     )]
     public class Activity1 : AndroidGameActivity

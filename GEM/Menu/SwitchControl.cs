@@ -21,7 +21,9 @@ namespace GEM.Menu
             if (caption != "" && parent is MenuButton)
             {
                 ((MenuButton)parent).Label.Caption = "";
+                ((MenuButton)parent).Label = Caption;
             }
+            ((MenuButton)parent).Image = _switchImage;
 
             // add to controls
             Controls.Add(_switchImage);

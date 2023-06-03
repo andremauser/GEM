@@ -113,8 +113,8 @@ namespace GEM.Menu
         #endregion
 
         #region Properties
-        public Label Label { get; private set; }
-        public Image Image { get; private set; }
+        public Label Label { get; set; }
+        public Image Image { get; set; }
         public Panel Panel { get; private set; }
         public MenuButton this[string name]
         {
@@ -169,9 +169,9 @@ namespace GEM.Menu
                 }
                 // set value
                 _state = value;
-                // update button label
+                // update button label (color)
                 if (Label != null) Label.ForeColor = ForeColor[value];
-                // update button image
+                // update button image (color and index)
                 if (Image != null)
                 {
                     Image.ForeColor = ForeColor[value];
@@ -280,10 +280,9 @@ namespace GEM.Menu
                         if (isTouchOver(touch))
                         {
                             _touchRequest = State.Press;
-                            _clickStarted = true;
                         }
                         // close menu on click outside
-                        if (_parentMenu == null)
+                        if (_parentMenu == null) // only check on root button
                         {
                             if (!isTouchOverR(touch))
                             {
@@ -472,10 +471,9 @@ namespace GEM.Menu
             if (isMouseOver())
             {
                 _mouseRequest = State.Press;
-                _clickStarted = true;
             }
             // close menu on click outside
-            if (_parentMenu == null)
+            if (_parentMenu == null) // only check on root button
             {
                 if (!isMouseOverR())
                 { 
@@ -494,7 +492,6 @@ namespace GEM.Menu
             else
             {
                 _mouseRequest = State.Idle;
-                _clickStarted = false;
             }
         }
 
@@ -670,6 +667,15 @@ namespace GEM.Menu
                 ForeColor[State.Hover] = (Color)foreground;
                 ForeColor[State.Press] = (Color)foreground;
                 ForeColor[State.Disabled] = (Color)foreground;
+            }
+        }
+        public void SetStateColorsR(State state, Color background, Color foreground)
+        {
+            BackColor[state] = background;
+            ForeColor[state] = foreground;
+            foreach (MenuButton sub in SubMenu.Values)
+            {
+                sub.SetStateColorsR(state, background, foreground);
             }
         }
         private void navigationRoll(int step = 1)
