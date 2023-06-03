@@ -253,15 +253,16 @@ namespace GEM.Emulation
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
-            updateRomListHandler(null, EventArgs.Empty); // initial call to rom search - updated by click on "open rom"
+            updateRomListHandler(null, EventArgs.Empty); // initial call to rom search - updated by click on "Open ROM"
 
-            _toolTip = new MenuButton(null, null, "", MenuType.StandAlone) { Enabled = false, Top = 680, Height = 40};
-            _toolTip.Width = _toolTip.Label.Width;
+            _toolTip = new MenuButton(null, null, "", MenuType.StandAlone) { Enabled = false, Height = 40};
+            _toolTip.Label.Padding = 15;
+            _toolTip.Label.HorizontalAlign = Align.Left;
             _toolTip.OnDraw += (o, e) =>
             {
                 // update tooltip line
                 _toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
-                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 20;
+                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 2 * _toolTip.Label.Padding;
                 _toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
             };
             _controls.Add(_toolTip);
@@ -479,8 +480,6 @@ namespace GEM.Emulation
             for (int i = 0; i < 4; i++)
             {
                 temp = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
-                //temp.Left = 180;
-                //temp.Top = i * temp.Height;
                 temp.Left = 320 + i * temp.Width;
                 temp.Top = 0;
                 temp.Image.ResizeToParent();
@@ -507,7 +506,7 @@ namespace GEM.Emulation
             _controls.Add(temp);
 
             // quit emulator
-            temp = new MenuButton(image: "quit") { Width = 60, Height = 60 };
+            temp = new MenuButton(image: "Quit") { Width = 60, Height = 60 };
             temp.Image.ResizeToParent();
             temp.Left = 1220;
             temp.BackColor[State.Idle] = Color.Transparent;
@@ -529,40 +528,40 @@ namespace GEM.Emulation
             _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
             _controls.Add(_menu);
             // add menu entries
-            _menu.AddClickMenu("game");
-            _menu.AddClickMenu("graphics");
-            _menu.AddClickMenu("audio");
-            _menu.AddClickMenu("controls");
-            _menu.AddClickMenu("quit");
+            _menu.AddClickMenu("Game Boy");
+            _menu.AddClickMenu("Graphics");
+            _menu.AddClickMenu("Audio");
+            _menu.AddClickMenu("Controls");
+            _menu.AddClickMenu("Quit");
 
             // cart
-            MenuButton romBrowser = _menu["game"].AddClickMenu("open rom");
+            MenuButton romBrowser = _menu["Game Boy"].AddClickMenu("Open ROM");
             romBrowser.OnOpen += updateRomListHandler;
             romBrowser.OnOpen += (o, e) => { fillOpenDialog(romBrowser); };
-            temp = _menu["game"]["open rom"].AddClickMenu("up", "arrow", 300, 40);
+            temp = _menu["Game Boy"]["Open ROM"].AddClickMenu("up", "arrow", 300, 40);
             temp.OnClick += (o, e) => 
             { 
                 _openStartIndex -= OPEN_ENTRIES; 
-                fillOpenDialog(_menu["game"]["open rom"]); 
-                MenuButton.Focus = _menu["game"]["open rom"].SubMenu.Values.ToArray<MenuButton>()[OPEN_ENTRIES]; 
+                fillOpenDialog(_menu["Game Boy"]["Open ROM"]); 
+                MenuButton.Focus = _menu["Game Boy"]["Open ROM"].SubMenu.Values.ToArray<MenuButton>()[OPEN_ENTRIES]; 
             };
             temp.Image.SetRotation(90);
-            temp.ToolTip = "scroll up";
+            temp.ToolTip = "Scroll up";
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
-                _menu["game"]["open rom"].AddClickMenu(i.ToString(), null, 300, 40).OnClick += openRomHandler; // add empty entry dummies
+                _menu["Game Boy"]["Open ROM"].AddClickMenu(i.ToString(), null, 300, 40).OnClick += openRomHandler; // add empty entry dummies
             }
-            temp = _menu["game"]["open rom"].AddClickMenu("down", "arrow", 300, 40);
-            temp.OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["game"]["open rom"]); MenuButton.Focus = _menu["game"]["open rom"].SubMenu.Values.ToArray<MenuButton>()[1]; };
+            temp = _menu["Game Boy"]["Open ROM"].AddClickMenu("down", "arrow", 300, 40);
+            temp.OnClick += (o, e) => { _openStartIndex += OPEN_ENTRIES; fillOpenDialog(_menu["Game Boy"]["Open ROM"]); MenuButton.Focus = _menu["Game Boy"]["Open ROM"].SubMenu.Values.ToArray<MenuButton>()[1]; };
             temp.Image.SetRotation(-90);
-            temp.ToolTip = "scroll down";
-            _menu["game"].AddClickMenu("reset rom").OnClick += _gameboy.Reset;
-            _menu["game"].AddClickMenu("exit rom").OnClick += _gameboy.EjectCartridge;
+            temp.ToolTip = "Scroll down";
+            _menu["Game Boy"].AddClickMenu("Reset ROM").OnClick += _gameboy.Reset;
+            _menu["Game Boy"].AddClickMenu("Exit ROM").OnClick += _gameboy.EjectCartridge;
             // graphics
-            _menu["graphics"].AddClickMenu("palette");
+            _menu["Graphics"].AddClickMenu("Palette");
             for (int i = 0; i < _emuPalette.Count(); i++)
             {
-                temp = _menu["graphics"]["palette"].AddClickMenu("color" + i.ToString());
+                temp = _menu["Graphics"]["Palette"].AddClickMenu("color" + i.ToString());
                 temp.Label.Caption = "";
                 if (_emuPaletteNames.Count() > i) temp.ToolTip = _emuPaletteNames[i];
                 Panel colorPanel = temp.AddPanel();
@@ -579,56 +578,78 @@ namespace GEM.Emulation
                 temp.ButtonData = i; // set button data to color index
                 temp.OnClick += setPaletteButtonHandler;
             }
-            temp = _menu["graphics"].AddClickMenu("grid");
-            temp.AddSwitch("grid").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_showGrid); };
-            temp.ToolTip = "show pixel grid";
+            temp = _menu["Graphics"].AddClickMenu("Resolution");
+            temp = _menu["Graphics"]["Resolution"].AddClickMenu("800x720");
+            temp.OnClick += (o, e) =>
+            {
+                Game1._Graphics.PreferredBackBufferWidth = 800;
+                Game1._Graphics.PreferredBackBufferHeight = 720;
+                Game1._Graphics.ApplyChanges();
+            };
+            temp = _menu["Graphics"]["Resolution"].AddClickMenu("1280x720");
+            temp.OnClick += (o, e) =>
+            {
+                Game1._Graphics.PreferredBackBufferWidth = 1280;
+                Game1._Graphics.PreferredBackBufferHeight = 720;
+                Game1._Graphics.ApplyChanges();
+            };
+            temp = _menu["Graphics"]["Resolution"].AddClickMenu("1920x1080");
+            temp.OnClick += (o, e) =>
+            {
+                Game1._Graphics.PreferredBackBufferWidth = 1920;
+                Game1._Graphics.PreferredBackBufferHeight = 1080;
+                Game1._Graphics.ApplyChanges();
+            };
+            temp = _menu["Graphics"].AddClickMenu("Grid");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_showGrid); };
+            temp.ToolTip = "Show pixel grid";
             temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
-            temp = _menu["graphics"].AddClickMenu("fullscreen");
-            temp.AddSwitch("fscreen").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.IsFullScreen); };
-            temp.ToolTip = "toggle fullscreen mode";
+            temp = _menu["Graphics"].AddClickMenu("FScreen");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.IsFullScreen); };
+            temp.ToolTip = "Toggle fullscreen mode";
             temp.OnClick += fullscreenHandler;
-            temp = _menu["graphics"].AddClickMenu("vsync");
-            temp.AddSwitch("vsync").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.SynchronizeWithVerticalRetrace); };
-            temp.ToolTip = "toggle vsync";
+            temp = _menu["Graphics"].AddClickMenu("VSync");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(Game1._Graphics.SynchronizeWithVerticalRetrace); };
+            temp.ToolTip = "Toggle VSync";
             temp.OnClick += vsyncHandler;
             // audio
-            _menu["audio"].AddClickMenu("volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "volume: " + _volumeList[_volumeIndex].ToString("0%"); };
-            temp = _menu["audio"]["volume"].AddClickMenu("vol +", "volplus");
+            _menu["Audio"].AddClickMenu("Volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "Volume: " + _volumeList[_volumeIndex].ToString("0%"); };
+            temp = _menu["Audio"]["Volume"].AddClickMenu("vol +", "volplus");
             temp.OnClick += (o, e) => { VolumeIndex++; };
-            temp.ToolTip = "volume up";
-            temp = _menu["audio"]["volume"].AddClickMenu("vol -", "volminus");
+            temp.ToolTip = "Volume up";
+            temp = _menu["Audio"]["Volume"].AddClickMenu("vol -", "volminus");
             temp.OnClick += (o, e) => { VolumeIndex--; };
-            temp.ToolTip = "volume down";
-            temp = _menu["audio"].AddClickMenu("show");
-            temp.AddSwitch("icons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_debugShowAudioIndicators); };
-            temp.ToolTip = "show audio channel icons";
+            temp.ToolTip = "Volume down";
+            temp = _menu["Audio"].AddClickMenu("Icons");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_debugShowAudioIndicators); };
+            temp.ToolTip = "Show audio channel icons";
             temp.OnClick += (o, e) => { _debugShowAudioIndicators = !_debugShowAudioIndicators; };
-            _menu["audio"].AddClickMenu("channels");
+            _menu["Audio"].AddClickMenu("Channels");
             for (int i = 0; i < 4; i++)
             {
-                temp = _menu["audio"]["channels"].AddClickMenu("CH" + (i + 1).ToString());
+                temp = _menu["Audio"]["Channels"].AddClickMenu("CH" + (i + 1).ToString());
                 temp.ButtonData = i;
-                temp.AddSwitch("ch" + (i + 1).ToString()).OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_gameboy.MasterSwitch[((MenuButton)((SwitchControl)o).Parent).ButtonData]); };
+                temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_gameboy.MasterSwitch[((MenuButton)((SwitchControl)o).Parent).ButtonData]); };
                 temp.OnClick += audioSwitchHandler;
             }
-            _menu["audio"]["channels"]["CH1"].ToolTip = "channel 1: square wave 1";
-            _menu["audio"]["channels"]["CH2"].ToolTip = "channel 2: square wave 2";
-            _menu["audio"]["channels"]["CH3"].ToolTip = "channel 3: custom wave";
-            _menu["audio"]["channels"]["CH4"].ToolTip = "channel 4: noise";
+            _menu["Audio"]["Channels"]["CH1"].ToolTip = "Channel 1: Square wave 1";
+            _menu["Audio"]["Channels"]["CH2"].ToolTip = "Channel 2: Square wave 2";
+            _menu["Audio"]["Channels"]["CH3"].ToolTip = "Channel 3: Custom wave";
+            _menu["Audio"]["Channels"]["CH4"].ToolTip = "Channel 4: Noise";
             // controls
-            temp = _menu["controls"].AddClickMenu("buttons");
-            temp.AddSwitch("buttons").OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
-            temp.ToolTip = "show onscreen buttons";
+            temp = _menu["Controls"].AddClickMenu("Buttons");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
+            temp.ToolTip = "Show onscreen buttons";
             temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
 
             // quit
-            _menu["quit"].AddClickMenu("quit GEM").OnClick += exitHandler;
+            _menu["Quit"].AddClickMenu("Quit GEM").OnClick += exitHandler;
 
             #endregion
 
 
             // random color scheme
-            EmuColorIndex = _random.Next(_emuPalette.Length);
+            EmuColorIndex = 0; //_random.Next(_emuPalette.Length);
         }
 
         public void Update(Viewport viewport)
@@ -683,8 +704,8 @@ namespace GEM.Emulation
             if (_romList.Count == 0)
             {
                 parent["0"].Enabled = true;
-                parent["0"].Label.Caption = "no roms found";
-                parent["0"].ToolTip = "put rom files in /roms folder";
+                parent["0"].Label.Caption = "No ROMs found";
+                parent["0"].ToolTip = "No ROM files found in /roms folder";
             }
             parent["down"].Enabled = (_openStartIndex + OPEN_ENTRIES) < _romList.Count;
         }

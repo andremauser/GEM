@@ -68,6 +68,8 @@ namespace GEM.Menu
         {
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
+            Label.Padding = 15;
+            Label.HorizontalAlign = Align.Left;
             if (image != null)
             {
                 Image = AddImage(image, imagesPerRow);

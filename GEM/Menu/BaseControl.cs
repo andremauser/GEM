@@ -137,6 +137,7 @@ namespace GEM.Menu
                 UpdateAlignPosition();
             }
         }
+        public int Padding { get; set; }
 
         public bool Visible
         {
@@ -222,9 +223,9 @@ namespace GEM.Menu
         {
             return (Panel)Add(new Panel(this));
         }
-        public SwitchControl AddSwitch(string caption)
+        public SwitchControl AddSwitch()
         {
-            return (SwitchControl)Add(new SwitchControl(this, caption));
+            return (SwitchControl)Add(new SwitchControl(this));
         }
         public Image AddImage(string image, int imagesPerRow = 1)
         {
@@ -243,25 +244,25 @@ namespace GEM.Menu
                 switch (HorizontalAlign)
                 {
                     case Align.Left:
-                        Left = 0;
+                        Left = Padding;
                         break;
                     case Align.Center:
                         Left = (Parent.Width - Width) / 2;
                         break;
                     case Align.Right:
-                        Left = Parent.Width - Width - 0;
+                        Left = Parent.Width - Width - Padding;
                         break;
                 }
                 switch (VerticalAlign)
                 {
                     case Align.Top:
-                        Top = 0;
+                        Top = Padding;
                         break;
                     case Align.Center:
                         Top = (Parent.Height - Height) / 2;
                         break;
                     case Align.Bottom:
-                        Top = Parent.Height - Height;
+                        Top = Parent.Height - Height - Padding;
                         break;
                 }
             }

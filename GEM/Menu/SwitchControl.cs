@@ -13,34 +13,24 @@ namespace GEM.Menu
         #endregion
 
         #region Constructors
-        public SwitchControl(BaseControl parent, String caption) : base(parent)
+        public SwitchControl(BaseControl parent) : base(parent)
         {
             _switchImage = new Image(this, "switch", 2);
-            Caption = new Label(this, caption);
-
-            if (caption != "" && parent is MenuButton)
-            {
-                ((MenuButton)parent).Label.Caption = "";
-                ((MenuButton)parent).Label = Caption;
-            }
             ((MenuButton)parent).Image = _switchImage;
 
             // add to controls
             Controls.Add(_switchImage);
-            Controls.Add(Caption);
 
             // size
             Width = parent.Width;
             Height = parent.Height;
 
             // positions
-            Caption.Left = 15;
             _switchImage.Left = Width - _switchImage.Width - 5;
         }
         #endregion
 
         #region Properties
-        Label Caption { get; set; }
         public override int Width 
         { 
             get => base.Width;

@@ -45,10 +45,10 @@ namespace GEM
         protected override void Initialize()
         {
             _emulator = new Emulator(GraphicsDevice);
-            //_Graphics.SynchronizeWithVerticalRetrace = false; // disable VSync for fps improvement
-            _Graphics.PreferredBackBufferWidth = 800;// 1280;
+            _Graphics.PreferredBackBufferWidth = 800;
             _Graphics.PreferredBackBufferHeight = 720;
-            _Graphics.ApplyChanges(); 
+            _Graphics.ApplyChanges();
+            Window.Title = "GEM";
 
             //save on quit
             Exiting += _emulator.ShutDownHandler;
@@ -82,8 +82,6 @@ namespace GEM
                 _fpsFrameCounter = 0;
                 _fpsSecondCounter = 0;
             }
-            //Window.Title = string.Format("GEM - {0} - FPS: {1} ({2:0.00} ms)", _emulator.CartridgeTitle, FPS, gameTime.ElapsedGameTime.TotalMilliseconds); // not efficient!
-            Window.Title = string.Format("GEM - {0}", _emulator.CartridgeTitle);
         }
         #endregion
 
