@@ -21,6 +21,7 @@ namespace GEM.Emulation
         public bool IsCGB;
         private string _saveFile;
         public string Title { get; private set; }
+        public static event EventHandler OnWriteRAM;
         #endregion
 
         #region Constructors
@@ -132,7 +133,7 @@ namespace GEM.Emulation
                     case 0x03:  // MBC1+RAM+BATTERY
                     case 0x10:  // MBC3
                     case 0x1B:  // MBC5+RAM+BATTERY
-                        return _data[pos - 0x4000 + _romBank * 0x4000];
+                        return _data[pos - 0x4000 + (_romBank & (_data.Length / 0x4000 - 1)) * 0x4000];
                 }
             }
             else return 0xFF;
@@ -215,6 +216,7 @@ namespace GEM.Emulation
             if (_isRamEnabled)
             {
                 _ram[pos + _ramBank * 0x2000] = value;
+                OnWriteRAM?.Invoke(this, EventArgs.Empty);
             }
         }
 

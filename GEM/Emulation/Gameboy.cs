@@ -103,7 +103,7 @@ namespace GEM.Emulation
         }
         public void PowerOff()
         {
-            _mmu.Cartridge.SaveToFile();
+            //SaveRAM();
             IsRunning = false;
             _mmu.IsLCDOn = false;
             _cycleCount = 0;
@@ -112,6 +112,10 @@ namespace GEM.Emulation
             _gpu.Reset();
             StopAfterFrame = false;
             StopAfterStep = false;
+        }
+        public void SaveRAM()
+        {
+            _mmu.Cartridge.SaveToFile();
         }
         public void Reset(object sender, EventArgs e)
         {
