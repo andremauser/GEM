@@ -9,6 +9,7 @@
 	<PropertyGroup>
 		<ApplicationIcon>icon.ico</ApplicationIcon>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
+		<AssemblyName>GEM</AssemblyName>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="icon.ico" />

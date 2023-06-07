@@ -470,7 +470,7 @@ namespace GEM.Emulation
                 temp = _vol.AddClickMenu(_volumeList[i].ToString("0%"));
                 temp.Height = 40;
                 temp.ButtonData = i;
-                temp.OnClick += (o, e) => { _volumeIndex = ((MenuButton)o).ButtonData; };
+                temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
             }
             // vol plus
             _volPlus = new MenuButton(_audioIconsBase, null, "volplus", MenuType.StandAlone, "volplus", 1) { Width = 60, Height = 60, Left = 0, Top = 60 };
@@ -630,7 +630,7 @@ namespace GEM.Emulation
                 temp = _menu["Sound"]["Volume"].AddClickMenu(_volumeList[i].ToString("0%"));
                 temp.Height = 40;
                 temp.ButtonData = i;
-                temp.OnClick += (o, e) => { _volumeIndex = ((MenuButton)o).ButtonData; };
+                temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
             }
             
             temp = _menu["Sound"].AddClickMenu("vol +", "volplus");
