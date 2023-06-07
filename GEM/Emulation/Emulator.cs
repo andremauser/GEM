@@ -39,7 +39,6 @@ namespace GEM.Emulation
         int _emuColorIndex = 0;
         int _openStartIndex = 0;
         bool _showGrid = false;
-        bool _showFPS = false;
 
         // buttonset bases
         BaseControl _onScreenButtonsBase;
@@ -295,7 +294,6 @@ namespace GEM.Emulation
             _controls.Add(_toolTip);
 
             MenuButton temp;
-            MenuButton btn;
 
             #region onscreen buttons
 
@@ -446,8 +444,8 @@ namespace GEM.Emulation
             _fps = new MenuButton(_debugInformationsBase, null, "fps", MenuType.StandAlone) { Width = 60, Height = 60 };
             _fps.Visible = false;
             _fps.Label.HorizontalAlign = Align.Center;
-            _fps.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = Game1._Instance.FPS.ToString(); };
             _fps.OnDraw += (o, e) => {
+                ((MenuButton)o).Label.Caption = Game1._Instance.FPS.ToString();
                 ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - ((BaseControl)o).Width;
                 ((BaseControl)o).Top = 0;
             };
@@ -457,38 +455,42 @@ namespace GEM.Emulation
             // sound channel icons
             _audioIconsBase = new BaseControl(null);
             _audioIconsBase.Visible = false;
-            _audioIconsBase.OnDraw += (o, e) => { _audioIconsBase.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2); };
+            _audioIconsBase.OnDraw += (o, e) => { 
+                _audioIconsBase.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2);
+                _audioIconsBase.Left = 0;
+            };
             _debugInformationsBase.Add(_audioIconsBase);
             // vol %
-            _vol = new MenuButton(_debugInformationsBase, null, "vol", MenuType.StandAlone) { Width = 60, Height = 60 };
-            _vol.Top = 0;
+            _vol = new MenuButton(_debugInformationsBase, null, "vol", MenuType.Click) { Width = 60, Height = 60, Left = 0, Top = 0 };
             _vol.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = _volumeList[_volumeIndex].ToString("0%"); };
-            _vol.OnDraw += (o, e) => { ((MenuButton)o).Left = Math.Max(_screenLeft - 60, 0); };
             _audioIconsBase.Add(_vol);
+
+            for (int i = 0; i < _volumeList.Count(); i++)
+            {
+                temp = _vol.AddClickMenu(_volumeList[i].ToString("0%"));
+                temp.Height = 40;
+                temp.ButtonData = i;
+                temp.OnClick += (o, e) => { _volumeIndex = ((MenuButton)o).ButtonData; };
+            }
             // vol plus
-            _volPlus = new MenuButton(_audioIconsBase, null, "volplus", MenuType.StandAlone, "volplus", 1) { Width = 60, Height = 60 };
-            _volPlus.Top = 60;
+            _volPlus = new MenuButton(_audioIconsBase, null, "volplus", MenuType.StandAlone, "volplus", 1) { Width = 60, Height = 60, Left = 0, Top = 60 };
             _volPlus.Image.ResizeToParent();
             _volPlus.OnClick += (o, e) => { VolumeIndex++; };
-            _volPlus.OnDraw += (o, e) => { ((MenuButton)o).Left = Math.Max(_screenLeft - 60, 0); };
             _audioIconsBase.Add(_volPlus);
             // vol minus
-            _volMinus = new MenuButton(_audioIconsBase, null, "volminus", MenuType.StandAlone, "volminus", 1) { Width = 60, Height = 60 };
-            _volMinus.Top = 120;
+            _volMinus = new MenuButton(_audioIconsBase, null, "volminus", MenuType.StandAlone, "volminus", 1) { Width = 60, Height = 60, Left = 0, Top = 120 };
             _volMinus.Image.ResizeToParent();
             _volMinus.OnClick += (o, e) => { VolumeIndex--; };
-            _volMinus.OnDraw += (o, e) => { ((MenuButton)o).Left = Math.Max(_screenLeft - 60, 0); };
             _audioIconsBase.Add(_volMinus);
             // channels
             for (int i = 0; i < 4; i++)
             {
-                _volChannel[i] = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60 };
+                _volChannel[i] = new MenuButton(_audioIconsBase, null, "CH" + (i+1).ToString(), MenuType.StandAlone, "sound", 3) { Width = 60, Height = 60, Left = 0 };
                 _volChannel[i].Top = (i + 3) * _volChannel[i].Height;
                 _volChannel[i].Image.ResizeToParent();
                 _volChannel[i].ButtonData = i;
                 _volChannel[i].OnClick += audioSwitchHandler;
                 _volChannel[i].OnDraw += audioIconsHandler;
-                _volChannel[i].OnDraw += (o, e) => { ((MenuButton)o).Left = Math.Max(_screenLeft - 60, 0); };
                 _audioIconsBase.Add(_volChannel[i]);
             }
 
@@ -582,10 +584,8 @@ namespace GEM.Emulation
                 temp.OnClick += setPaletteButtonHandler;
             }
 
-            temp = _menu["Game Boy"].AddClickMenu("Buttons");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
-            temp.ToolTip = "Show onscreen buttons";
-            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
+            temp = _menu["Game Boy"].AddClickMenu("Pause");
+            temp.OnClick += (o, e) => { _gameboy.PauseToggle(this, EventArgs.Empty); };
 
             // display
 
@@ -624,11 +624,20 @@ namespace GEM.Emulation
 
             // Sound
             _menu["Sound"].AddClickMenu("Volume").OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "Volume: " + _volumeList[_volumeIndex].ToString("0%"); };
-            temp = _menu["Sound"]["Volume"].AddClickMenu("vol +", "volplus");
+
+            for (int i = 0; i < _volumeList.Count(); i++)
+            {
+                temp = _menu["Sound"]["Volume"].AddClickMenu(_volumeList[i].ToString("0%"));
+                temp.Height = 40;
+                temp.ButtonData = i;
+                temp.OnClick += (o, e) => { _volumeIndex = ((MenuButton)o).ButtonData; };
+            }
+            
+            temp = _menu["Sound"].AddClickMenu("vol +", "volplus");
             temp.OnClick += (o, e) => { VolumeIndex++; };
             temp.ToolTip = "Volume up";
 
-            temp = _menu["Sound"]["Volume"].AddClickMenu("vol -", "volminus");
+            temp = _menu["Sound"].AddClickMenu("vol -", "volminus");
             temp.OnClick += (o, e) => { VolumeIndex--; };
             temp.ToolTip = "Volume down";
 
@@ -638,6 +647,11 @@ namespace GEM.Emulation
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_fps.Visible); };
             temp.ToolTip = "Show FPS";
             temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; };
+
+            temp = _menu["Debug"].AddClickMenu("Buttons");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
+            temp.ToolTip = "Show onscreen buttons";
+            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
 
             temp = _menu["Debug"].AddClickMenu("Audio");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_audioIconsBase.Visible); };
@@ -762,9 +776,6 @@ namespace GEM.Emulation
                     drawMouseMarker(pixelSize, _screenLeft, _screenTop);
                 }
             }
-
-            // update audio icon visibility
-            
 
             foreach (BaseControl control in _controls)
             {
