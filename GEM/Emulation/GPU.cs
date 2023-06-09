@@ -25,9 +25,13 @@ namespace GEM.Emulation
             ModeClock = 0;
             _mmu.LCDMode = 2;
 
-            Background = new Layer(256, 256, graphicsDevice);
-            Window = new Layer(256, 256, graphicsDevice);
-            Tileset = new Layer(128, 192, graphicsDevice);
+            BackgroundMap = new Layer(256, 256, graphicsDevice);
+            WindowMap = new Layer(256, 256, graphicsDevice);
+            TileMap = new Layer(128, 192, graphicsDevice);
+
+            Background = new Layer(160, 144, graphicsDevice);
+            Window = new Layer(160, 144, graphicsDevice);
+            Sprites = new Layer(160, 144, graphicsDevice);
             Screen = new Layer(160, 144, graphicsDevice);
 
             _spriteList = new Sprite[40];
@@ -45,9 +49,14 @@ namespace GEM.Emulation
         public bool IsDrawTime { get; private set; }
 
         public Layer Screen { get; private set; }
+
         public Layer Background { get; private set; }
         public Layer Window { get; private set; }
-        public Layer Tileset { get; private set; }
+        public Layer Sprites { get; private set; }
+
+        public Layer BackgroundMap { get; private set; }
+        public Layer WindowMap { get; private set; }
+        public Layer TileMap { get; private set; }
 
         #endregion
 
@@ -111,7 +120,6 @@ namespace GEM.Emulation
             ModeClock -= 80;
             _mmu.LCDMode = 3;
         }
-
         private void afterVRAMRead()
         {
 
@@ -123,7 +131,6 @@ namespace GEM.Emulation
             renderScanline();                                               // Render Scanline
             // ---------- //
         }
-
         private void afterHBlank()
         {
             ModeClock -= 204;
@@ -143,7 +150,6 @@ namespace GEM.Emulation
                 IsDrawTime = true;                                          // Synchronize CPU
             }
         }
-
         private void afterVBlank()
         {
             ModeClock -= 456;
@@ -154,14 +160,14 @@ namespace GEM.Emulation
                 if (_mmu.Mode2IE == 1) { _mmu.IF |= 0b00000010; }           // Request LCD STAT Interrupt
 
                 // Refresh Screens
-                Background.RawData = renderBGWData(_mmu.BGMap);
-                Background.PaletteData = renderPaletteData(Background.RawData, _mmu.BGP);
+                BackgroundMap.RawData = renderBGWData(_mmu.BGMap);
+                BackgroundMap.PaletteData = renderPaletteData(BackgroundMap.RawData, _mmu.BGP);
 
-                Window.RawData = renderBGWData(_mmu.WindowMap);
-                Window.PaletteData = renderPaletteData(Window.RawData, _mmu.BGP);
+                WindowMap.RawData = renderBGWData(_mmu.WindowMap);
+                WindowMap.PaletteData = renderPaletteData(WindowMap.RawData, _mmu.BGP);
 
-                Tileset.RawData = renderTileset();
-                Tileset.PaletteData = renderPaletteData(Tileset.RawData, _mmu.BGP);
+                TileMap.RawData = renderTileset();
+                TileMap.PaletteData = renderPaletteData(TileMap.RawData, _mmu.BGP);
 
                 // refresh sprites
                 for (int i = 0; i < 40; i++)
@@ -173,26 +179,33 @@ namespace GEM.Emulation
             }
         }
 
-
         private void renderScanline()
         {
             int y = _mmu.LY;
-            Layer scanline = new Layer(160, 1);
             List<Sprite> sprites = oamSearch(y);
+
+
             // Render each Pixel
             for (int x = 0; x < 160; x++)
             {
-                // resolve Background Pixel
+                int backgroundPixel = -1;   // background layer
+                int windowPixel = -1;       // window layer
+                int spritePixel = -1;       // sprite layer
+                int screenPixel = -1;       // combined screen
+
                 int bgPixelData = 0;
                 int bgPixelPalette = 0;
+
+                // resolve Background Pixel
                 if (_mmu.IsBGEnabled)
                 {
                     // Background
                     int posX = x + _mmu.SCX & 0xFF;
                     int posY = y + _mmu.SCY & 0xFF;
                     int index = 256 * posY + posX;
-                    bgPixelData = Background.RawData[index];
-                    bgPixelPalette = Background.PaletteData[index];
+                    bgPixelData = BackgroundMap.RawData[index];
+                    backgroundPixel = BackgroundMap.PaletteData[index];
+                    bgPixelPalette = backgroundPixel;
                 }
                 if (_mmu.IsWindowEnabled && y >= _mmu.WY && x >= _mmu.WX - 7)
                 {
@@ -200,8 +213,9 @@ namespace GEM.Emulation
                     int posX = x - (_mmu.WX - 7);
                     int posY = y - _mmu.WY;
                     int index = 256 * posY + posX;
-                    bgPixelData = Window.RawData[index];
-                    bgPixelPalette = Window.PaletteData[index];
+                    bgPixelData = WindowMap.RawData[index];
+                    windowPixel = WindowMap.PaletteData[index];
+                    bgPixelPalette = windowPixel;
                 }
 
                 // resolve sprite priority
@@ -227,18 +241,22 @@ namespace GEM.Emulation
                 }
 
                 // Assign scanline pixel depending on sprite's bg-priority
-                if (spriteOnPixel != null && (spriteOnPixel.Priority == 0 ||                      // Sprite on Top
-                                             spriteOnPixel.Priority == 1 && bgPixelData == 0))  // Sprite in Background, but BG transparent
+                if (spriteOnPixel != null && (spriteOnPixel.Priority == 0 ||                     // Sprite on Top
+                                              spriteOnPixel.Priority == 1 && bgPixelData == 0))  // Sprite in Background, but BG transparent
                 {
-                    scanline.RawData[x] = spritePixelData;
-                    scanline.PaletteData[x] = spriteOnPixel.PixelPalette(spritePixelData);
+                    spritePixel = spriteOnPixel.PixelPalette(spritePixelData);
+                    screenPixel = spritePixel;
                 }
                 else
                 {
-                    scanline.RawData[x] = bgPixelData;
-                    scanline.PaletteData[x] = bgPixelPalette;
+                    screenPixel = bgPixelPalette;
                 }
-                Screen.PaletteData[160 * y + x] = scanline.PaletteData[x];
+
+                int pos = 160 * y + x;
+                Background.PaletteData[pos] = backgroundPixel;
+                Window.PaletteData[pos] = windowPixel;
+                Sprites.PaletteData[pos] = spritePixel;
+                Screen.PaletteData[pos] = screenPixel;
             }
         }
 
@@ -359,7 +377,7 @@ namespace GEM.Emulation
             }
             else
             {
-                // CGB-Mode: OAM-Loacation Priority (Probably already is... just for clearance)
+                // CGB-Mode: OAM-Loacation Priority (Probably already is...)
                 visibleSprites.OrderBy(x => x.Address);
             }
             return visibleSprites;

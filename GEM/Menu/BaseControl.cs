@@ -223,10 +223,6 @@ namespace GEM.Menu
         {
             return (Panel)Add(new Panel(this));
         }
-        public SwitchControl AddSwitch()
-        {
-            return (SwitchControl)Add(new SwitchControl(this));
-        }
         public Image AddImage(string image, int imagesPerRow = 1)
         {
             return (Image)Add(new Image(this, image, imagesPerRow));
@@ -234,6 +230,10 @@ namespace GEM.Menu
         public Image AddImage(Texture2D image, int imagesPerRow = 1)
         {
             return (Image)Add(new Image(this, image, imagesPerRow));
+        }
+        public SwitchControl AddSwitch()
+        {
+            return (SwitchControl)Add(new SwitchControl(this));
         }
 
         public void UpdateAlignPosition()

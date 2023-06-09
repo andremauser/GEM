@@ -39,12 +39,17 @@ namespace GEM.Emulation
         int _emuColorIndex = 0;
         int _openStartIndex = 0;
         bool _showGrid = false;
+        bool _drawBackground = true;
+        bool _drawWindow = true;
+        bool _drawSprites = true;
+        bool _markBackground = false;
+        bool _markWindow = false;
+        bool _markSprites = false;
 
         // buttonset bases
         BaseControl _onScreenButtonsBase;
         BaseControl _debugInformationsBase;
         BaseControl _audioIconsBase;
-
 
         // fields
         List<string> _romList = new List<string>();
@@ -70,8 +75,6 @@ namespace GEM.Emulation
         int _screenLeft;
         int _screenTop;
         bool _writeRAM = false;
-
-        Random _random = new Random();
 
         #endregion
 
@@ -439,7 +442,6 @@ namespace GEM.Emulation
             _debugInformationsBase = new BaseControl(null);
             _controls.Add(_debugInformationsBase);
 
-
             // fps
             _fps = new MenuButton(_debugInformationsBase, null, "fps", MenuType.StandAlone) { Width = 60, Height = 60 };
             _fps.Visible = false;
@@ -462,12 +464,14 @@ namespace GEM.Emulation
             _debugInformationsBase.Add(_audioIconsBase);
             // vol %
             _vol = new MenuButton(_debugInformationsBase, null, "vol", MenuType.Click) { Width = 60, Height = 60, Left = 0, Top = 0 };
+            _vol.Label.HorizontalAlign = Align.Center;
             _vol.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = _volumeList[_volumeIndex].ToString("0%"); };
             _audioIconsBase.Add(_vol);
 
             for (int i = 0; i < _volumeList.Count(); i++)
             {
                 temp = _vol.AddClickMenu(_volumeList[i].ToString("0%"));
+                temp.Label.HorizontalAlign = Align.Center;
                 temp.Height = 40;
                 temp.ButtonData = i;
                 temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
@@ -629,6 +633,7 @@ namespace GEM.Emulation
             {
                 temp = _menu["Sound"]["Volume"].AddClickMenu(_volumeList[i].ToString("0%"));
                 temp.Height = 40;
+                temp.Label.HorizontalAlign = Align.Center;
                 temp.ButtonData = i;
                 temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
             }
@@ -642,6 +647,34 @@ namespace GEM.Emulation
             temp.ToolTip = "Volume down";
 
             // Debug
+
+            _menu["Debug"].AddClickMenu("Layers");
+
+            _menu["Debug"]["Layers"].AddClickMenu("Draw");
+
+            temp = _menu["Debug"]["Layers"]["Draw"].AddClickMenu("Background");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_drawBackground); };
+            temp.OnClick += (o, e) => { _drawBackground = !_drawBackground; };
+            temp = _menu["Debug"]["Layers"]["Draw"].AddClickMenu("Window");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_drawWindow); };
+            temp.OnClick += (o, e) => { _drawWindow = !_drawWindow; };
+            temp = _menu["Debug"]["Layers"]["Draw"].AddClickMenu("Sprites");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_drawSprites); };
+            temp.OnClick += (o, e) => { _drawSprites = !_drawSprites; };
+
+            _menu["Debug"]["Layers"].AddClickMenu("Mark");
+
+            temp = _menu["Debug"]["Layers"]["Mark"].AddClickMenu("Background");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_markBackground); };
+            temp.OnClick += (o, e) => { _markBackground = !_markBackground; };
+            temp = _menu["Debug"]["Layers"]["Mark"].AddClickMenu("Window");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_markWindow); };
+            temp.OnClick += (o, e) => { _markWindow = !_markWindow; };
+            temp = _menu["Debug"]["Layers"]["Mark"].AddClickMenu("Sprites");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_markSprites); };
+            temp.OnClick += (o, e) => { _markSprites = !_markSprites; };
+
+
 
             temp = _menu["Debug"].AddClickMenu("FPS");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_fps.Visible); };
@@ -671,8 +704,8 @@ namespace GEM.Emulation
 
             temp = _menu["Debug"].AddClickMenu("Grid");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_showGrid); };
-            temp.ToolTip = "Show pixel grid";
             temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
+            temp.ToolTip = "Show pixel grid";
 
             // quit
             _menu["Quit"].AddClickMenu("Quit GEM").OnClick += exitHandler;
@@ -680,8 +713,8 @@ namespace GEM.Emulation
             #endregion
 
 
-            // random color scheme
-            EmuColorIndex = 0; //_random.Next(_emuPalette.Length);
+            // initial color palette
+            EmuColorIndex = 0;
         }
 
         public void Update(Viewport viewport)
@@ -700,11 +733,11 @@ namespace GEM.Emulation
         {
             // update emulator
             _gameboy.UpdateFrame();
-            Texture2D gbScreen = _gameboy.GetScreen(_emuPalette[EmuColorIndex]);
+            Texture2D[] screens = _gameboy.GetScreens(_emuPalette[EmuColorIndex]);
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
-            drawEmulator(viewport, gbScreen);
+            drawEmulator(viewport, screens);
             _spriteBatch.End();
 
             // save RAM to file
@@ -750,8 +783,9 @@ namespace GEM.Emulation
         }
 
         // Draw Methods
-        private void drawEmulator(Viewport viewport, Texture2D screen)
+        private void drawEmulator(Viewport viewport, Texture2D[] screens)
         {
+            
             // Screen Position & Size
             float pixelSize = MathHelper.Min(viewport.Height / 144f,
                                              viewport.Width / 160f);
@@ -762,7 +796,9 @@ namespace GEM.Emulation
             _screenTop = (viewport.Height - _screenHeight) / 2;
 
             // Draw Screen
-            _spriteBatch.Draw(screen, new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), Color.White);
+            if (_drawBackground) _spriteBatch.Draw(screens[0], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markBackground ? _pixelMarkerTextColor : Color.White);
+            if (_drawWindow) _spriteBatch.Draw(screens[1], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markWindow ? _pixelMarkerTextColor : Color.White);
+            if (_drawSprites) _spriteBatch.Draw(screens[2], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markSprites ? _pixelMarkerTextColor : Color.White);
 
             // Draw Grid
             if (_showGrid)
@@ -839,31 +875,8 @@ namespace GEM.Emulation
                 _spriteBatch.Draw(_Pixel, new Rectangle(left, (int)(top + y * pixelSize), width, 1), gridColor);
             }
         }
-        private void drawWindow(int posX, int posY)
-        {
-            float scale = 1f;
-            //_spriteBatch.DrawString(_Font, "Window:", new Vector2(posX, posY), _emuPalette[_emuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.WindowTexture(_emuPalette[EmuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
-        }
-        private void drawBackground(int posX, int posY)
-        {
-            float scale = 1f;
-            _spriteBatch.DrawString(_Font, "Background:", new Vector2(posX, posY), _emuPalette[EmuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.BackgroundTexture(_emuPalette[EmuColorIndex]), new Rectangle(posX, posY + 20, (int)(256 * scale), (int)(256 * scale)), Color.White);
-        }
-        private void drawTileset(int posX, int posY)
-        {
-            float scale = 2f;
-            _spriteBatch.DrawString(_Font, "Tileset:", new Vector2(posX, posY), _emuPalette[EmuColorIndex][1]);
-            _spriteBatch.Draw(_gameboy.TilesetTexture(_emuPalette[EmuColorIndex]), new Rectangle(posX, posY + 20, (int)(128 * scale), (int)(192 * scale)), Color.White);
-        }
 
         // Event Handler
-        public void ShutDownHandler<EventArgs>(object sender, EventArgs e)
-        {
-            // Eventhandler to save game when closing window
-            _gameboy.PowerOff();
-        }
         private void fullscreenHandler(object sender, EventArgs e)
         {
             Game1._Graphics.ToggleFullScreen();

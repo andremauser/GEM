@@ -155,33 +155,50 @@ namespace GEM.Emulation
             _apu.MasterVolume = volume;
         }
 
-        public Texture2D GetScreen(Color[] palette)
+        public Texture2D[] GetScreens(Color[] palette)
         {
+            Texture2D[] screens = new Texture2D[3];
+
             if (!_mmu.IsLCDOn)
             {
-                return _nullTexture;
+                screens[0] = _nullTexture;
+                screens[1] = _nullTexture;
+                screens[2] = _nullTexture;
+                return screens;
             }
-            _gpu.Screen.ColorGrid = renderColorData(_gpu.Screen.PaletteData, palette);
-            _gpu.Screen.Texture.SetData(_gpu.Screen.ColorGrid);
-            return _gpu.Screen.Texture;
+
+            _gpu.Background.ColorGrid = renderColorData(_gpu.Background.PaletteData, palette);
+            _gpu.Background.Texture.SetData(_gpu.Background.ColorGrid);
+            screens[0] = _gpu.Background.Texture;
+
+            _gpu.Window.ColorGrid = renderColorData(_gpu.Window.PaletteData, palette);
+            _gpu.Window.Texture.SetData(_gpu.Window.ColorGrid);
+            screens[1] = _gpu.Window.Texture;
+
+            _gpu.Sprites.ColorGrid = renderColorData(_gpu.Sprites.PaletteData, palette);
+            _gpu.Sprites.Texture.SetData(_gpu.Sprites.ColorGrid);
+            screens[2] = _gpu.Sprites.Texture;
+
+
+            return screens;
         }
         public Texture2D BackgroundTexture(Color[] palette)
         {
-            _gpu.Background.ColorGrid = renderColorData(_gpu.Background.PaletteData, palette);
-            _gpu.Background.Texture.SetData(_gpu.Background.ColorGrid);
-            return _gpu.Background.Texture;
+            _gpu.BackgroundMap.ColorGrid = renderColorData(_gpu.BackgroundMap.PaletteData, palette);
+            _gpu.BackgroundMap.Texture.SetData(_gpu.BackgroundMap.ColorGrid);
+            return _gpu.BackgroundMap.Texture;
         }
         public Texture2D WindowTexture(Color[] palette)
         {
-            _gpu.Window.ColorGrid = renderColorData(_gpu.Window.PaletteData, palette);
-            _gpu.Window.Texture.SetData(_gpu.Window.ColorGrid);
-            return _gpu.Window.Texture;
+            _gpu.WindowMap.ColorGrid = renderColorData(_gpu.WindowMap.PaletteData, palette);
+            _gpu.WindowMap.Texture.SetData(_gpu.WindowMap.ColorGrid);
+            return _gpu.WindowMap.Texture;
         }
         public Texture2D TilesetTexture(Color[] palette)
         {
-            _gpu.Tileset.ColorGrid = renderColorData(_gpu.Tileset.PaletteData, palette);
-            _gpu.Tileset.Texture.SetData(_gpu.Tileset.ColorGrid);
-            return _gpu.Tileset.Texture;
+            _gpu.TileMap.ColorGrid = renderColorData(_gpu.TileMap.PaletteData, palette);
+            _gpu.TileMap.Texture.SetData(_gpu.TileMap.ColorGrid);
+            return _gpu.TileMap.Texture;
         }
 
         // ---
@@ -302,7 +319,14 @@ namespace GEM.Emulation
             Color[] colorData = new Color[num];
             for (int i = 0; i < num; i++)
             {
-                colorData[i] = palette[dataLayer[i]];
+                if (dataLayer[i] >= 0)
+                {
+                    colorData[i] = palette[dataLayer[i]];
+                }
+                else
+                {
+                    colorData[i] = Color.Transparent;
+                }
             }
             return colorData;
         }

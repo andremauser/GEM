@@ -50,10 +50,6 @@ namespace GEM
             _Graphics.ApplyChanges();
             Window.Title = "GEM";
 
-            //save on quit
-            Exiting += _emulator.ShutDownHandler;
-            
-
             base.Initialize();
         }
 
