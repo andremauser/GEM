@@ -103,7 +103,6 @@ namespace GEM.Emulation
         }
         public void PowerOff()
         {
-            //SaveRAM();
             IsRunning = false;
             _mmu.IsLCDOn = false;
             _cycleCount = 0;
@@ -125,6 +124,10 @@ namespace GEM.Emulation
         public void PauseToggle(object sender, EventArgs e)
         {
             IsRunning = !IsRunning;
+            if (IsRunning)
+            {
+                _mmu.IsLCDOn = true;
+            }
             StopAfterFrame = false;
             StopAfterStep = false;
         }

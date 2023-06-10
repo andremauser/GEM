@@ -46,6 +46,11 @@ namespace GEM.Emulation
         bool _markWindow = false;
         bool _markSprites = false;
 
+        // timespans
+        double _timespanUpdate;
+        double _timespanDraw;
+        double _timespanEmulation;
+
         // buttonset bases
         BaseControl _onScreenButtonsBase;
         BaseControl _debugInformationsBase;
@@ -443,7 +448,10 @@ namespace GEM.Emulation
             _controls.Add(_debugInformationsBase);
 
             // fps
-            _fps = new MenuButton(_debugInformationsBase, null, "fps", MenuType.StandAlone) { Width = 60, Height = 60 };
+            _fps = new MenuButton(_debugInformationsBase, null, "fps", MenuType.Click) { Width = 60, Height = 60 };
+            _fps.KeyBinding = Keys.RightControl;
+            _fps.BtnBinding = Buttons.RightShoulder;
+            _fps.ToolTip = "Current frame rate";
             _fps.Visible = false;
             _fps.Label.HorizontalAlign = Align.Center;
             _fps.OnDraw += (o, e) => {
@@ -452,6 +460,36 @@ namespace GEM.Emulation
                 ((BaseControl)o).Top = 0;
             };
             _debugInformationsBase.Add(_fps);
+            _fps.Panel.HorizontalAlign = Align.Left;
+            _fps.Panel.VerticalAlign = Align.Bottom;
+            _fps.Panel.Left = -200 + 60;
+            _fps.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
+            _fps.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
+            Label label;
+            temp = _fps.AddClickMenu("update");
+            temp.Width = 200;
+            temp.ToolTip = "Input / UI";
+            temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanUpdate * Game1.FRAME_RATE / 1000); };
+            temp.Label.HorizontalAlign = Align.Right;
+            label = temp.AddLabel(temp.ToolTip + ":");
+            label.Padding = 15;
+            label.HorizontalAlign = Align.Left;
+            temp = _fps.AddClickMenu("emulation");
+            temp.Width = 200;
+            temp.ToolTip = "Emulation";
+            temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanEmulation * Game1.FRAME_RATE / 1000); };
+            temp.Label.HorizontalAlign = Align.Right;
+            label = temp.AddLabel(temp.ToolTip + ":");
+            label.Padding = 15;
+            label.HorizontalAlign = Align.Left;
+            temp = _fps.AddClickMenu("draw");
+            temp.Width = 200;
+            temp.ToolTip = "Rendering";
+            temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanDraw * Game1.FRAME_RATE / 1000); };
+            temp.Label.HorizontalAlign = Align.Right;
+            label = temp.AddLabel(temp.ToolTip + ":");
+            label.Padding = 15;
+            label.HorizontalAlign = Align.Left;
 
 
             // sound channel icons
@@ -588,8 +626,15 @@ namespace GEM.Emulation
                 temp.OnClick += setPaletteButtonHandler;
             }
 
-            temp = _menu["Game Boy"].AddClickMenu("Pause");
+            temp = _menu["Game Boy"].AddClickMenu("Buttons");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
+            temp.ToolTip = "Show onscreen buttons";
+            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
+
+            temp = _menu["Game Boy"].AddClickMenu("Running");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_gameboy.IsRunning); };
             temp.OnClick += (o, e) => { _gameboy.PauseToggle(this, EventArgs.Empty); };
+            temp.ToolTip = "Pause/Unpause Game Boy";
 
             // display
 
@@ -681,10 +726,6 @@ namespace GEM.Emulation
             temp.ToolTip = "Show FPS";
             temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; };
 
-            temp = _menu["Debug"].AddClickMenu("Buttons");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_onScreenButtonsBase.Visible); };
-            temp.ToolTip = "Show onscreen buttons";
-            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
 
             temp = _menu["Debug"].AddClickMenu("Audio");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).SetSwitch(_audioIconsBase.Visible); };
@@ -719,6 +760,8 @@ namespace GEM.Emulation
 
         public void Update(Viewport viewport)
         {
+            DateTime start = DateTime.Now;
+
             // update input
             Input.Update();
 
@@ -727,12 +770,18 @@ namespace GEM.Emulation
             {
                 control.Update();
             }
+
+            DateTime end = DateTime.Now;
+            _timespanUpdate = (end - start).TotalMilliseconds;
         }
 
         public void Draw(Viewport viewport)
         {
+            DateTime start = DateTime.Now;
+
             // update emulator
             _gameboy.UpdateFrame();
+            DateTime afterEmulation = DateTime.Now;
             Texture2D[] screens = _gameboy.GetScreens(_emuPalette[EmuColorIndex]);
 
             // draw emulator
@@ -746,6 +795,10 @@ namespace GEM.Emulation
                 _gameboy.SaveRAM();
                 _writeRAM = false;
             }
+
+            DateTime end = DateTime.Now;
+            _timespanEmulation = (afterEmulation - start).TotalMilliseconds;
+            _timespanDraw = (end - afterEmulation).TotalMilliseconds;
         }
 
 
@@ -834,14 +887,10 @@ namespace GEM.Emulation
             int tileSize = (int)(size * 8 + 1);
 
             // Tile Marker
-            //_spriteBatch.Draw(_pixel, new Rectangle(left, tilePosY, (int)(size*160), tileSize), _gridColorLight);
-            //_spriteBatch.Draw(_pixel, new Rectangle(tilePosX, top, tileSize, (int)(size*144)), _gridColorLight);
             _spriteBatch.DrawString(_Font, tileX.ToString(), new Vector2(tilePosX, top), _pixelMarkerTextColor);
             _spriteBatch.DrawString(_Font, tileY.ToString(), new Vector2(left, tilePosY), _pixelMarkerTextColor);
 
             // Pixel Marker
-            //_spriteBatch.Draw(_pixel, new Rectangle(left, pixelPosY, (int)(size * 160), pixelSize), _gridColorLight);
-            //_spriteBatch.Draw(_pixel, new Rectangle(pixelPosX, top, pixelSize, (int)(size * 160)), _gridColorLight);
             _spriteBatch.Draw(_Pixel, new Rectangle(pixelPosX, pixelPosY, pixelSize, pixelSize), _pixelMarkerColor);
             _spriteBatch.DrawString(_Font, string.Format("{0}", pixelX), new Vector2(pixelPosX, pixelPosY - 24), _pixelMarkerTextColor);
             _spriteBatch.DrawString(_Font, string.Format("{0,3}", pixelY), new Vector2(pixelPosX - 40, pixelPosY), _pixelMarkerTextColor);

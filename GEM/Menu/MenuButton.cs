@@ -435,14 +435,14 @@ namespace GEM.Menu
         // keyboard event handler
         public void KeyDownHandler(Keys key)
         {
-            if (key == KeyBinding)
+            if (key == KeyBinding && Visible)
             {
                 _keyboardRequest = State.Press;
             }
         }
         public void KeyUpHandler(Keys key)
         {
-            if (key == KeyBinding)
+            if (key == KeyBinding && Visible)
             {
                 _keyboardRequest = State.Idle;
                 _clickStarted = true; // keep clickStarted even when mouse click outside
@@ -453,14 +453,14 @@ namespace GEM.Menu
         // gamepad event handler
         public void ButtonDownHandler(Buttons button)
         {
-            if (button == BtnBinding)
+            if (button == BtnBinding && Visible)
             {
                 _gamepadRequest = State.Press;
             }
         }
         public void ButtonUpHandler(Buttons key)
         {
-            if (key == BtnBinding)
+            if (key == BtnBinding && Visible)
             {
                 _gamepadRequest = State.Idle;
             }
