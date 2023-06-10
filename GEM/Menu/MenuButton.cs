@@ -390,6 +390,7 @@ namespace GEM.Menu
         }
         public void Open(object sender, EventArgs e)
         {
+            if (!Visible) return;
             Focus = this;
             Panel.Visible = true;
             OnOpen?.Invoke(this, EventArgs.Empty);
@@ -435,14 +436,14 @@ namespace GEM.Menu
         // keyboard event handler
         public void KeyDownHandler(Keys key)
         {
-            if (key == KeyBinding && Visible)
+            if (key == KeyBinding)
             {
                 _keyboardRequest = State.Press;
             }
         }
         public void KeyUpHandler(Keys key)
         {
-            if (key == KeyBinding && Visible)
+            if (key == KeyBinding)
             {
                 _keyboardRequest = State.Idle;
                 _clickStarted = true; // keep clickStarted even when mouse click outside
@@ -453,14 +454,14 @@ namespace GEM.Menu
         // gamepad event handler
         public void ButtonDownHandler(Buttons button)
         {
-            if (button == BtnBinding && Visible)
+            if (button == BtnBinding)
             {
                 _gamepadRequest = State.Press;
             }
         }
         public void ButtonUpHandler(Buttons key)
         {
-            if (key == BtnBinding && Visible)
+            if (key == BtnBinding)
             {
                 _gamepadRequest = State.Idle;
             }
