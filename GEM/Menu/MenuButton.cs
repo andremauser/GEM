@@ -38,6 +38,8 @@ namespace GEM.Menu
         // menu structure events
         public event EventHandler OnOpen;
         public event EventHandler OnClose;
+        // focus events
+        public static event EventHandler OnFocusChange;
         // menu button colors
         public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
         public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
@@ -215,6 +217,9 @@ namespace GEM.Menu
             }
             set
             {
+                MenuButton oldFocus = _focus;
+                MenuButton newFocus = value;
+
                 // last focus
                 if (_focus != null)
                 {
@@ -231,6 +236,8 @@ namespace GEM.Menu
                 if (value == null)
                 {
                     _focus = null;
+
+                    OnFocusChange?.Invoke(null, EventArgs.Empty);
                     return;
                 }
                 if (value.Parent != null)
@@ -244,6 +251,8 @@ namespace GEM.Menu
                     Input.OnButtonDown += _focus.NavigationHandlerDown;
                     Input.OnButtonUp += _focus.NavigationHandlerUp;
                 }
+                
+                OnFocusChange?.Invoke(null, EventArgs.Empty);
             }
         }
         public string ToolTip 

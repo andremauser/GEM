@@ -289,6 +289,19 @@ namespace GEM.Emulation
             _pixelMarkerColor = new Color(255, 0, 255, 255);
             updateRomListHandler(null, EventArgs.Empty); // initial call to rom search - updated by click on "Open ROM"
 
+            MenuButton.OnFocusChange += (o, e) => {
+                if (MenuButton.Focus == null)
+                {
+                    _onScreenButtonsBase.Enabled = true;
+                    _audioIconsBase.Enabled = true;
+                }
+                else
+                {
+                    _onScreenButtonsBase.Enabled = false;
+                    _audioIconsBase.Enabled = false;
+                }
+            };
+
             _toolTip = new MenuButton(null, null, "", MenuType.StandAlone) { Enabled = false, Height = 40};
             _toolTip.Label.Padding = 15;
             _toolTip.Label.HorizontalAlign = Align.Left;
@@ -451,7 +464,7 @@ namespace GEM.Emulation
             _fps = new MenuButton(_debugInformationsBase, null, "fps", MenuType.Click) { Width = 60, Height = 60 };
             _fps.KeyBinding = Keys.RightControl;
             _fps.BtnBinding = Buttons.RightShoulder;
-            _fps.ToolTip = "Current frame rate";
+            _fps.ToolTip = "Current Frame Rate";
             _fps.Visible = false;
             _fps.Label.HorizontalAlign = Align.Center;
             _fps.OnDraw += (o, e) => {
@@ -463,8 +476,8 @@ namespace GEM.Emulation
             _fps.Panel.HorizontalAlign = Align.Left;
             _fps.Panel.VerticalAlign = Align.Bottom;
             _fps.Panel.Left = -200 + 60;
-            _fps.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
-            _fps.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
+            _fps.OnOpen += (o, e) => { MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
+            _fps.OnClose += (o, e) => { MenuButton.Focus = null; };
             Label label;
             temp = _fps.AddClickMenu("update");
             temp.Width = 200;
@@ -568,8 +581,8 @@ namespace GEM.Emulation
             _menu.Panel.VerticalAlign = Align.Bottom;
             _menu.KeyBinding = Keys.LeftControl;
             _menu.BtnBinding = Buttons.LeftShoulder;
-            _menu.OnOpen += (o, e) => { _onScreenButtonsBase.Enabled = false; _audioIconsBase.Enabled = false; MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
-            _menu.OnClose += (o, e) => { _onScreenButtonsBase.Enabled = true; _audioIconsBase.Enabled = true; MenuButton.Focus = null; };
+            _menu.OnOpen += (o, e) => { MenuButton.Focus = ((MenuButton)o).SubMenu.Values.ToArray<MenuButton>()[0]; MenuButton.Focus.Close(o, e); };
+            _menu.OnClose += (o, e) => { MenuButton.Focus = null; };
             _controls.Add(_menu);
             // add menu entries
             _menu.AddClickMenu("ROM");
