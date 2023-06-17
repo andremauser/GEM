@@ -63,6 +63,7 @@ namespace GEM.Menu
         public int ButtonData;
         Image _arrow;
         MenuType _menuType;
+        public bool IsClosedOnClickOutside = true;
         #endregion
 
         #region Constructors
@@ -240,7 +241,7 @@ namespace GEM.Menu
                     OnFocusChange?.Invoke(null, EventArgs.Empty);
                     return;
                 }
-                if (value.Parent != null)
+                if (value.ParentControl != null)
                 {
                     _focus = value;
                 }
@@ -253,6 +254,13 @@ namespace GEM.Menu
                 }
                 
                 OnFocusChange?.Invoke(null, EventArgs.Empty);
+            }
+        }
+        public static bool IsFocusSet
+        {
+            get
+            {
+                return Focus != null;
             }
         }
         public string ToolTip 
@@ -269,7 +277,7 @@ namespace GEM.Menu
         #endregion
 
         #region Methods
-        public override void Update()
+        public override void Update(GameTime gameTime)
         {
             if (Visible)
             {
@@ -293,7 +301,7 @@ namespace GEM.Menu
                             _touchRequest = State.Press;
                         }
                         // close menu on click outside
-                        if (_parentMenu == null) // only check on root button
+                        if (_parentMenu == null && IsClosedOnClickOutside) // only check on root button
                         {
                             if (!isTouchOverR(touch))
                             {
@@ -311,7 +319,7 @@ namespace GEM.Menu
 
             resolveStateRequests();
 
-            base.Update();
+            base.Update(gameTime);
         }
         public override void Draw(SpriteBatch spriteBatch)
         {
@@ -343,7 +351,7 @@ namespace GEM.Menu
         }
 
         // add submenu
-        public MenuButton AddMenu(string name, MenuButton button)
+        public MenuButton AddSubMenu(string name, MenuButton button)
         {
             // check for duplicate name
             if (SubMenu.ContainsKey(name)) return null;
@@ -358,9 +366,9 @@ namespace GEM.Menu
 
             return button;
         }
-        public MenuButton AddMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, int imagesPerRow = 1)
+        public MenuButton AddSubMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, int imagesPerRow = 1)
         {
-            MenuButton tmp = AddMenu(name, new MenuButton(Panel, this, name, MenuType.Click, image, imagesPerRow) { Width = width, Height = height });
+            MenuButton tmp = AddSubMenu(name, new MenuButton(Panel, this, name, MenuType.Click, image, imagesPerRow) { Width = width, Height = height });
             if (tmp.Image != null) tmp.Image.ResizeToParent();
             return tmp;
         }
@@ -475,7 +483,7 @@ namespace GEM.Menu
                 _mouseRequest = State.Press;
             }
             // close menu on click outside
-            if (_parentMenu == null) // only check on root button
+            if (_parentMenu == null && IsClosedOnClickOutside) // only check on root button
             {
                 if (!isMouseOverR())
                 { 
@@ -705,18 +713,25 @@ namespace GEM.Menu
         }
         private void navigationLeft()
         {
-            MenuButton close;
+            MenuButton closeMenu;
             if (_parentMenu != null)
             {
                 Focus = _parentMenu;
-                close = _parentMenu;
+                closeMenu = _parentMenu;
             }
             else
             {
                 Focus = null;
-                close = (MenuButton)Parent.Parent;
+                closeMenu = this;
             }
-            close.Close(null, EventArgs.Empty);
+            if (closeMenu.IsClosedOnClickOutside) // used for not closing audioBar
+            {
+                closeMenu.Close(null, EventArgs.Empty);
+            }
+            else
+            {
+                Focus = null;
+            }
         }
         private bool isTouchOver(TouchLocation touch)
         {

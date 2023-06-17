@@ -11,22 +11,22 @@ namespace GEM.Emulation
     internal class Gameboy
     {
         #region Fields
-        private MMU _mmu;
-        private CPU _cpu;
-        private GPU _gpu;
-        private APU _apu;
-        private int _cycleCount;
-        private Texture2D _nullTexture;
+        MMU _mmu;
+        CPU _cpu;
+        GPU _gpu;
+        APU _apu;
+        int _cycleCount;
+        Texture2D _nullTexture;
 
         // input
-        public bool IsButton_A;
-        public bool IsButton_B;
-        public bool IsButton_Start;
-        public bool IsButton_Select;
-        public bool IsButton_Left;
-        public bool IsButton_Right;
-        public bool IsButton_Up;
-        public bool IsButton_Down;
+        bool _isButton_A;
+        bool _isButton_B;
+        bool _isButton_Start;
+        bool _isButton_Select;
+        bool _isButton_Left;
+        bool _isButton_Right;
+        bool _isButton_Up;
+        bool _isButton_Down;
         #endregion
 
         #region Constructors
@@ -83,7 +83,48 @@ namespace GEM.Emulation
                 return _apu.IsChannelOutput;
             }
         }
-        
+
+        // input
+        public bool IsButton_A
+        {
+            get { return _isButton_A; }
+            set { _isButton_A = value; }
+        }
+        public bool IsButton_B
+        {
+            get { return _isButton_B; }
+            set { _isButton_B = value; }
+        }
+        public bool IsButton_Start
+        {
+            get { return _isButton_Start; }
+            set { _isButton_Start = value; }
+        }
+        public bool IsButton_Select
+        {
+            get { return _isButton_Select; }
+            set { _isButton_Select = value; }
+        }
+        public bool IsButton_Left
+        {
+            get { return _isButton_Left && !_isButton_Right; }
+            set { _isButton_Left = value; }
+        }
+        public bool IsButton_Right
+        {
+            get { return _isButton_Right && !_isButton_Left; }
+            set { _isButton_Right = value; }
+        }
+        public bool IsButton_Up
+        {
+            get { return _isButton_Up && !_isButton_Down; }
+            set { _isButton_Up = value;}
+        }
+        public bool IsButton_Down
+        {
+            get { return _isButton_Down && !_isButton_Up; }
+            set { _isButton_Down = value; }
+        }
         #endregion
 
         #region Methods

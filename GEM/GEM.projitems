@@ -28,6 +28,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Menu\Image.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\Label.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\MenuButton.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\Notification.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Menu\NotificationPanel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\Panel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\SwitchControl.cs" />
   </ItemGroup>
@@ -36,12 +38,14 @@
     <Content Include="$(MSBuildThisFileDirectory)Content\btna.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\btnb.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\dpad.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\info.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\max.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\menu.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\quit.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\raw\cart.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\sound.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\stasel.png" />
+    <Content Include="$(MSBuildThisFileDirectory)Content\success.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\switch.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\volminus.png" />
     <Content Include="$(MSBuildThisFileDirectory)Content\volplus.png" />

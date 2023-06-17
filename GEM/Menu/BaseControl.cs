@@ -16,7 +16,7 @@ namespace GEM.Menu
     internal class BaseControl
     {
         #region Fields
-        public BaseControl Parent;
+        public BaseControl ParentControl;
         public List<BaseControl> Controls;
         protected Texture2D _pixel;
         Align _horizontalAlign;
@@ -33,7 +33,7 @@ namespace GEM.Menu
         #region Constructors
         public BaseControl(BaseControl parent)
         {
-            Parent = parent;
+            ParentControl = parent;
             Controls = new List<BaseControl>();
             _pixel = Emulator._Pixel;
             HorizontalAlign = Align.Center;
@@ -87,9 +87,9 @@ namespace GEM.Menu
         {
             get
             {
-                if (Parent != null)
+                if (ParentControl != null)
                 {
-                    return Parent.PosX + Left;
+                    return ParentControl.PosX + Left;
                 }
                 else
                 {
@@ -101,9 +101,9 @@ namespace GEM.Menu
         {
             get
             {
-                if (Parent != null)
+                if (ParentControl != null)
                 {
-                    return Parent.PosY + Top;
+                    return ParentControl.PosY + Top;
                 }
                 else
                 {
@@ -150,10 +150,10 @@ namespace GEM.Menu
                 }
                 else
                 {
-                    if (Parent != null)
+                    if (ParentControl != null)
                     {
                         // if visible and has parent, both must be visible
-                        return _visible && Parent.Visible;
+                        return _visible && ParentControl.Visible;
                     }
                     else
                     {
@@ -172,9 +172,9 @@ namespace GEM.Menu
             get
             {
                 bool tmp = true;
-                if (Parent != null)
+                if (ParentControl != null)
                 {
-                    tmp = Parent.Enabled;
+                    tmp = ParentControl.Enabled;
                 }
                 return tmp && _enabled;
             }
@@ -183,17 +183,32 @@ namespace GEM.Menu
                 _enabled = value;
             }
         }
+
+        public BaseControl RootControl
+        {
+            get
+            {
+                if (ParentControl == null)
+                {
+                    return this;
+                }
+                else
+                {
+                    return ParentControl.RootControl;
+                }
+            }
+        }
         #endregion
 
         #region Methods
-        public virtual void Update()
+        public virtual void Update(GameTime gameTime)
         {
             // update-calculations (defined in inherited class)
 
             // embedded controls should be updated first (e.g. click priority from top to bottom)
             foreach (BaseControl control in Controls)
             {
-                control.Update();
+                control.Update(gameTime);
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch)
@@ -212,7 +227,7 @@ namespace GEM.Menu
         public BaseControl Add(BaseControl control)
         {
             Controls.Add(control);
-            control.Parent = this;
+            control.ParentControl = this;
             return control;
         }
         public Label AddLabel(string caption)
@@ -239,7 +254,7 @@ namespace GEM.Menu
         public void UpdateAlignPosition()
         {
             // align performed before rotation, so preferably use square images
-            if (Parent != null)
+            if (ParentControl != null)
             {
                 switch (HorizontalAlign)
                 {
@@ -247,10 +262,10 @@ namespace GEM.Menu
                         Left = Padding;
                         break;
                     case Align.Center:
-                        Left = (Parent.Width - Width) / 2;
+                        Left = (ParentControl.Width - Width) / 2;
                         break;
                     case Align.Right:
-                        Left = Parent.Width - Width - Padding;
+                        Left = ParentControl.Width - Width - Padding;
                         break;
                 }
                 switch (VerticalAlign)
@@ -259,10 +274,10 @@ namespace GEM.Menu
                         Top = Padding;
                         break;
                     case Align.Center:
-                        Top = (Parent.Height - Height) / 2;
+                        Top = (ParentControl.Height - Height) / 2;
                         break;
                     case Align.Bottom:
-                        Top = Parent.Height - Height - Padding;
+                        Top = ParentControl.Height - Height - Padding;
                         break;
                 }
             }
