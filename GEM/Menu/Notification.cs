@@ -27,14 +27,14 @@ namespace GEM.Menu
         {
             _seconds = seconds;
             _button = new MenuButton(this, null, message, MenuType.StandAlone);
-            _button.Label.Padding = HEIGHT + 15;
+            _button.Label.Margin = HEIGHT + 15;
             _button.Label.HorizontalAlign = Align.Left;
-            _button.Width = _button.Label.Width + _button.Label.Padding + 15;
+            _button.Width = _button.Label.Width + _button.Label.Margin.Left + 15;
             _button.Height = HEIGHT;
             _button.Left = -_button.Width;
             _button.Top = -HEIGHT;
             _button.Enabled = false;
-            Controls.Add(_button);
+            EmbeddedControls.Add(_button);
 
             string pic;
             switch (type)
@@ -54,7 +54,7 @@ namespace GEM.Menu
             }
 
             Image img = _button.AddImage(pic);
-            img.Padding = 15;
+            img.Margin = 15;
             img.HorizontalAlign = Align.Left;
             img.VerticalAlign = Align.Center;
             img.ForeColor = _button.ForeColor[State.Disabled];

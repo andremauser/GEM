@@ -71,17 +71,20 @@ namespace GEM.Menu
         {
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
-            Label.Padding = 15;
             Label.HorizontalAlign = Align.Left;
             if (image != null)
             {
                 Image = AddImage(image, imagesPerRow);
+                Image.HorizontalAlign = Align.Center;
+                Image.VerticalAlign = Align.Center;
                 Label.Caption = "";
             }
             _arrow = AddImage("arrow");
             _arrow.HorizontalAlign = Align.Right;
+            _arrow.VerticalAlign = Align.Center;
             _arrow.Visible = false;
-            Panel = AddPanel();
+            PanelAnchorPoint = Add(new BaseControl(this));
+            Panel = PanelAnchorPoint.AddPanel();
             Panel.Visible = false;
             _menuType = menuType;
             switch (menuType)
@@ -111,16 +114,17 @@ namespace GEM.Menu
             ApplyDefaultColors();
             Width = DEFAULT_WIDTH;
             Height = DEFAULT_HEIGHT;
-            // set submenu anchor point (size of panel is 0)
-            Panel.HorizontalAlign = Align.Right;
-            Panel.VerticalAlign = Align.Top;
+            PanelAnchorPoint.HorizontalAlign = Align.Right;
+            PanelAnchorPoint.VerticalAlign = Align.Top;
+            Label.Margin = 15;
         }
         #endregion
 
         #region Properties
         public Label Label { get; set; }
         public Image Image { get; set; }
-        public Panel Panel { get; private set; }
+        public BaseControl PanelAnchorPoint { get; set; }
+        public Panel Panel { get; set; }
         public MenuButton this[string name]
         {
             // submenu access by name
@@ -334,12 +338,12 @@ namespace GEM.Menu
                 if (Image != null) Image.ForeColor = ForeColor[State.Hover];
             }
             // draw box
-            spriteBatch.Draw(_pixel, new Rectangle(PosX, PosY, Width, Height), color);
+            spriteBatch.Draw(_pixel, new Rectangle(LocationX, LocationY, Width, Height), color);
             // draw border
             int borderWidth = 1;
             Color borderColor = BorderColor[State.Idle];
-            int x = PosX - borderWidth / 2;
-            int y = PosY - borderWidth / 2;
+            int x = LocationX - borderWidth / 2;
+            int y = LocationY - borderWidth / 2;
             int w = Width + borderWidth;
             int h = Height + borderWidth;
             spriteBatch.Draw(_pixel, new Rectangle(x, y, w, borderWidth), borderColor);
@@ -614,7 +618,7 @@ namespace GEM.Menu
             int x = Input.MousePosX;
             int y = Input.MousePosY;
             bool hover = false;
-            if (x > PosX && x < (PosX + Width) && y > PosY && y < (PosY + Height))
+            if (x > LocationX && x < (LocationX + Width) && y > LocationY && y < (LocationY + Height))
             {
                 hover = true;
             }
@@ -738,7 +742,7 @@ namespace GEM.Menu
             int x = (int)touch.Position.X;
             int y = (int)touch.Position.Y;
             bool hover = false;
-            if (x > PosX && x < (PosX + Width) && y > PosY && y < (PosY + Height))
+            if (x > LocationX && x < (LocationX + Width) && y > LocationY && y < (LocationY + Height))
             {
                 hover = true;
             }

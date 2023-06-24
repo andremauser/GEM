@@ -19,25 +19,26 @@ namespace GEM.Menu
             ((MenuButton)parent).Image = _switchImage;
 
             // add to controls
-            Controls.Add(_switchImage);
+            EmbeddedControls.Add(_switchImage);
+            HorizontalAlign = Align.Right;
+            Margin = 5;
 
-            // size
-            Width = parent.Width;
-            Height = parent.Height;
-
-            // positions
-            _switchImage.Left = Width - _switchImage.Width - 5;
         }
         #endregion
 
         #region Properties
-        public override int Width 
-        { 
-            get => base.Width;
-            set
+        public override int Width
+        {
+            get
             {
-                base.Width = value;
-                _switchImage.Left = Width - _switchImage.Width;
+                return _switchImage.Width;
+            }
+        }
+        public override int Height
+        {
+            get
+            {
+                return _switchImage.Height;
             }
         }
         #endregion

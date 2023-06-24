@@ -210,7 +210,7 @@ namespace GEM.Emulation
                 if (_mmu.IsWindowEnabled && y >= _mmu.WY && x >= _mmu.WX - 7)
                 {
                     // Window overwriting Background Pixel
-                    int posX = x - (_mmu.WX - 7);
+                    int posX = x - (_mmu.WX - 7) -1; // TODO: -1 fixes wrong pixel offset. reason?
                     int posY = y - _mmu.WY;
                     int index = 256 * posY + posX;
                     bgPixelData = WindowMap.RawData[index];

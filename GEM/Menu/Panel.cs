@@ -24,6 +24,8 @@ namespace GEM.Menu
         {
             // default values
             Direction = Direction.Vertical;
+            VerticalAlign = Align.Top;
+            HorizontalAlign = Align.Left;
         }
         #endregion
 
@@ -37,14 +39,14 @@ namespace GEM.Menu
                 {
                     case Direction.Vertical:
                         int w = 0;
-                        foreach (BaseControl control in Controls)
+                        foreach (BaseControl control in EmbeddedControls)
                         {
                             w = Math.Max(w, control.Width);
                         }
                         return w;
                     case Direction.Horizontal:
                         w = 0;
-                        foreach(BaseControl control in Controls)
+                        foreach(BaseControl control in EmbeddedControls)
                         {
                             w += control.Width;
                         }
@@ -61,14 +63,14 @@ namespace GEM.Menu
                 {
                     case Direction.Horizontal:
                         int h = 0;
-                        foreach (BaseControl control in Controls)
+                        foreach (BaseControl control in EmbeddedControls)
                         {
                             h = Math.Max(h, control.Height);
                         }
                         return h;
                     case Direction.Vertical:
                         h = 0;
-                        foreach (BaseControl control in Controls)
+                        foreach (BaseControl control in EmbeddedControls)
                         {
                             h += control.Height;
                         }
@@ -88,12 +90,12 @@ namespace GEM.Menu
             {
                 // order controls vertically
                 int top = 0;
-                for (int i = 0; i < Controls.Count; i++)
+                for (int i = 0; i < EmbeddedControls.Count; i++)
                 {
-                    Controls[i].Top = top;
-                    top += Controls[i].Height;
+                    EmbeddedControls[i].Top = top;
+                    top += EmbeddedControls[i].Height;
 
-                    Controls[i].Left = 0;
+                    EmbeddedControls[i].Left = 0;
                 }
             }
 
@@ -101,14 +103,20 @@ namespace GEM.Menu
             {
                 // order controls horizontally
                 int left = 0;
-                for (int i = 0; i < Controls.Count; i++)
+                for (int i = 0; i < EmbeddedControls.Count; i++)
                 {
-                    Controls[i].Left = left;
-                    left += Controls[i].Width;
+                    EmbeddedControls[i].Left = left;
+                    left += EmbeddedControls[i].Width;
 
-                    Controls[i].Top = 0;
+                    EmbeddedControls[i].Top = 0;
                 }
             }
+        }
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            //spriteBatch.Draw(_pixel, new Rectangle(LocationX, LocationY, Width, Height), Color.Magenta);
+            base.Draw(spriteBatch);
         }
         #endregion
     }

@@ -1,4 +1,5 @@
 ﻿using GEM.Emulation;
+using GEM.Struct;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -10,156 +11,143 @@ namespace GEM.Menu
     {
         Left, Center, Right, Top, Bottom
     }
-    /// <summary>
-    /// base class for nested controls
-    /// </summary>
+    
     internal class BaseControl
     {
         #region Fields
-        public BaseControl ParentControl;
-        public List<BaseControl> Controls;
         protected Texture2D _pixel;
-        Align _horizontalAlign;
-        Align _verticalAlign;
-        int _width;
-        int _height;
+
+        // property fields
         protected float _rotation;
         bool _enabled;
         bool _visible;
 
+        // events
         public event EventHandler OnDraw;
         #endregion
 
         #region Constructors
         public BaseControl(BaseControl parent)
         {
-            ParentControl = parent;
-            Controls = new List<BaseControl>();
             _pixel = Emulator._Pixel;
-            HorizontalAlign = Align.Center;
-            VerticalAlign = Align.Center;
+
+            // hierarchy
+            ParentControl = parent;
+            EmbeddedControls = new List<BaseControl>();
+
+            // default values
+            HorizontalAlign = Align.Left;
+            VerticalAlign = Align.Top;
             Visible = true;
             Enabled = true;
+            RotationPivotX = 0.5f;
+            RotationPivotY = 0.5f;
+            Padding = new Offset(0);
+            Margin = new Offset(0);
         }
         #endregion
 
         #region Properties
-        // offset to parent control
+        // location (top left corner)
+        public int LocationX
+        {
+            get
+            {
+                int locX = Left;
+                if (ParentControl != null)
+                {
+                    if (HorizontalAlign == Align.Left)
+                    {
+                        locX += ParentControl.LocationX
+                                + ParentControl.Padding.Left
+                                + Margin.Left;
+                    }
+                    if (HorizontalAlign == Align.Center)
+                    {
+                        locX += ParentControl.LocationX
+                                + (ParentControl.Width / 2)
+                                - (Width / 2);
+                    }
+                    if (HorizontalAlign == Align.Right)
+                    {
+                        locX += ParentControl.LocationX
+                                + ParentControl.Width
+                                - ParentControl.Padding.Right
+                                - Margin.Right
+                                - Width;
+                    }
+                }
+                return locX;
+            }
+        }
+        public int LocationY
+        {
+            get
+            {
+                int locY = Top;
+                if (ParentControl != null)
+                {
+                    if (VerticalAlign == Align.Top)
+                    {
+                        locY += ParentControl.LocationY
+                                + ParentControl.Padding.Top
+                                + Margin.Top;
+                    }
+                    if (VerticalAlign == Align.Center)
+                    {
+                        locY += ParentControl.LocationY
+                                + (ParentControl.Height / 2)
+                                - (Height / 2);
+                    }
+                    if (VerticalAlign == Align.Bottom)
+                    {
+                        locY += ParentControl.LocationY
+                                + ParentControl.Height
+                                - ParentControl.Padding.Bottom
+                                - Margin.Bottom
+                                - Height;
+                    }
+                }
+                return locY;
+            }
+        }
         public int Left { get; set; }
         public int Top { get; set; }
+        public Offset Padding { get; set; }
+        public Offset Margin { get; set; }
+        public Align HorizontalAlign { get; set; }
+        public Align VerticalAlign { get; set; }
 
-        // control size
-        public virtual int Width 
+        // rotation
+        public float Rotation
         {
-            get
-            {
-                return _width;
-            }
-            set
-            {
-                _width = value;
-                UpdateAlignPosition();
-                foreach (BaseControl child in Controls)
-                {
-                    child.UpdateAlignPosition();
-                }
-            }
+            get { return _rotation * 180f / MathHelper.Pi; }
+            set { _rotation = value / 180f * MathHelper.Pi; }
         }
-        public virtual int Height 
+        public float RotationRad
         {
-            get
-            {
-                return _height;
-            }
-            set
-            {
-                _height = value;
-                UpdateAlignPosition();
-                foreach (BaseControl child in Controls)
-                {
-                    child.UpdateAlignPosition();
-                }
-            }
+            get { return _rotation; }
+            set { _rotation = value; }
         }
+        public float RotationPivotX { get; set; }
+        public float RotationPivotY { get; set; }
 
-        // absolute position on canvas
-        public int PosX
-        {
-            get
-            {
-                if (ParentControl != null)
-                {
-                    return ParentControl.PosX + Left;
-                }
-                else
-                {
-                    return Left;
-                }
-            }
-        }
-        public int PosY
-        {
-            get
-            {
-                if (ParentControl != null)
-                {
-                    return ParentControl.PosY + Top;
-                }
-                else
-                {
-                    return Top;
-                }
-            }
-        }
+        // scale
+        public virtual int Width { get; set; }
+        public virtual int Height { get; set; }
 
-        // align within parent control
-        public Align HorizontalAlign
-        {
-            get
-            {
-                return _horizontalAlign;
-            }
-            set
-            {
-                _horizontalAlign = value;
-                UpdateAlignPosition();
-            }
-        }
-        public Align VerticalAlign
-        {
-            get
-            {
-                return _verticalAlign;
-            }
-            set
-            {
-                _verticalAlign = value;
-                UpdateAlignPosition();
-            }
-        }
-        public int Padding { get; set; }
-
+        // state
         public bool Visible
         {
             get
             {
-                if (!_visible)
+                if (ParentControl != null)
                 {
-                    // if not visible -> return this
-                    return _visible;
+                    return _visible && ParentControl.Visible;
                 }
                 else
                 {
-                    if (ParentControl != null)
-                    {
-                        // if visible and has parent, both must be visible
-                        return _visible && ParentControl.Visible;
-                    }
-                    else
-                    {
-                        // visible and top level -> return this
-                        return _visible;
-                    }
+                    return _visible;
                 }
             }
             set
@@ -171,12 +159,14 @@ namespace GEM.Menu
         { 
             get
             {
-                bool tmp = true;
                 if (ParentControl != null)
                 {
-                    tmp = ParentControl.Enabled;
+                    return _enabled && ParentControl.Enabled;
                 }
-                return tmp && _enabled;
+                else
+                {
+                    return _enabled;
+                }
             }
             set
             {
@@ -184,41 +174,41 @@ namespace GEM.Menu
             }
         }
 
+        // hierarchy
+        public BaseControl ParentControl { get; set; }
         public BaseControl RootControl
         {
             get
             {
-                if (ParentControl == null)
-                {
-                    return this;
-                }
-                else
+                if (ParentControl != null)
                 {
                     return ParentControl.RootControl;
                 }
+                else
+                {
+                    return this;
+                }
             }
         }
+        public List<BaseControl> EmbeddedControls { get; set; }
         #endregion
 
         #region Methods
         public virtual void Update(GameTime gameTime)
         {
-            // update-calculations (defined in inherited class)
-
             // embedded controls should be updated first (e.g. click priority from top to bottom)
-            foreach (BaseControl control in Controls)
+            foreach (BaseControl control in EmbeddedControls)
             {
                 control.Update(gameTime);
             }
         }
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            // draw-method (defined in inherited class)
-
-            // embedded controls drawn last (from bottom to top)
             if (!Visible) return;
             OnDraw?.Invoke(this, EventArgs.Empty);
-            foreach (BaseControl control in Controls)
+
+            // embedded controls drawn last (from bottom to top)
+            foreach (BaseControl control in EmbeddedControls)
             {
                 control.Draw(spriteBatch);
             }
@@ -226,7 +216,7 @@ namespace GEM.Menu
 
         public BaseControl Add(BaseControl control)
         {
-            Controls.Add(control);
+            EmbeddedControls.Add(control);
             control.ParentControl = this;
             return control;
         }
@@ -251,47 +241,7 @@ namespace GEM.Menu
             return (SwitchControl)Add(new SwitchControl(this));
         }
 
-        public void UpdateAlignPosition()
-        {
-            // align performed before rotation, so preferably use square images
-            if (ParentControl != null)
-            {
-                switch (HorizontalAlign)
-                {
-                    case Align.Left:
-                        Left = Padding;
-                        break;
-                    case Align.Center:
-                        Left = (ParentControl.Width - Width) / 2;
-                        break;
-                    case Align.Right:
-                        Left = ParentControl.Width - Width - Padding;
-                        break;
-                }
-                switch (VerticalAlign)
-                {
-                    case Align.Top:
-                        Top = Padding;
-                        break;
-                    case Align.Center:
-                        Top = (ParentControl.Height - Height) / 2;
-                        break;
-                    case Align.Bottom:
-                        Top = ParentControl.Height - Height - Padding;
-                        break;
-                }
-            }
-        }
-
-        public void SetRotation(float radian)
-        {
-            _rotation = radian;
-        }
-        public void SetRotation(int degree)
-        {
-            _rotation = degree / 180f * MathHelper.Pi;
-        }
-                
+     
         #endregion
     }
 }

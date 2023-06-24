@@ -77,6 +77,8 @@ namespace GEM.Emulation
         int _screenLeft;
         int _screenTop;
         bool _writeRAM = false;
+        DateTime _saveTime;
+        const int SAVE_DELAY_MS = 500;
 
         #endregion
 
@@ -86,7 +88,7 @@ namespace GEM.Emulation
             _graphicsDevice = graphicsDevice;
             _controls = new List<BaseControl>();
             _volumeList = new float[] { 0f, 0.01f, 0.05f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
-            Cartridge.OnWriteRAM += (o, e) => { _writeRAM = true; };
+            Cartridge.OnWriteRAM += (o, e) => { _writeRAM = true; _saveTime = DateTime.Now + TimeSpan.FromMilliseconds(SAVE_DELAY_MS); };
         }
         #endregion
 
@@ -304,7 +306,7 @@ namespace GEM.Emulation
             _dpadUp.Left = -50;
             _dpadUp.Top = -120;
             _dpadUp.Image.ResizeToParent();
-            _dpadUp.Image.SetRotation(90);
+            _dpadUp.Image.Rotation = 90;
             _dpadUp.KeyBinding = Keys.Up;
             _dpadUp.BtnBinding = Buttons.DPadUp;
             _dpadUp.OnPress += (o, e) =>  _gameboy.IsButton_Up = true;
@@ -316,7 +318,7 @@ namespace GEM.Emulation
             _dpadDown.Left = -50;
             _dpadDown.Top = 20;
             _dpadDown.Image.ResizeToParent();
-            _dpadDown.Image.SetRotation(270);
+            _dpadDown.Image.Rotation = 270;
             _dpadDown.KeyBinding = Keys.Down;
             _dpadDown.BtnBinding = Buttons.DPadDown;
             _dpadDown.OnPress += (o, e) => _gameboy.IsButton_Down = true;
@@ -339,7 +341,7 @@ namespace GEM.Emulation
             _dpadLeft.Left = -120;
             _dpadLeft.Top = -50;
             _dpadLeft.Image.ResizeToParent();
-            _dpadLeft.Image.SetRotation(180);
+            _dpadLeft.Image.Rotation = 180;
             _dpadLeft.KeyBinding = Keys.Left;
             _dpadLeft.BtnBinding = Buttons.DPadLeft;
             _dpadLeft.OnPress += (o, e) => _gameboy.IsButton_Left = true;
@@ -364,7 +366,7 @@ namespace GEM.Emulation
             _btnA.Left = 0;
             _btnA.Top = -70;
             _btnA.Image.ResizeToParent();
-            _btnA.Image.SetRotation(20);
+            _btnA.Image.Rotation = 20;
             _btnA.KeyBinding = Keys.X;
             _btnA.BtnBinding = Buttons.B;
             _btnA.OnPress += (o, e) => _gameboy.IsButton_A = true;
@@ -376,7 +378,7 @@ namespace GEM.Emulation
             _btnB.Left = -120;
             _btnB.Top = -30;
             _btnB.Image.ResizeToParent();
-            _btnB.Image.SetRotation(20);
+            _btnB.Image.Rotation = 20;
             _btnB.KeyBinding = Keys.Y;
             _btnB.BtnBinding = Buttons.A;
             _btnB.OnPress += (o, e) => _gameboy.IsButton_B = true;
@@ -388,7 +390,7 @@ namespace GEM.Emulation
             _btnStart.Left = 1040;
             _btnStart.Top = 620;
             _btnStart.Image.ResizeToParent();
-            _btnStart.Image.SetRotation(20);
+            _btnStart.Image.Rotation = 20;
             _btnStart.KeyBinding = Keys.Enter;
             _btnStart.BtnBinding = Buttons.Start;
             _btnStart.OnPress += (o, e) => _gameboy.IsButton_Start = true;
@@ -398,7 +400,7 @@ namespace GEM.Emulation
                 ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
                 ((BaseControl)o).Left = Math.Min(
                     _screenLeft + _screenWidth + 20, 
-                    _btnB.PosX
+                    _btnB.LocationX
                     );
             }; 
             _onScreenButtonsBase.Add(_btnStart);
@@ -406,7 +408,7 @@ namespace GEM.Emulation
             // select
             _btnSelect = new MenuButton(null, null, "Select", MenuType.StandAlone, "stasel", 4) { Width = 100, Height = 100 };
             _btnSelect.Image.ResizeToParent();
-            _btnSelect.Image.SetRotation(20);
+            _btnSelect.Image.Rotation = 20;
             _btnSelect.KeyBinding = Keys.Back;
             _btnSelect.BtnBinding = Buttons.Back;
             _btnSelect.OnPress += (o, e) => _gameboy.IsButton_Select = true;
@@ -416,7 +418,7 @@ namespace GEM.Emulation
                 ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
                 ((BaseControl)o).Left = Math.Max(
                     _screenLeft - ((BaseControl)o).Width - 20, 
-                    _dpadRight.PosX
+                    _dpadRight.LocationX
                     );
             }; 
             _onScreenButtonsBase.Add(_btnSelect);
@@ -441,7 +443,7 @@ namespace GEM.Emulation
             {
                 // update tooltip line
                 _toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
-                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 2 * _toolTip.Label.Padding;
+                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 2 * _toolTip.Label.Padding.Left;
                 _toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
             };
             _controls.Add(_toolTip);
@@ -493,7 +495,7 @@ namespace GEM.Emulation
             _spriteBatch.End();
 
             // save RAM to file
-            if (_writeRAM)
+            if (_writeRAM && DateTime.Now >= _saveTime)
             {
                 _gameboy.SaveRAM();
                 _notifications.Push("Game saved", NotificationType.Success);
@@ -522,7 +524,6 @@ namespace GEM.Emulation
                     parent[i.ToString()].ToolTip = fileName;
                     parent[i.ToString()].Label.Caption = fileName.Substring(0, Math.Min(fileName.Length, 26));
                     parent[i.ToString()].Label.HorizontalAlign = Align.Left;
-                    parent[i.ToString()].Label.Left = 20;
                 }
                 else
                 {
@@ -568,8 +569,8 @@ namespace GEM.Emulation
             // menu
             mainMenu = new MenuButton(image: "menu", menuType: MenuType.Click) { Width = 60, Height = 60 };
             mainMenu.Image.ResizeToParent();
-            mainMenu.Panel.HorizontalAlign = Align.Left;
-            mainMenu.Panel.VerticalAlign = Align.Bottom;
+            mainMenu.PanelAnchorPoint.HorizontalAlign = Align.Left;
+            mainMenu.PanelAnchorPoint.VerticalAlign = Align.Bottom;
             mainMenu.KeyBinding = Keys.LeftControl;
             mainMenu.BtnBinding = Buttons.LeftShoulder;
             mainMenu.OnOpen += setFocusToFirstEntry;
@@ -594,7 +595,7 @@ namespace GEM.Emulation
                 fillOpenDialog(romBrowser);
                 MenuButton.Focus = romBrowser.SubMenu.Values.ToArray()[OPEN_ENTRIES];
             };
-            temp.Image.SetRotation(90);
+            temp.Image.Rotation = 90;
             temp.ToolTip = "Scroll up";
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
@@ -606,7 +607,7 @@ namespace GEM.Emulation
                 fillOpenDialog(romBrowser);
                 MenuButton.Focus = romBrowser.SubMenu.Values.ToArray()[1];
             };
-            temp.Image.SetRotation(-90);
+            temp.Image.Rotation = -90;
             temp.ToolTip = "Scroll down";
 
             current.AddSubMenu("Reset ROM").OnClick += _gameboy.Reset;
@@ -623,15 +624,17 @@ namespace GEM.Emulation
                 if (_emuPaletteNames.Count() > colorIndex) temp.ToolTip = _emuPaletteNames[colorIndex];
                 Panel colorPanel = temp.AddPanel();
                 colorPanel.Direction = Direction.Horizontal;
+                colorPanel.HorizontalAlign = Align.Center;
+                colorPanel.VerticalAlign = Align.Center;
                 for (int i = 0; i < 4; i++)
                 {
-                    Label tile = colorPanel.AddLabel(i.ToString());
-                    tile.Caption = "";
+                    Label tile = colorPanel.AddLabel("");
                     tile.Width = 30;
                     tile.Height = 30;
                     tile.MarkColor = _emuPalette[colorIndex][i];
+                    tile.VerticalAlign = Align.Top;
+                    tile.HorizontalAlign = Align.Left;
                 }
-                colorPanel.UpdateAlignPosition();
                 temp.ButtonData = colorIndex;
                 temp.OnClick += setPaletteButtonHandler;
             }
@@ -777,8 +780,9 @@ namespace GEM.Emulation
                 ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - ((BaseControl)o).Width;
                 ((BaseControl)o).Top = 0;
             };
-            fpsMenu.Panel.VerticalAlign = Align.Bottom;
-            fpsMenu.Panel.Left = -subMenuWidth + fpsMenu.Width;
+            fpsMenu.PanelAnchorPoint.HorizontalAlign = Align.Right;
+            fpsMenu.PanelAnchorPoint.VerticalAlign = Align.Bottom;
+            fpsMenu.Panel.HorizontalAlign = Align.Right;
             fpsMenu.OnOpen += setFocusToFirstEntry;
             fpsMenu.OnClose += setFocusToNull;
 
@@ -789,7 +793,7 @@ namespace GEM.Emulation
             temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanUpdate * Game1.FRAME_RATE / 1000); };
             temp.Label.HorizontalAlign = Align.Right;
             label = temp.AddLabel(temp.ToolTip + ":");
-            label.Padding = 15;
+            label.Margin = 15;
             label.HorizontalAlign = Align.Left;
 
             temp = fpsMenu.AddSubMenu("emulation");
@@ -798,7 +802,7 @@ namespace GEM.Emulation
             temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanEmulation * Game1.FRAME_RATE / 1000); };
             temp.Label.HorizontalAlign = Align.Right;
             label = temp.AddLabel(temp.ToolTip + ":");
-            label.Padding = 15;
+            label.Margin = 15;
             label.HorizontalAlign = Align.Left;
 
             temp = fpsMenu.AddSubMenu("draw");
@@ -807,7 +811,7 @@ namespace GEM.Emulation
             temp.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = String.Format("{0:0 %}", _timespanDraw * Game1.FRAME_RATE / 1000); };
             temp.Label.HorizontalAlign = Align.Right;
             label = temp.AddLabel(temp.ToolTip + ":");
-            label.Padding = 15;
+            label.Margin = 15;
             label.HorizontalAlign = Align.Left;
 
             return fpsMenu;
@@ -821,8 +825,8 @@ namespace GEM.Emulation
             audioMenu = new MenuButton(image: "menu", menuType: MenuType.Click) { Width = 60, Height = 60 };
             audioMenu.IsClosedOnClickOutside = false;
             audioMenu.Image.ResizeToParent();
-            audioMenu.Panel.HorizontalAlign = Align.Right;
-            audioMenu.Panel.VerticalAlign = Align.Top;
+            audioMenu.PanelAnchorPoint.HorizontalAlign = Align.Right;
+            audioMenu.PanelAnchorPoint.VerticalAlign = Align.Top;
             audioMenu.OnClose += setFocusToNull;
             audioMenu.OnDraw += (o, e) => {
                 audioMenu.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2);

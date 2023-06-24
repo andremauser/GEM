@@ -21,7 +21,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Input.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Layer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\MMU.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Register.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Struct\Offset.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Struct\Register.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Sprite.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Game1.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\BaseControl.cs" />
