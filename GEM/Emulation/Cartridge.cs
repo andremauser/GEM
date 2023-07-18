@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 
 namespace GEM.Emulation
 {
@@ -157,7 +154,11 @@ namespace GEM.Emulation
                 {
                     _isRamEnabled = true;
                 }
-                else _isRamEnabled = false;
+                else
+                {
+                    _isRamEnabled = false;
+                    //SaveToFile();
+                }
             }
             else if (pos >= 0x2000 && pos < 0x4000)
             {
@@ -229,6 +230,7 @@ namespace GEM.Emulation
                     Directory.CreateDirectory("save/");
                 File.WriteAllBytes(_saveFile, _ram);
             }
+            //OnWriteRAM?.Invoke(this, EventArgs.Empty);
         }
         #endregion
     }

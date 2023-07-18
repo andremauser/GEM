@@ -46,9 +46,9 @@ namespace GEM.Menu
                 notification.Draw(spriteBatch);
             }
         }
-        public void Push(string message, NotificationType type = NotificationType.Information, double seconds = 3.0d)
+        public void Push(string message, Style style, NotificationType type = NotificationType.Information, double seconds = 3.0d)
         {
-            Notification notification = new Notification(this, message, type, seconds);
+            Notification notification = new Notification(this, message, style, type, seconds);
             _notifications.Add(notification);
         }
         public void Pop(Notification notification) 

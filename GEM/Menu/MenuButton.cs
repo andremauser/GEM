@@ -18,8 +18,7 @@ namespace GEM.Menu
     }
     public enum MenuType
     {
-        Click,
-        Hover,
+        Default,
         StandAlone
     }
 
@@ -41,9 +40,9 @@ namespace GEM.Menu
         // focus events
         public static event EventHandler OnFocusChange;
         // menu button colors
-        public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
-        public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
-        public Dictionary<State, Color> BorderColor = new Dictionary<State, Color>();
+        //public Dictionary<State, Color> BackColor = new Dictionary<State, Color>();
+        //public Dictionary<State, Color> ForeColor = new Dictionary<State, Color>();
+        //public Dictionary<State, Color> BorderColor = new Dictionary<State, Color>();
         // menu structure
         public Dictionary<string, MenuButton> SubMenu = new Dictionary<string, MenuButton>();
         MenuButton _parentMenu;
@@ -67,17 +66,34 @@ namespace GEM.Menu
         #endregion
 
         #region Constructors
-        public MenuButton(BaseControl parentControl = null, MenuButton parentMenu = null, string caption = "", MenuType menuType = MenuType.StandAlone, string image = null, int imagesPerRow = 1) : base(parentControl)
+        public MenuButton(BaseControl parentControl = null, MenuButton parentMenu = null, string caption = "", Style style = null, MenuType menuType = MenuType.Default, string image = null, int imagesPerRow = 1, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT) : base(parentControl)
         {
+            if (style != null)
+            {
+                Style = style;
+            }
+            else
+            {
+                if (parentMenu != null)
+                {
+                    Style = parentMenu.Style;
+                }
+                else
+                {
+                    Style = new Style();
+                }
+            }
+            Width = width;
+            Height = height;
             _parentMenu = parentMenu;
             Label = AddLabel(caption);
-            Label.HorizontalAlign = Align.Left;
             if (image != null)
             {
                 Image = AddImage(image, imagesPerRow);
                 Image.HorizontalAlign = Align.Center;
                 Image.VerticalAlign = Align.Center;
-                Label.Caption = "";
+                Image.ResizeToParent();
+                Label.Visible = false;
             }
             _arrow = AddImage("arrow");
             _arrow.HorizontalAlign = Align.Right;
@@ -89,15 +105,10 @@ namespace GEM.Menu
             _menuType = menuType;
             switch (menuType)
             {
-                case MenuType.Click:
+                case MenuType.Default:
                     // submenu open on click
                     OnClick += ToggleMenu;
                     OnFocus += OpenIfSideOpen;
-                    break;
-                case MenuType.Hover:
-                    // submenu open on hover
-                    OnFocus += Open;
-                    OnClick += ToggleMenu;
                     break;
                 default:
                     break;
@@ -112,10 +123,9 @@ namespace GEM.Menu
 
             // default values
             ApplyDefaultColors();
-            Width = DEFAULT_WIDTH;
-            Height = DEFAULT_HEIGHT;
             PanelAnchorPoint.HorizontalAlign = Align.Right;
             PanelAnchorPoint.VerticalAlign = Align.Top;
+            Label.HorizontalAlign = Align.Left;
             Label.Margin = 15;
         }
         #endregion
@@ -179,11 +189,11 @@ namespace GEM.Menu
                 // set value
                 _state = value;
                 // update button label (color)
-                if (Label != null) Label.ForeColor = ForeColor[value];
+                if (Label != null) Label.ForeColor = Style.ForeColor(value);
                 // update button image (color and index)
                 if (Image != null)
                 {
-                    Image.ForeColor = ForeColor[value];
+                    Image.ForeColor = Style.ForeColor(value);
                     Image.ImageIndex = (int)value; // cast enum to int
                 }
             }
@@ -278,6 +288,7 @@ namespace GEM.Menu
                 _toolTip = value;
             }
         }
+        public Style Style { get; set; }
         #endregion
 
         #region Methods
@@ -330,26 +341,26 @@ namespace GEM.Menu
             if (!Visible) return;
 
             // highlight button when submenu is visible
-            Color color = BackColor[State];
+            Color color = Style.BackColor(State);// Style.GetColor(Element.Background, State); // BackColor[State];
             if (Panel.Visible && SubMenu.Count > 0 && State == State.Idle)
             {
-                color = BackColor[State.Hover];
-                Label.ForeColor = ForeColor[State.Hover];
-                if (Image != null) Image.ForeColor = ForeColor[State.Hover];
+                color = Style.BackColor(State.Hover);
+                Label.ForeColor = Style.ForeColor(State.Hover);
+                if (Image != null) Image.ForeColor = Style.ForeColor(State.Hover);
             }
             // draw box
             spriteBatch.Draw(_pixel, new Rectangle(LocationX, LocationY, Width, Height), color);
             // draw border
-            int borderWidth = 1;
-            Color borderColor = BorderColor[State.Idle];
-            int x = LocationX - borderWidth / 2;
-            int y = LocationY - borderWidth / 2;
-            int w = Width + borderWidth;
-            int h = Height + borderWidth;
-            spriteBatch.Draw(_pixel, new Rectangle(x, y, w, borderWidth), borderColor);
-            spriteBatch.Draw(_pixel, new Rectangle(x, y + Height, w, borderWidth), borderColor);
-            spriteBatch.Draw(_pixel, new Rectangle(x, y, borderWidth, h), borderColor);
-            spriteBatch.Draw(_pixel, new Rectangle(x + Width, y, borderWidth, h), borderColor);
+            int borderWidth = Style.BorderWidth;
+            Color borderColor = Style.BorderColor(_state);
+            int x = LocationX;// - borderWidth / 2;
+            int y = LocationY;// - borderWidth / 2;
+            int w = Width;// + borderWidth;
+            int h = Height;// + borderWidth;
+            spriteBatch.Draw(_pixel, new Rectangle(x, y, w, borderWidth), borderColor); // top
+            spriteBatch.Draw(_pixel, new Rectangle(x, y + Height - borderWidth, w, borderWidth), borderColor); // bottom
+            spriteBatch.Draw(_pixel, new Rectangle(x, y, borderWidth, h), borderColor); // left
+            spriteBatch.Draw(_pixel, new Rectangle(x + Width - borderWidth, y, borderWidth, h), borderColor); // right
             // draw label, image and submenu
             base.Draw(spriteBatch);
         }
@@ -372,7 +383,7 @@ namespace GEM.Menu
         }
         public MenuButton AddSubMenu(string name, string image = null, int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, int imagesPerRow = 1)
         {
-            MenuButton tmp = AddSubMenu(name, new MenuButton(Panel, this, name, MenuType.Click, image, imagesPerRow) { Width = width, Height = height });
+            MenuButton tmp = AddSubMenu(name, new MenuButton(Panel, this, name, null, MenuType.Default, image, imagesPerRow) { Width = width, Height = height });
             if (tmp.Image != null) tmp.Image.ResizeToParent();
             return tmp;
         }
@@ -588,6 +599,7 @@ namespace GEM.Menu
         // private helper methods
         public void ApplyDefaultColors()
         {
+            /*
             BackColor[State.Idle] = new Color(0.1f, 0.1f, 0.1f, 0.95f);
             BackColor[State.Hover] = new Color(0.2f, 0.2f, 0.2f, 1f);
             BackColor[State.Press] = Color.DarkViolet;
@@ -602,6 +614,7 @@ namespace GEM.Menu
             BorderColor[State.Hover] = Color.Transparent;
             BorderColor[State.Press] = Color.Transparent;
             BorderColor[State.Disabled] = Color.Transparent;
+            */
         }
         private bool isClickStartedR()
         {
@@ -667,7 +680,7 @@ namespace GEM.Menu
             State = State.Idle;
         }
         public void SetButtonColors(Color? background, Color? foreground)
-        {
+        {/*
             if (background != null)
             {
                 BackColor[State.Idle] = (Color)background;
@@ -681,12 +694,12 @@ namespace GEM.Menu
                 ForeColor[State.Hover] = (Color)foreground;
                 ForeColor[State.Press] = (Color)foreground;
                 ForeColor[State.Disabled] = (Color)foreground;
-            }
+            }*/
         }
         public void SetStateColorsR(State state, Color background, Color foreground)
-        {
+        {/*
             BackColor[state] = background;
-            ForeColor[state] = foreground;
+            ForeColor[state] = foreground;*/
             foreach (MenuButton sub in SubMenu.Values)
             {
                 sub.SetStateColorsR(state, background, foreground);

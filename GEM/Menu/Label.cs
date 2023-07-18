@@ -1,7 +1,6 @@
 ﻿using GEM.Emulation;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace GEM.Menu
 {
@@ -46,6 +45,7 @@ namespace GEM.Menu
         #region Methods
         public override void Draw(SpriteBatch spriteBatch)
         {
+            if (!Visible) return;
             // text marking
             Rectangle   destinationRectangle =  new Rectangle(LocationX + Width / 2, LocationY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
             Rectangle   sourceRectangle =       new Rectangle(0, 0, _pixel.Width, _pixel.Height); // use full texture

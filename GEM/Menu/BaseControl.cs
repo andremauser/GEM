@@ -40,8 +40,6 @@ namespace GEM.Menu
             VerticalAlign = Align.Top;
             Visible = true;
             Enabled = true;
-            RotationPivotX = 0.5f;
-            RotationPivotY = 0.5f;
             Padding = new Offset(0);
             Margin = new Offset(0);
         }
@@ -121,16 +119,9 @@ namespace GEM.Menu
         // rotation
         public float Rotation
         {
-            get { return _rotation * 180f / MathHelper.Pi; }
-            set { _rotation = value / 180f * MathHelper.Pi; }
+            get { return MathHelper.ToDegrees(_rotation); }
+            set { _rotation = MathHelper.ToRadians(value); }
         }
-        public float RotationRad
-        {
-            get { return _rotation; }
-            set { _rotation = value; }
-        }
-        public float RotationPivotX { get; set; }
-        public float RotationPivotY { get; set; }
 
         // scale
         public virtual int Width { get; set; }
@@ -241,7 +232,6 @@ namespace GEM.Menu
             return (SwitchControl)Add(new SwitchControl(this));
         }
 
-     
         #endregion
     }
 }

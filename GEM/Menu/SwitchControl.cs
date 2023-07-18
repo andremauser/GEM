@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GEM.Menu
 {
@@ -16,13 +12,13 @@ namespace GEM.Menu
         public SwitchControl(BaseControl parent) : base(parent)
         {
             _switchImage = new Image(this, "switch", 2);
-            ((MenuButton)parent).Image = _switchImage;
+            ((MenuButton)parent).Image = _switchImage; // for updating color
 
             // add to controls
             EmbeddedControls.Add(_switchImage);
             HorizontalAlign = Align.Right;
+            VerticalAlign = Align.Center;
             Margin = 5;
-
         }
         #endregion
 
@@ -44,7 +40,7 @@ namespace GEM.Menu
         #endregion
 
         #region Methods
-        public void SetSwitch(bool state)
+        public void UpdateSwitch(bool state)
         {
             _switchImage.ImageIndex = Convert.ToInt32(state);
         }
