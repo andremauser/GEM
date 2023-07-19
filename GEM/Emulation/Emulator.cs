@@ -106,7 +106,7 @@ namespace GEM.Emulation
             get
             {
                 string title = _gameboy.CartridgeTitle;
-                return title != "" ? title : "(N/A)";
+                return title != "" ? title : "N/A";
             }
         }
         public int VolumeIndex 
@@ -227,6 +227,7 @@ namespace GEM.Emulation
             _pixelMarkerColor = new Color(255, 0, 255, 255);
             updateRomList(); // initial call to rom search - updated by click on "Open ROM"
 
+            _gameboy.OnPowerOn += (o, e) => { _notifications.Push(CartridgeTitle, _notificationStyle, NotificationType.Information); };
 
             // disable and re-enable background controls
             MenuButton.OnFocusChange += (o, e) => {

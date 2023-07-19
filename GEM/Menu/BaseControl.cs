@@ -11,11 +11,26 @@ namespace GEM.Menu
     {
         Left, Center, Right, Top, Bottom
     }
+
+    public enum BlendType
+    {
+        Linear
+    }
     
     internal class BaseControl
     {
         #region Fields
         protected Texture2D _pixel;
+
+        // move animation
+        protected int _moveFromLeft;
+        protected int _moveFromTop;
+        protected int _moveToLeft;
+        protected int _moveToTop;
+        protected DateTime _moveTimeBegin;
+        protected DateTime _moveTimeEnd;
+        protected BlendType _moveBlendType;
+        protected bool _isMoving;
 
         // property fields
         protected float _rotation;
@@ -42,6 +57,7 @@ namespace GEM.Menu
             Enabled = true;
             Padding = new Offset(0);
             Margin = new Offset(0);
+            _isMoving = false;
         }
         #endregion
 
@@ -188,6 +204,26 @@ namespace GEM.Menu
         public virtual void Update(GameTime gameTime)
         {
             // embedded controls should be updated first (e.g. click priority from top to bottom)
+
+            if (_isMoving)
+            {
+                long elapsed = (DateTime.Now - _moveTimeBegin).Ticks;
+                long total = (_moveTimeEnd - _moveTimeBegin).Ticks;
+                double percentage = elapsed / (total * 1d);
+                if (percentage >= 1)
+                {
+                    percentage = 1;
+                    _isMoving = false;
+                }
+                switch (_moveBlendType)
+                {
+                    case BlendType.Linear:
+                    default:
+                        Left = (int)(_moveFromLeft + (_moveToLeft - _moveFromLeft) * percentage);
+                        Top = (int)(_moveFromTop + (_moveToTop - _moveFromTop) * percentage);
+                        break;
+                }
+            }
             foreach (BaseControl control in EmbeddedControls)
             {
                 control.Update(gameTime);
@@ -230,6 +266,18 @@ namespace GEM.Menu
         public SwitchControl AddSwitch()
         {
             return (SwitchControl)Add(new SwitchControl(this));
+        }
+
+        public void MoveTo(int newLeft, int newTop, float seconds, BlendType blendType = BlendType.Linear)
+        {
+            _moveFromLeft = Left;
+            _moveFromTop = Top;
+            _moveToLeft = newLeft;
+            _moveToTop = newTop;
+            _moveTimeBegin = DateTime.Now;
+            _moveTimeEnd = _moveTimeBegin + TimeSpan.FromSeconds(seconds);
+            _moveBlendType = blendType;
+            _isMoving = true;
         }
 
         #endregion

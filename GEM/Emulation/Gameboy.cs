@@ -28,6 +28,9 @@ namespace GEM.Emulation
         bool _isButton_Right;
         bool _isButton_Up;
         bool _isButton_Down;
+
+        // events
+        public event EventHandler OnPowerOn;
         #endregion
 
         #region Constructors
@@ -142,6 +145,7 @@ namespace GEM.Emulation
         {
             _mmu.IsLCDOn = true;
             IsRunning = true;
+            OnPowerOn?.Invoke(this, EventArgs.Empty);
         }
         public void PowerOff()
         {

@@ -15,6 +15,7 @@ namespace GEM.Menu
         double _seconds;
         MenuButton _button;
         public static int HEIGHT = 60;
+        static float MOVEOUTTIME = 0.25f;
         #endregion
 
         #region Constructors
@@ -65,6 +66,10 @@ namespace GEM.Menu
         public override void Update(GameTime gameTime)
         {
             _seconds -= gameTime.ElapsedGameTime.TotalSeconds;
+            if (_seconds <= MOVEOUTTIME && !_isMoving)
+            {
+                MoveTo(_button.Width, 0, MOVEOUTTIME);
+            }
             if (_seconds <= 0)
             {
                 ((NotificationPanel)ParentControl).Pop(this);
