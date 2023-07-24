@@ -13,8 +13,8 @@ This is a personal hobby and learning project inspired by [The Ultimate Game Boy
 
 ## Screenshots
 <p float="left">
-  <img src="screenshot01.png" width="50%" />
-  <img src="screenshot02.png" width="50%" />
+  <img src="screenshot01.png" width="49%" />
+  <img src="screenshot02.png" width="49%" />
 </p>
 
 
