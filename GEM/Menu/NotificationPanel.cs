@@ -41,6 +41,7 @@ namespace GEM.Menu
         }
         public override void Draw(SpriteBatch spriteBatch)
         {
+            base.Draw(spriteBatch);
             foreach (Notification notification in _notifications)
             {
                 notification.Draw(spriteBatch);
@@ -50,6 +51,7 @@ namespace GEM.Menu
         {
             Notification notification = new Notification(this, message, style, type, seconds);
             _notifications.Add(notification);
+
         }
         public void Pop(Notification notification) 
         {

@@ -31,7 +31,7 @@ namespace GEM
             Content.RootDirectory = "Content";
             _Content = Content;
             IsMouseVisible = true;
-            Window.AllowUserResizing = true;// false;
+            Window.AllowUserResizing = true;
             IsFixedTimeStep = true;
             TargetElapsedTime = System.TimeSpan.FromSeconds(1d / FRAME_RATE); // set MonoGame frame rate to original DMG
         }
@@ -45,9 +45,6 @@ namespace GEM
         protected override void Initialize()
         {
             _emulator = new Emulator(GraphicsDevice);
-            _Graphics.PreferredBackBufferWidth = 800;
-            _Graphics.PreferredBackBufferHeight = 720;
-            _Graphics.ApplyChanges();
             Window.Title = "GEM";
 
             base.Initialize();

@@ -18,7 +18,7 @@ namespace GEM.Emulation
         public bool IsCGB;
         private string _saveFile;
         public string Title { get; private set; }
-        public static event EventHandler OnWriteRAM;
+        public static event EventHandler OnRamDisable;
         #endregion
 
         #region Constructors
@@ -157,7 +157,7 @@ namespace GEM.Emulation
                 else
                 {
                     _isRamEnabled = false;
-                    //SaveToFile();
+                    OnRamDisable?.Invoke(this, EventArgs.Empty);
                 }
             }
             else if (pos >= 0x2000 && pos < 0x4000)
@@ -217,20 +217,18 @@ namespace GEM.Emulation
             if (_isRamEnabled)
             {
                 _ram[pos + _ramBank * 0x2000] = value;
-                OnWriteRAM?.Invoke(this, EventArgs.Empty);
             }
         }
 
         public void SaveToFile()
         {
-            // currently called on PowerOff sequence
+            if (!_isCartridgeLoaded) return;
             if (!_ram.All(item => item == 0))   // RAM not empty
             {
                 if (!Directory.Exists("save/"))
                     Directory.CreateDirectory("save/");
                 File.WriteAllBytes(_saveFile, _ram);
             }
-            //OnWriteRAM?.Invoke(this, EventArgs.Empty);
         }
         #endregion
     }

@@ -15,7 +15,7 @@ namespace GEM.Menu
         double _seconds;
         MenuButton _button;
         public static int HEIGHT = 60;
-        static float MOVEOUTTIME = 0.25f;
+        static float MOVETIME = 0.25f;
         #endregion
 
         #region Constructors
@@ -56,6 +56,9 @@ namespace GEM.Menu
             img.HorizontalAlign = Align.Right;
             img.VerticalAlign = Align.Center;
             img.ForeColor = _button.Style.ForeColor(State.Disabled);
+
+            Left = _button.Width;
+            MoveTo(0, 0, MOVETIME);
         }
         #endregion
 
@@ -66,9 +69,9 @@ namespace GEM.Menu
         public override void Update(GameTime gameTime)
         {
             _seconds -= gameTime.ElapsedGameTime.TotalSeconds;
-            if (_seconds <= MOVEOUTTIME && !_isMoving)
+            if (_seconds <= MOVETIME && !_isMoving)
             {
-                MoveTo(_button.Width, 0, MOVEOUTTIME);
+                MoveTo(_button.Width, 0, MOVETIME);
             }
             if (_seconds <= 0)
             {

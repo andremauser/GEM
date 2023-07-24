@@ -21,6 +21,7 @@ namespace GEM.Emulation
         static public SpriteFont _Font;
 
         const int OPEN_ENTRIES = 12;
+        const int SAVE_DELAY_MS = 500;
 
         Gameboy _gameboy;
         GraphicsDevice _graphicsDevice;
@@ -34,6 +35,7 @@ namespace GEM.Emulation
         Color _pixelMarkerTextColor;
         Color _pixelMarkerColor;
 
+        // styles
         Style _menuStyle;
         Style _menuButtonStyle;
         Style _onScreenStyle;
@@ -45,16 +47,16 @@ namespace GEM.Emulation
         public event PaletteChange OnPaletteChange;
 
         // states
-        int _volumeIndex = 0;
-        int _emuColorIndex = 0;
-        int _openStartIndex = 0;
-        bool _showGrid = false;
-        bool _drawBackground = true;
-        bool _drawWindow = true;
-        bool _drawSprites = true;
-        bool _markBackground = false;
-        bool _markWindow = false;
-        bool _markSprites = false;
+        int _volumeIndex;
+        int _emuColorIndex;
+        int _openStartIndex;
+        bool _showGrid;
+        bool _drawBackground;
+        bool _drawWindow;
+        bool _drawSprites;
+        bool _markBackground;
+        bool _markWindow;
+        bool _markSprites;
 
         // timespans
         double _timespanUpdate;
@@ -65,38 +67,32 @@ namespace GEM.Emulation
         BaseControl _onScreenButtonsBase;
 
         // fields
-        List<string> _romList = new List<string>();
+        List<string> _romList;
         List<BaseControl> _controls;
         float[] _volumeList;
         MenuButton _menu;
         MenuButton _audioBar;
         MenuButton _toolTip;
         NotificationPanel _notifications;
-        MenuButton _dpadUp;
-        MenuButton _dpadDown;
-        MenuButton _dpadLeft;
-        MenuButton _dpadRight;
-        MenuButton _btnA;
-        MenuButton _btnB;
-        MenuButton _btnStart;
-        MenuButton _btnSelect;
         MenuButton _fps;
         int _screenWidth;
         int _screenHeight;
         int _screenLeft;
         int _screenTop;
-        bool _writeRAM = false;
+        bool _saveRamToFile;
         DateTime _saveTime;
-        const int SAVE_DELAY_MS = 500;
         #endregion
 
         #region Constructors
         public Emulator(GraphicsDevice graphicsDevice)
         {
             _graphicsDevice = graphicsDevice;
+            _gameboy = new Gameboy(_graphicsDevice);
+            _spriteBatch = new SpriteBatch(_graphicsDevice);
+            _Pixel = new Texture2D(_graphicsDevice, 1, 1);
+            _Pixel.SetData(new Color[] { Color.White });
             _controls = new List<BaseControl>();
-            _volumeList = new float[] { 0f, 0.01f, 0.05f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
-            Cartridge.OnWriteRAM += (o, e) => { _writeRAM = true; _saveTime = DateTime.Now + TimeSpan.FromMilliseconds(SAVE_DELAY_MS); };
+            _romList = new List<string>();
         }
         #endregion
 
@@ -138,11 +134,10 @@ namespace GEM.Emulation
         #region Methods
         public void LoadContent(ContentManager content)
         {
-            _gameboy = new Gameboy(_graphicsDevice);
-            _spriteBatch = new SpriteBatch(_graphicsDevice);
             _Font = content.Load<SpriteFont>("Console");
-            _Pixel = new Texture2D(_graphicsDevice, 1, 1);
-            _Pixel.SetData(new Color[] { Color.White });
+            // volumes
+            _volumeList = new float[] { 0f, 0.01f, 0.05f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
+            // colors
             _emuPalette = new Color[][]
             {
                 new Color[]
@@ -225,21 +220,25 @@ namespace GEM.Emulation
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
             _pixelMarkerColor = new Color(255, 0, 255, 255);
-            updateRomList(); // initial call to rom search - updated by click on "Open ROM"
 
-            _gameboy.OnPowerOn += (o, e) => { _notifications.Push(CartridgeTitle, _notificationStyle, NotificationType.Information); };
+            // initial call to rom search - updated by click on "Open ROM"
+            updateRomList();
+            _openStartIndex = 0;
 
             // disable and re-enable background controls
             MenuButton.OnFocusChange += (o, e) => {
+                // no focus
                 if (!MenuButton.IsFocusSet)
                 {
                     _onScreenButtonsBase.Enabled = true;
                     _audioBar.Enabled = true;
                 }
+                // focus set not on onscreenbuttons
                 if (MenuButton.IsFocusSet && MenuButton.Focus.RootControl != _onScreenButtonsBase)
                 {
                     _onScreenButtonsBase.Enabled = false;
                 }
+                // focus set not on audiobar
                 if (MenuButton.IsFocusSet && MenuButton.Focus.RootControl != _audioBar)
                 {
                     _audioBar.Enabled = false;
@@ -247,219 +246,77 @@ namespace GEM.Emulation
             };
 
             // styles
-            _menuStyle = new Style(this);
-            _menuStyle.SetColor(Element.Background, State.Idle, 3, 0.8f);
-            _menuStyle.SetColor(Element.Background, State.Hover, 2);
-            _menuStyle.SetColor(Element.Background, State.Press, 1);
-            _menuStyle.SetColor(Element.Background, State.Disabled, 3, 0.8f);
-            _menuStyle.SetColor(Element.Foreground, State.Idle, Color.White);
-            _menuStyle.SetColor(Element.Foreground, State.Hover, Color.White);
-            _menuStyle.SetColor(Element.Foreground, State.Press, Color.White);
-            _menuStyle.SetColor(Element.Foreground, State.Disabled, Color.White);
-            _menuStyle.SetColor(Element.Border, State.Idle, Color.Transparent, 0f);
-            _menuStyle.SetColor(Element.Border, State.Hover, Color.Transparent, 0f);
-            _menuStyle.SetColor(Element.Border, State.Press, Color.Transparent, 0f);
-            _menuStyle.SetColor(Element.Border, State.Disabled, Color.Transparent, 0f);
-            _menuStyle.BorderWidth = 1;
+            createStyles();
 
-            _menuButtonStyle = new Style(_menuStyle);
-            _menuButtonStyle.SetColor(Element.Background, State.Idle, Color.Transparent, 0f);
-            _menuButtonStyle.SetColor(Element.Foreground, State.Idle, 2);
-
-            _onScreenStyle = new Style(this);
-            _onScreenStyle.SetColor(Element.Background, State.Idle, Color.Transparent, 0f);
-            _onScreenStyle.SetColor(Element.Background, State.Hover, Color.Transparent, 0f);
-            _onScreenStyle.SetColor(Element.Background, State.Press, Color.Transparent, 0f);
-            _onScreenStyle.SetColor(Element.Background, State.Disabled, Color.Transparent, 0f);
-            _onScreenStyle.SetColor(Element.Foreground, State.Idle, 2);
-            _onScreenStyle.SetColor(Element.Foreground, State.Hover, 2);
-            _onScreenStyle.SetColor(Element.Foreground, State.Press, 2);
-            _onScreenStyle.SetColor(Element.Foreground, State.Disabled, 2);
-
-            _toolTipStyle = new Style(_menuStyle);
-            _notificationStyle = new Style(_menuStyle);
-
-            #region onscreen buttons
-
-            _onScreenButtonsBase = new BaseControl(null);
-            _onScreenButtonsBase.Visible = false; // hide OnScreenButtons on start
+            // on screen buttons
+            _onScreenButtonsBase = onScreenButtons();
             _controls.Add(_onScreenButtonsBase);
 
-            // dpad
-            BaseControl _dpad = new BaseControl(null);
-            _onScreenButtonsBase.Add(_dpad);
-            _dpad.OnDraw += (o, e) => 
-            {
-                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
-                ((BaseControl)o).Left = Math.Max(_screenLeft / 2, 120);
-            };
-
-            // up
-            _dpadUp = new MenuButton(_dpad, null, "up", _onScreenStyle, MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
-            _dpadUp.Left = -50;
-            _dpadUp.Top = -120;
-            _dpadUp.Image.ResizeToParent();
-            _dpadUp.Image.Rotation = 90;
-            _dpadUp.KeyBinding = Keys.Up;
-            _dpadUp.BtnBinding = Buttons.DPadUp;
-            _dpadUp.OnPress += (o, e) =>  _gameboy.IsButton_Up = true;
-            _dpadUp.OnRelease += (o, e) => _gameboy.IsButton_Up = false;
-            _dpad.Add(_dpadUp);
-
-            // down
-            _dpadDown = new MenuButton(_dpad, null, "down", _onScreenStyle, MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
-            _dpadDown.Left = -50;
-            _dpadDown.Top = 20;
-            _dpadDown.Image.ResizeToParent();
-            _dpadDown.Image.Rotation = 270;
-            _dpadDown.KeyBinding = Keys.Down;
-            _dpadDown.BtnBinding = Buttons.DPadDown;
-            _dpadDown.OnPress += (o, e) => _gameboy.IsButton_Down = true;
-            _dpadDown.OnRelease += (o, e) => _gameboy.IsButton_Down = false;
-            _dpad.Add(_dpadDown);
-
-            // right
-            _dpadRight = new MenuButton(_dpad, null, "->", _onScreenStyle, MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
-            _dpadRight.Left = 20;
-            _dpadRight.Top = -50;
-            _dpadRight.Image.ResizeToParent();
-            _dpadRight.KeyBinding = Keys.Right;
-            _dpadRight.BtnBinding = Buttons.DPadRight;
-            _dpadRight.OnPress += (o, e) => _gameboy.IsButton_Right = true;
-            _dpadRight.OnRelease += (o, e) => _gameboy.IsButton_Right = false;
-            _dpad.Add(_dpadRight);
-
-            // left
-            _dpadLeft = new MenuButton(_dpad, null, "<-", _onScreenStyle, MenuType.StandAlone, "dpad", 4) { Width = 100, Height = 100 };
-            _dpadLeft.Left = -120;
-            _dpadLeft.Top = -50;
-            _dpadLeft.Image.ResizeToParent();
-            _dpadLeft.Image.Rotation = 180;
-            _dpadLeft.KeyBinding = Keys.Left;
-            _dpadLeft.BtnBinding = Buttons.DPadLeft;
-            _dpadLeft.OnPress += (o, e) => _gameboy.IsButton_Left = true;
-            _dpadLeft.OnRelease += (o, e) => _gameboy.IsButton_Left = false;
-            _dpad.Add(_dpadLeft);
-
-
-            // buttons A, B
-            BaseControl _btns = new BaseControl(null) { Left = 1150, Top = 400 };
-            _onScreenButtonsBase.Add(_btns);
-            _btns.OnDraw += (o, e) =>
-            {
-                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
-                ((BaseControl)o).Left = Math.Min(
-                    _screenWidth + (int)(_screenLeft * 1.5f),
-                    _screenWidth + _screenLeft * 2 - 120
-                    );
-            };
-
-            // A
-            _btnA = new MenuButton(_btns, null, "A", _onScreenStyle, MenuType.StandAlone, "btna", 4) { Width = 100, Height = 100 };
-            _btnA.Left = 0;
-            _btnA.Top = -70;
-            _btnA.Image.ResizeToParent();
-            _btnA.Image.Rotation = 20;
-            _btnA.KeyBinding = Keys.X;
-            _btnA.BtnBinding = Buttons.B;
-            _btnA.OnPress += (o, e) => _gameboy.IsButton_A = true;
-            _btnA.OnRelease += (o, e) => _gameboy.IsButton_A = false;
-            _btns.Add(_btnA);
-
-            // B
-            _btnB = new MenuButton(_btns, null, "B", _onScreenStyle, MenuType.StandAlone, "btnb", 4) { Width = 100, Height = 100 };
-            _btnB.Left = -120;
-            _btnB.Top = -30;
-            _btnB.Image.ResizeToParent();
-            _btnB.Image.Rotation = 20;
-            _btnB.KeyBinding = Keys.Y;
-            _btnB.BtnBinding = Buttons.A;
-            _btnB.OnPress += (o, e) => _gameboy.IsButton_B = true;
-            _btnB.OnRelease += (o, e) => _gameboy.IsButton_B = false;
-            _btns.Add(_btnB);
-
-            // start
-            _btnStart = new MenuButton(null, null, "Start", _onScreenStyle, MenuType.StandAlone, "stasel", 4) { Width = 100, Height = 100 };
-            _btnStart.Left = 1040;
-            _btnStart.Top = 620;
-            _btnStart.Image.ResizeToParent();
-            _btnStart.Image.Rotation = 20;
-            _btnStart.KeyBinding = Keys.Enter;
-            _btnStart.BtnBinding = Buttons.Start;
-            _btnStart.OnPress += (o, e) => _gameboy.IsButton_Start = true;
-            _btnStart.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
-            _btnStart.OnDraw += (o, e) =>
-            {
-                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
-                ((BaseControl)o).Left = Math.Min(
-                    _screenLeft + _screenWidth + 20, 
-                    _btnB.LocationX
-                    );
-            }; 
-            _onScreenButtonsBase.Add(_btnStart);
-
-            // select
-            _btnSelect = new MenuButton(null, null, "Select", _onScreenStyle, MenuType.StandAlone, "stasel", 4) { Width = 100, Height = 100 };
-            _btnSelect.Image.ResizeToParent();
-            _btnSelect.Image.Rotation = 20;
-            _btnSelect.KeyBinding = Keys.Back;
-            _btnSelect.BtnBinding = Buttons.Back;
-            _btnSelect.OnPress += (o, e) => _gameboy.IsButton_Select = true;
-            _btnSelect.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
-            _btnSelect.OnDraw += (o, e) =>
-            {
-                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
-                ((BaseControl)o).Left = Math.Max(
-                    _screenLeft - ((BaseControl)o).Width - 20, 
-                    _dpadRight.LocationX
-                    );
-            }; 
-            _onScreenButtonsBase.Add(_btnSelect);
-
-            #endregion
-
+            // audio bar
             _audioBar = audioMenu();
+            _audioBar.OnClose += setFocusToNull;
+            _audioBar.OnDraw += (o, e) => {
+                _audioBar.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2);
+                _audioBar.Left = -_audioBar.Width;
+            };
             _controls.Add(_audioBar);
 
+            // fps menu
             _fps = fpsMenu();
             _controls.Add(_fps);
 
+            // main menu
             _menu = mainMenu();
             _controls.Add(_menu);
 
-            #region tooltip
-
-            _toolTip = new MenuButton(null, null, "", _toolTipStyle, MenuType.StandAlone) { Enabled = false, Height = 40 };
-            _toolTip.Label.Padding = 15;
-            _toolTip.Label.HorizontalAlign = Align.Left;
-            _toolTip.OnDraw += (o, e) =>
-            {
-                // update tooltip line
-                _toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
-                _toolTip.Width = _toolTip.Label.Caption == "" ? 0 : _toolTip.Label.Width + 2 * _toolTip.Label.Padding.Left;
-                _toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
-            };
+            // tooltip
+            _toolTip = toolTip();
             _controls.Add(_toolTip);
 
-            #endregion
-
-
-            // initial color palette
-            EmuColorIndex = 0;
-
-
+            // notifications
             _notifications = new NotificationPanel(null);
+            _notifications.OnDraw += (o, e) => {
+                _notifications.Left = Game1._Graphics.GraphicsDevice.Viewport.Width;
+                _notifications.Top = Game1._Graphics.GraphicsDevice.Viewport.Height;
+            };
             _controls.Add(_notifications);
 
+            // set notifications
             _notifications.Push("Welcome to GEM", _notificationStyle, NotificationType.Information, 10);
+            _gameboy.OnPowerOn += (o, e) => { _notifications.Push(CartridgeTitle, _notificationStyle, NotificationType.Information); };
+
+            // save RAM event
+            _saveRamToFile = false;
+            Cartridge.OnRamDisable += (o, e) => { _saveRamToFile = true; _saveTime = DateTime.Now + TimeSpan.FromMilliseconds(SAVE_DELAY_MS); };
+            Game1._Instance.Exiting += (o, e) => { SaveRamToFile(); };
+
+            // settings
+            EmuColorIndex = 0;
+            Game1._Graphics.IsFullScreen = false;
+            Game1._Graphics.PreferredBackBufferWidth = 800;
+            Game1._Graphics.PreferredBackBufferHeight = 720;
+            Game1._Graphics.ApplyChanges();
+            _notifications.Visible = true;
+            _fps.Visible = false;
+            _showGrid = false;
+            _drawBackground = true;
+            _drawWindow = true;
+            _drawSprites = true;
+            _markBackground = false;
+            _markWindow = false;
+            _markSprites = false;
+            _volumeIndex = 0;
+            _audioBar.Panel.Visible = false;
+            _gameboy.MasterSwitch[0] = true;
+            _gameboy.MasterSwitch[1] = true;
+            _gameboy.MasterSwitch[2] = true;
+            _gameboy.MasterSwitch[3] = true;
+            _onScreenButtonsBase.Visible = false;
         }
 
         public void Update(GameTime gameTime)
         {
             DateTime start = DateTime.Now;
-
-            _notifications.Left = _screenWidth + 2 * _screenLeft;
-            _notifications.Top = _screenHeight + 2 * _screenTop;
 
             // update input
             Input.Update();
@@ -489,11 +346,9 @@ namespace GEM.Emulation
             _spriteBatch.End();
 
             // save RAM to file
-            if (_writeRAM && DateTime.Now >= _saveTime)
+            if (_saveRamToFile && DateTime.Now >= _saveTime)
             {
-                _gameboy.SaveRAM();
-                _notifications.Push("Game saved", _notificationStyle, NotificationType.Success);
-                _writeRAM = false;
+                SaveRamToFile();
             }
 
             DateTime end = DateTime.Now;
@@ -501,6 +356,13 @@ namespace GEM.Emulation
             _timespanDraw = (end - afterEmulation).TotalMilliseconds;
         }
 
+        // Public Helper Methods
+        public void SaveRamToFile()
+        {
+            _gameboy.SaveRAM();
+            _notifications.Push("RAM saved", _notificationStyle, NotificationType.Success);
+            _saveRamToFile = false;
+        }
 
         // Private Helper Methods
         private void fillOpenDialog(MenuButton parent)
@@ -554,6 +416,40 @@ namespace GEM.Emulation
             }
             _openStartIndex = 0;
         }
+        private void createStyles()
+        {
+            _menuStyle = new Style(this);
+            _menuStyle.SetColor(Element.Background, State.Idle, 3, 0.8f);
+            _menuStyle.SetColor(Element.Background, State.Hover, 2);
+            _menuStyle.SetColor(Element.Background, State.Press, 1);
+            _menuStyle.SetColor(Element.Background, State.Disabled, 3, 0.8f);
+            _menuStyle.SetColor(Element.Foreground, State.Idle, Color.White);
+            _menuStyle.SetColor(Element.Foreground, State.Hover, Color.White);
+            _menuStyle.SetColor(Element.Foreground, State.Press, Color.White);
+            _menuStyle.SetColor(Element.Foreground, State.Disabled, Color.White);
+            _menuStyle.SetColor(Element.Border, State.Idle, Color.Transparent, 0f);
+            _menuStyle.SetColor(Element.Border, State.Hover, Color.Transparent, 0f);
+            _menuStyle.SetColor(Element.Border, State.Press, Color.Transparent, 0f);
+            _menuStyle.SetColor(Element.Border, State.Disabled, Color.Transparent, 0f);
+            _menuStyle.BorderWidth = 1;
+
+            _menuButtonStyle = new Style(_menuStyle);
+            _menuButtonStyle.SetColor(Element.Background, State.Idle, Color.Transparent, 0f);
+            _menuButtonStyle.SetColor(Element.Foreground, State.Idle, 2);
+
+            _onScreenStyle = new Style(this);
+            _onScreenStyle.SetColor(Element.Background, State.Idle, Color.Transparent, 0f);
+            _onScreenStyle.SetColor(Element.Background, State.Hover, Color.Transparent, 0f);
+            _onScreenStyle.SetColor(Element.Background, State.Press, Color.Transparent, 0f);
+            _onScreenStyle.SetColor(Element.Background, State.Disabled, Color.Transparent, 0f);
+            _onScreenStyle.SetColor(Element.Foreground, State.Idle, 2);
+            _onScreenStyle.SetColor(Element.Foreground, State.Hover, 2);
+            _onScreenStyle.SetColor(Element.Foreground, State.Press, 2);
+            _onScreenStyle.SetColor(Element.Foreground, State.Disabled, 2);
+
+            _toolTipStyle = new Style(_menuStyle);
+            _notificationStyle = new Style(_menuStyle);
+        }
         private MenuButton mainMenu()
         {
             MenuButton mainMenu;
@@ -569,17 +465,15 @@ namespace GEM.Emulation
             mainMenu.OnOpen += setFocusToFirstEntry;
             mainMenu.OnClose += setFocusToNull;
             // add menu entries
-            mainMenu.AddSubMenu("ROM");
-            mainMenu.AddSubMenu("Game Boy");
-            mainMenu.AddSubMenu("Display");
-            mainMenu.AddSubMenu("Sound");
-            mainMenu.AddSubMenu("Debug");
+            mainMenu.AddSubMenu("Game");
+            mainMenu.AddSubMenu("Settings");
+            mainMenu.AddSubMenu("Emulator");
             mainMenu.AddSubMenu("Quit");
 
             mainMenu.Style = _menuButtonStyle;
 
             // ROM
-            current = mainMenu["ROM"];
+            current = mainMenu["Game"];
 
             MenuButton romBrowser = current.AddSubMenu("Open ROM");
             romBrowser.OnOpen += (o, e) => { updateRomList(); fillOpenDialog(romBrowser); };
@@ -605,12 +499,11 @@ namespace GEM.Emulation
 
             current.AddSubMenu("Reset ROM").OnClick += _gameboy.Reset;
             current.AddSubMenu("Exit ROM").OnClick += _gameboy.EjectCartridge;
-      
 
-            // Game Boy
-            current = mainMenu["Game Boy"];
+            // settings
+            current = mainMenu["Settings"];
 
-            MenuButton colorList = current.AddSubMenu("Colors");
+            MenuButton colorList = current.AddSubMenu("Color Palette");
             for (int colorIndex = 0; colorIndex < _emuPalette.Count(); colorIndex++)
             {
                 temp = colorList.AddSubMenu("color" + colorIndex.ToString());
@@ -633,20 +526,13 @@ namespace GEM.Emulation
                 temp.OnClick += setPaletteButtonHandler;
             }
 
-            temp = current.AddSubMenu("Buttons");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_onScreenButtonsBase.Visible); };
-            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
-            temp.ToolTip = "Show onscreen buttons";
+            temp = current.AddSubMenu("Screen Size");
 
-            temp = mainMenu["Game Boy"].AddSubMenu("Running");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_gameboy.IsRunning); };
-            temp.OnClick += (o, e) => { _gameboy.PauseToggle(this, EventArgs.Empty); };
-            temp.ToolTip = "Pause/Unpause Game Boy";
+            MenuButton fs = temp.AddSubMenu("Fullscreen");
+            fs.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(Game1._Graphics.IsFullScreen); };
+            fs.OnClick += fullscreenHandler;
+            fs.ToolTip = "Toggle fullscreen mode";
 
-            // display
-            current = mainMenu["Display"];
-
-            temp = current.AddSubMenu("Resolution");
             temp.AddSubMenu("800x720").OnClick += (o, e) => {
                 Game1._Graphics.PreferredBackBufferWidth = 800;
                 Game1._Graphics.PreferredBackBufferHeight = 720;
@@ -663,19 +549,6 @@ namespace GEM.Emulation
                 Game1._Graphics.ApplyChanges();
             };
 
-            temp = current.AddSubMenu("Full");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(Game1._Graphics.IsFullScreen); };
-            temp.OnClick += fullscreenHandler;
-            temp.ToolTip = "Toggle fullscreen mode";
-
-            temp = current.AddSubMenu("VSync");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(Game1._Graphics.SynchronizeWithVerticalRetrace); };
-            temp.OnClick += vsyncHandler;
-            temp.ToolTip = "Toggle VSync";
-
-            // Sound
-            current = mainMenu["Sound"];
-
             MenuButton volume = current.AddSubMenu("Volume");
             volume.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "Volume: " + _volumeList[_volumeIndex].ToString("0%"); };
 
@@ -688,18 +561,38 @@ namespace GEM.Emulation
                 temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
             }
 
-            temp = current.AddSubMenu("Volume up", "volplus");
-            temp.OnClick += (o, e) => { VolumeIndex++; };
+            // emulator
+            current = mainMenu["Emulator"];
 
-            temp = current.AddSubMenu("Volume down", "volminus");
-            temp.OnClick += (o, e) => { VolumeIndex--; };
+            MenuButton overlay = current.AddSubMenu("Overlay");
 
-            // Debug
-            current = mainMenu["Debug"];
+            temp = overlay.AddSubMenu("FPS");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_fps.Visible); };
+            temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; };
+            temp.ToolTip = "Show FPS";
+
+            MenuButton audio = overlay.AddSubMenu("Audio Panel");
+            audio.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_audioBar.Panel.Visible); };
+            audio.OnClick += (o, e) => { _audioBar.Panel.Visible = !_audioBar.Panel.Visible; };
+            audio.ToolTip = "Show audio sidebar";
+
+            temp = overlay.AddSubMenu("Buttons");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_onScreenButtonsBase.Visible); };
+            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
+            temp.ToolTip = "Show onscreen buttons";
+
+            temp = overlay.AddSubMenu("Notifications");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_notifications.Visible); };
+            temp.OnClick += (o, e) => { _notifications.Visible = !_notifications.Visible; };
+
+            temp = overlay.AddSubMenu("Grid");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_showGrid); };
+            temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
+            temp.ToolTip = "Show pixel grid";
 
             MenuButton layers = current.AddSubMenu("Layers");
 
-            MenuButton draw = layers.AddSubMenu("Draw");
+            MenuButton draw = layers.AddSubMenu("Visible");
             temp = draw.AddSubMenu("Background");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_drawBackground); };
             temp.OnClick += (o, e) => { _drawBackground = !_drawBackground; };
@@ -710,7 +603,7 @@ namespace GEM.Emulation
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_drawSprites); };
             temp.OnClick += (o, e) => { _drawSprites = !_drawSprites; };
 
-            MenuButton mark = layers.AddSubMenu("Mark");
+            MenuButton mark = layers.AddSubMenu("Highlight");
             temp = mark.AddSubMenu("Background");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_markBackground); };
             temp.OnClick += (o, e) => { _markBackground = !_markBackground; };
@@ -721,16 +614,7 @@ namespace GEM.Emulation
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_markSprites); };
             temp.OnClick += (o, e) => { _markSprites = !_markSprites; };
 
-
-            temp = current.AddSubMenu("FPS");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_fps.Visible); };
-            temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; };
-            temp.ToolTip = "Show FPS";
-
-            MenuButton audio = current.AddSubMenu("Audio");
-            audio.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_audioBar.Panel.Visible); };
-            audio.OnClick += (o, e) => { _audioBar.Panel.Visible = !_audioBar.Panel.Visible; };
-            audio.ToolTip = "Show audio sidebar";
+            audio = current.AddSubMenu("Channels");
             for (int i = 0; i < 4; i++)
             {
                 temp = audio.AddSubMenu("CH" + (i + 1).ToString());
@@ -742,11 +626,6 @@ namespace GEM.Emulation
             audio["CH2"].ToolTip = "Channel 2: Square wave 2";
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
-
-            temp = current.AddSubMenu("Grid");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_showGrid); };
-            temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
-            temp.ToolTip = "Show pixel grid";
 
             // quit
             current = mainMenu["Quit"];
@@ -819,11 +698,6 @@ namespace GEM.Emulation
             audioMenu.Image.ResizeToParent();
             audioMenu.PanelAnchorPoint.HorizontalAlign = Align.Right;
             audioMenu.PanelAnchorPoint.VerticalAlign = Align.Top;
-            audioMenu.OnClose += setFocusToNull;
-            audioMenu.OnDraw += (o, e) => {
-                audioMenu.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2);
-                audioMenu.Left = -audioMenu.Width;
-            };
 
 
             // vol %
@@ -863,11 +737,154 @@ namespace GEM.Emulation
 
             return audioMenu;
         }
+        private MenuButton toolTip()
+        {
+            MenuButton toolTip;
+
+            toolTip = new MenuButton(null, null, "", _toolTipStyle, MenuType.StandAlone) { Enabled = false, Height = 40 };
+            toolTip.Label.Padding = 15;
+            toolTip.Label.HorizontalAlign = Align.Left;
+            toolTip.OnDraw += (o, e) =>
+            {
+                // update tooltip line
+                toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
+                toolTip.Width = toolTip.Label.Caption == "" ? 0 : toolTip.Label.Width + 2 * toolTip.Label.Padding.Left;
+                toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
+            };
+
+            return toolTip;
+        }
+        private BaseControl onScreenButtons()
+        {
+            BaseControl onScreenButtons;
+            onScreenButtons = new BaseControl(null);
+
+            // dpad
+            BaseControl dpad = new BaseControl(null);
+            onScreenButtons.Add(dpad);
+            dpad.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
+                ((BaseControl)o).Left = Math.Max(_screenLeft / 2, 120);
+            };
+
+            // up
+            MenuButton dpadUp;
+            dpadUp = new MenuButton(dpad, null, "up", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
+            dpadUp.Left = -50;
+            dpadUp.Top = -120;
+            dpadUp.Image.Rotation = 90;
+            dpadUp.KeyBinding = Keys.Up;
+            dpadUp.BtnBinding = Buttons.DPadUp;
+            dpadUp.OnPress += (o, e) => _gameboy.IsButton_Up = true;
+            dpadUp.OnRelease += (o, e) => _gameboy.IsButton_Up = false;
+            dpad.Add(dpadUp);
+
+            // down
+            MenuButton dpadDown;
+            dpadDown = new MenuButton(dpad, null, "down", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
+            dpadDown.Left = -50;
+            dpadDown.Top = 20;
+            dpadDown.Image.Rotation = 270;
+            dpadDown.KeyBinding = Keys.Down;
+            dpadDown.BtnBinding = Buttons.DPadDown;
+            dpadDown.OnPress += (o, e) => _gameboy.IsButton_Down = true;
+            dpadDown.OnRelease += (o, e) => _gameboy.IsButton_Down = false;
+            dpad.Add(dpadDown);
+
+            // right
+            MenuButton dpadRight;
+            dpadRight = new MenuButton(dpad, null, "->", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
+            dpadRight.Left = 20;
+            dpadRight.Top = -50;
+            dpadRight.KeyBinding = Keys.Right;
+            dpadRight.BtnBinding = Buttons.DPadRight;
+            dpadRight.OnPress += (o, e) => _gameboy.IsButton_Right = true;
+            dpadRight.OnRelease += (o, e) => _gameboy.IsButton_Right = false;
+            dpad.Add(dpadRight);
+
+            // left
+            MenuButton dpadLeft;
+            dpadLeft = new MenuButton(dpad, null, "<-", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
+            dpadLeft.Left = -120;
+            dpadLeft.Top = -50;
+            dpadLeft.Image.Rotation = 180;
+            dpadLeft.KeyBinding = Keys.Left;
+            dpadLeft.BtnBinding = Buttons.DPadLeft;
+            dpadLeft.OnPress += (o, e) => _gameboy.IsButton_Left = true;
+            dpadLeft.OnRelease += (o, e) => _gameboy.IsButton_Left = false;
+            dpad.Add(dpadLeft);
+
+
+            // buttons A, B
+            BaseControl btns = new BaseControl(null) { Left = 1150, Top = 400 };
+            onScreenButtons.Add(btns);
+            btns.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
+                ((BaseControl)o).Left = Math.Min(_screenWidth + (int)(_screenLeft * 1.5f), _screenWidth + _screenLeft * 2 - 120);
+            };
+
+            // A
+            MenuButton btnA;
+            btnA = new MenuButton(btns, null, "A", _onScreenStyle, MenuType.StandAlone, "btna", 4, 100, 100);
+            btnA.Left = 0;
+            btnA.Top = -70;
+            btnA.Image.Rotation = 20;
+            btnA.KeyBinding = Keys.X;
+            btnA.BtnBinding = Buttons.B;
+            btnA.OnPress += (o, e) => _gameboy.IsButton_A = true;
+            btnA.OnRelease += (o, e) => _gameboy.IsButton_A = false;
+            btns.Add(btnA);
+
+            // B
+            MenuButton btnB;
+            btnB = new MenuButton(btns, null, "B", _onScreenStyle, MenuType.StandAlone, "btnb", 4, 100, 100);
+            btnB.Left = -120;
+            btnB.Top = -30;
+            btnB.Image.Rotation = 20;
+            btnB.KeyBinding = Keys.Y;
+            btnB.BtnBinding = Buttons.A;
+            btnB.OnPress += (o, e) => _gameboy.IsButton_B = true;
+            btnB.OnRelease += (o, e) => _gameboy.IsButton_B = false;
+            btns.Add(btnB);
+
+            // start
+            MenuButton btnStart;
+            btnStart = new MenuButton(null, null, "Start", _onScreenStyle, MenuType.StandAlone, "stasel", 4, 100, 100);
+            btnStart.Image.Rotation = 20;
+            btnStart.KeyBinding = Keys.Enter;
+            btnStart.BtnBinding = Buttons.Start;
+            btnStart.OnPress += (o, e) => _gameboy.IsButton_Start = true;
+            btnStart.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
+            btnStart.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
+                ((BaseControl)o).Left = Math.Min(_screenLeft + _screenWidth + 20, btnB.LocationX);
+            };
+            onScreenButtons.Add(btnStart);
+
+            // select
+            MenuButton btnSelect;
+            btnSelect = new MenuButton(null, null, "Select", _onScreenStyle, MenuType.StandAlone, "stasel", 4, 100, 100);
+            btnSelect.Image.Rotation = 20;
+            btnSelect.KeyBinding = Keys.Back;
+            btnSelect.BtnBinding = Buttons.Back;
+            btnSelect.OnPress += (o, e) => _gameboy.IsButton_Select = true;
+            btnSelect.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
+            btnSelect.OnDraw += (o, e) =>
+            {
+                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
+                ((BaseControl)o).Left = Math.Max(_screenLeft - ((BaseControl)o).Width - 20, dpadRight.LocationX);
+            };
+            onScreenButtons.Add(btnSelect);
+
+            return onScreenButtons;
+        }
 
         // Draw Methods
         private void drawEmulator(Viewport viewport, Texture2D[] screens)
         {
-            
             // Screen Position & Size
             float pixelSize = MathHelper.Min(viewport.Height / 144f,
                                              viewport.Width / 160f);
