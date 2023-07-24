@@ -47,16 +47,7 @@ namespace GEM.Emulation
         public event PaletteChange OnPaletteChange;
 
         // states
-        int _volumeIndex;
-        int _emuColorIndex;
         int _openStartIndex;
-        bool _showGrid;
-        bool _drawBackground;
-        bool _drawWindow;
-        bool _drawSprites;
-        bool _markBackground;
-        bool _markWindow;
-        bool _markSprites;
 
         // timespans
         double _timespanUpdate;
@@ -81,6 +72,7 @@ namespace GEM.Emulation
         int _screenTop;
         bool _saveRamToFile;
         DateTime _saveTime;
+        Settings _settings;
         #endregion
 
         #region Constructors
@@ -93,6 +85,7 @@ namespace GEM.Emulation
             _Pixel.SetData(new Color[] { Color.White });
             _controls = new List<BaseControl>();
             _romList = new List<string>();
+            _settings = new Settings();
         }
         #endregion
 
@@ -109,24 +102,24 @@ namespace GEM.Emulation
         { 
             get
             {
-                return _volumeIndex;
+                return _settings.VolumeIndex;
             }
             set
             {
-                _volumeIndex = Math.Clamp(value, 0, _volumeList.Length - 1);
-                _gameboy.SetVolume(_volumeList[_volumeIndex]);
+                _settings.VolumeIndex = Math.Clamp(value, 0, _volumeList.Length - 1);
+                _gameboy.SetVolume(_volumeList[_settings.VolumeIndex]);
             }
         }
         public int EmuColorIndex
         {
             get
             {
-                return _emuColorIndex;
+                return _settings.ColorIndex;
             }
             set
             {
-                _emuColorIndex = value;
-                OnPaletteChange?.Invoke(_emuPalette[_emuColorIndex]);
+                _settings.ColorIndex = value;
+                OnPaletteChange?.Invoke(_emuPalette[_settings.ColorIndex]);
             }
         }
         #endregion
@@ -288,30 +281,26 @@ namespace GEM.Emulation
             // save RAM event
             _saveRamToFile = false;
             Cartridge.OnRamDisable += (o, e) => { _saveRamToFile = true; _saveTime = DateTime.Now + TimeSpan.FromMilliseconds(SAVE_DELAY_MS); };
-            Game1._Instance.Exiting += (o, e) => { SaveRamToFile(); };
+            Game1._Instance.Exiting += (o, e) => { SaveRamToFile(); _settings.SaveSettings(); };
+            // resize event
+            Game1._Instance.Window.ClientSizeChanged += (o, e) => { 
+                _settings.ScreenWidth = Game1._Instance.Window.ClientBounds.Width;
+                _settings.ScreenHeight = Game1._Instance.Window.ClientBounds.Height;
+            };
 
-            // settings
-            EmuColorIndex = 0;
-            Game1._Graphics.IsFullScreen = false;
-            Game1._Graphics.PreferredBackBufferWidth = 800;
-            Game1._Graphics.PreferredBackBufferHeight = 720;
+            // load settings
+            _settings = _settings.LoadSettings();
+            EmuColorIndex = _settings.ColorIndex;
+            Game1._Graphics.IsFullScreen = _settings.IsFullScreen;
+            Game1._Graphics.PreferredBackBufferWidth = _settings.ScreenWidth;
+            Game1._Graphics.PreferredBackBufferHeight = _settings.ScreenHeight;
             Game1._Graphics.ApplyChanges();
-            _notifications.Visible = true;
-            _fps.Visible = false;
-            _showGrid = false;
-            _drawBackground = true;
-            _drawWindow = true;
-            _drawSprites = true;
-            _markBackground = false;
-            _markWindow = false;
-            _markSprites = false;
-            _volumeIndex = 0;
-            _audioBar.Panel.Visible = false;
-            _gameboy.MasterSwitch[0] = true;
-            _gameboy.MasterSwitch[1] = true;
-            _gameboy.MasterSwitch[2] = true;
-            _gameboy.MasterSwitch[3] = true;
-            _onScreenButtonsBase.Visible = false;
+            VolumeIndex = _settings.VolumeIndex;
+            _fps.Visible = _settings.IsFpsVisible;
+            _audioBar.Panel.Visible = _settings.IsAudioPanelVisible;
+            _onScreenButtonsBase.Visible = _settings.IsOnScreenButtonsVisible;
+            _notifications.Visible = _settings.IsNotificationsVisible;
+            _gameboy.MasterSwitch = _settings.AudioChannels;
         }
 
         public void Update(GameTime gameTime)
@@ -534,23 +523,23 @@ namespace GEM.Emulation
             fs.ToolTip = "Toggle fullscreen mode";
 
             temp.AddSubMenu("800x720").OnClick += (o, e) => {
-                Game1._Graphics.PreferredBackBufferWidth = 800;
-                Game1._Graphics.PreferredBackBufferHeight = 720;
-                Game1._Graphics.ApplyChanges();
+                _settings.ScreenWidth = 800;
+                _settings.ScreenHeight = 720;
+                changeScreenSize();
             };
             temp.AddSubMenu("1280x720").OnClick += (o, e) => {
-                Game1._Graphics.PreferredBackBufferWidth = 1280;
-                Game1._Graphics.PreferredBackBufferHeight = 720;
-                Game1._Graphics.ApplyChanges();
+                _settings.ScreenWidth = 1280;
+                _settings.ScreenHeight = 720;
+                changeScreenSize();
             };
             temp.AddSubMenu("1920x1080").OnClick += (o, e) => {
-                Game1._Graphics.PreferredBackBufferWidth = 1920;
-                Game1._Graphics.PreferredBackBufferHeight = 1080;
-                Game1._Graphics.ApplyChanges();
+                _settings.ScreenWidth = 1920;
+                _settings.ScreenHeight = 1080;
+                changeScreenSize();
             };
 
             MenuButton volume = current.AddSubMenu("Volume");
-            volume.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "Volume: " + _volumeList[_volumeIndex].ToString("0%"); };
+            volume.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = "Volume: " + _volumeList[_settings.VolumeIndex].ToString("0%"); };
 
             for (int i = 0; i < _volumeList.Count(); i++)
             {
@@ -568,51 +557,51 @@ namespace GEM.Emulation
 
             temp = overlay.AddSubMenu("FPS");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_fps.Visible); };
-            temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; };
+            temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; _settings.IsFpsVisible = _fps.Visible; };
             temp.ToolTip = "Show FPS";
 
             MenuButton audio = overlay.AddSubMenu("Audio Panel");
             audio.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_audioBar.Panel.Visible); };
-            audio.OnClick += (o, e) => { _audioBar.Panel.Visible = !_audioBar.Panel.Visible; };
+            audio.OnClick += (o, e) => { _audioBar.Panel.Visible = !_audioBar.Panel.Visible; _settings.IsAudioPanelVisible = _audioBar.Panel.Visible; };
             audio.ToolTip = "Show audio sidebar";
 
             temp = overlay.AddSubMenu("Buttons");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_onScreenButtonsBase.Visible); };
-            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; };
+            temp.OnClick += (o, e) => { _onScreenButtonsBase.Visible = !_onScreenButtonsBase.Visible; _settings.IsOnScreenButtonsVisible = _onScreenButtonsBase.Visible; };
             temp.ToolTip = "Show onscreen buttons";
 
             temp = overlay.AddSubMenu("Notifications");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_notifications.Visible); };
-            temp.OnClick += (o, e) => { _notifications.Visible = !_notifications.Visible; };
+            temp.OnClick += (o, e) => { _notifications.Visible = !_notifications.Visible; _settings.IsNotificationsVisible = _notifications.Visible; };
 
             temp = overlay.AddSubMenu("Grid");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_showGrid); };
-            temp.OnClick += (o, e) => { _showGrid = !_showGrid; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsGridVisible); };
+            temp.OnClick += (o, e) => { _settings.IsGridVisible = !_settings.IsGridVisible; };
             temp.ToolTip = "Show pixel grid";
 
             MenuButton layers = current.AddSubMenu("Layers");
 
             MenuButton draw = layers.AddSubMenu("Visible");
             temp = draw.AddSubMenu("Background");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_drawBackground); };
-            temp.OnClick += (o, e) => { _drawBackground = !_drawBackground; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundVisible); };
+            temp.OnClick += (o, e) => { _settings.IsBackgroundVisible = !_settings.IsBackgroundVisible; };
             temp = draw.AddSubMenu("Window");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_drawWindow); };
-            temp.OnClick += (o, e) => { _drawWindow = !_drawWindow; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowVisible); };
+            temp.OnClick += (o, e) => { _settings.IsWindowVisible = !_settings.IsWindowVisible; };
             temp = draw.AddSubMenu("Sprites");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_drawSprites); };
-            temp.OnClick += (o, e) => { _drawSprites = !_drawSprites; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesVisible); };
+            temp.OnClick += (o, e) => { _settings.IsSpritesVisible = !_settings.IsSpritesVisible; };
 
             MenuButton mark = layers.AddSubMenu("Highlight");
             temp = mark.AddSubMenu("Background");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_markBackground); };
-            temp.OnClick += (o, e) => { _markBackground = !_markBackground; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsBackgroundHighlighted = !_settings.IsBackgroundHighlighted; };
             temp = mark.AddSubMenu("Window");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_markWindow); };
-            temp.OnClick += (o, e) => { _markWindow = !_markWindow; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsWindowHighlighted = !_settings.IsWindowHighlighted; };
             temp = mark.AddSubMenu("Sprites");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_markSprites); };
-            temp.OnClick += (o, e) => { _markSprites = !_markSprites; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsSpritesHighlighted = !_settings.IsSpritesHighlighted; };
 
             audio = current.AddSubMenu("Channels");
             for (int i = 0; i < 4; i++)
@@ -703,7 +692,7 @@ namespace GEM.Emulation
             // vol %
             current = audioMenu.AddSubMenu("Volume", null, 60);
             current.Label.HorizontalAlign = Align.Center;
-            current.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = _volumeList[_volumeIndex].ToString("0%"); };
+            current.OnDraw += (o, e) => { ((MenuButton)o).Label.Caption = _volumeList[_settings.VolumeIndex].ToString("0%"); };
             current.ToolTip = "Volume";
             for (int i = 0; i < _volumeList.Count(); i++)
             {
@@ -881,6 +870,12 @@ namespace GEM.Emulation
 
             return onScreenButtons;
         }
+        private void changeScreenSize()
+        {
+            Game1._Graphics.PreferredBackBufferWidth = _settings.ScreenWidth;
+            Game1._Graphics.PreferredBackBufferHeight = _settings.ScreenHeight;
+            Game1._Graphics.ApplyChanges();
+        }
 
         // Draw Methods
         private void drawEmulator(Viewport viewport, Texture2D[] screens)
@@ -895,12 +890,12 @@ namespace GEM.Emulation
             _screenTop = (viewport.Height - _screenHeight) / 2;
 
             // Draw Screen
-            if (_drawBackground) _spriteBatch.Draw(screens[0], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markBackground ? _pixelMarkerTextColor : Color.White);
-            if (_drawWindow) _spriteBatch.Draw(screens[1], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markWindow ? _pixelMarkerTextColor : Color.White);
-            if (_drawSprites) _spriteBatch.Draw(screens[2], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _markSprites ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsBackgroundVisible) _spriteBatch.Draw(screens[0], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsBackgroundHighlighted ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsWindowVisible) _spriteBatch.Draw(screens[1], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsWindowHighlighted ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsSpritesVisible) _spriteBatch.Draw(screens[2], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsSpritesHighlighted ? _pixelMarkerTextColor : Color.White);
 
             // Draw Grid
-            if (_showGrid)
+            if (_settings.IsGridVisible)
             {
                 drawGrid(pixelSize, _screenLeft, _screenTop, _screenWidth, _screenHeight);
                 if (Input.MousePosX >= _screenLeft &&
@@ -975,6 +970,7 @@ namespace GEM.Emulation
         private void fullscreenHandler(object sender, EventArgs e)
         {
             Game1._Graphics.ToggleFullScreen();
+            _settings.IsFullScreen = Game1._Graphics.IsFullScreen;
         }
         private void vsyncHandler(object sender, EventArgs e)
         {
@@ -1006,6 +1002,7 @@ namespace GEM.Emulation
         {
             MenuButton btn = (MenuButton)sender;
             _gameboy.MasterSwitch[btn.ButtonData] = !_gameboy.MasterSwitch[btn.ButtonData];
+            _settings.AudioChannels = _gameboy.MasterSwitch;
         }
         private void audioIconsHandler(object sender, EventArgs e)
         {
