@@ -5,7 +5,7 @@
 
 GEM is a Game Boy emulator written in C# using [MonoGame](https://www.monogame.org/) framework.
 
-This is a personal hobby and learning project inspired by [The Ultimate Game Boy Talk](https://media.ccc.de/v/33c3-8029-the_ultimate_game_boy_talk) by Michael Steil.
+This is a personal hobby and learning project inspired by [The Ultimate Game Boy Talk by Michael Steil](https://media.ccc.de/v/33c3-8029-the_ultimate_game_boy_talk).
 
 ## Disclaimer
 - :warning: Work in progress - expect glitches and crashes 
