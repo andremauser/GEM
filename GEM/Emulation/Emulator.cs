@@ -629,7 +629,7 @@ namespace GEM.Emulation
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
 
-            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("made by André Mauser", _notificationStyle, NotificationType.Information); };
+            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("GEM by André Mauser\ngithub.com/andremauser", _notificationStyle, NotificationType.Information); };
 
             // quit
             current = mainMenu["Quit"];
