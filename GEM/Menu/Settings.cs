@@ -10,6 +10,7 @@ namespace GEM.Menu
         public int ScreenWidth { get; set; }
         public int ScreenHeight { get; set; }
         public int VolumeIndex { get; set; }
+        public bool IsMenuIconVisible { get; set; }
         public bool IsFpsVisible { get; set; }
         public bool IsAudioPanelVisible { get; set; }
         public bool IsOnScreenButtonsVisible { get; set; }
@@ -31,6 +32,7 @@ namespace GEM.Menu
             ScreenWidth = 800;
             ScreenHeight = 720;
             VolumeIndex = 0;
+            IsMenuIconVisible = true;
             IsFpsVisible = false;
             IsAudioPanelVisible = false;
             IsOnScreenButtonsVisible = false;

@@ -118,7 +118,7 @@ namespace GEM.Emulation
             }
             set
             {
-                _settings.ColorIndex = value;
+                _settings.ColorIndex = Math.Clamp(value, 0, _emuPalette.Length - 1); ;
                 OnPaletteChange?.Invoke(_emuPalette[_settings.ColorIndex]);
             }
         }
@@ -296,6 +296,7 @@ namespace GEM.Emulation
             Game1._Graphics.PreferredBackBufferHeight = _settings.ScreenHeight;
             Game1._Graphics.ApplyChanges();
             VolumeIndex = _settings.VolumeIndex;
+            _menu.Image.Visible = _settings.IsMenuIconVisible;
             _fps.Visible = _settings.IsFpsVisible;
             _audioBar.Panel.Visible = _settings.IsAudioPanelVisible;
             _onScreenButtonsBase.Visible = _settings.IsOnScreenButtonsVisible;
@@ -332,6 +333,14 @@ namespace GEM.Emulation
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             drawEmulator(viewport, screens);
+            _spriteBatch.End();
+
+            // draw controls
+            _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp);
+            foreach (BaseControl control in _controls)
+            {
+                control.Draw(_spriteBatch);
+            }
             _spriteBatch.End();
 
             // save RAM to file
@@ -555,6 +564,10 @@ namespace GEM.Emulation
 
             MenuButton overlay = current.AddSubMenu("Overlay");
 
+            temp = overlay.AddSubMenu("Menu Icon");
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_menu.Image.Visible); };
+            temp.OnClick += (o, e) => { _menu.Image.Visible = !_menu.Image.Visible; _settings.IsMenuIconVisible = _menu.Image.Visible; };
+
             temp = overlay.AddSubMenu("FPS");
             temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_fps.Visible); };
             temp.OnClick += (o, e) => { _fps.Visible = !_fps.Visible; _settings.IsFpsVisible = _fps.Visible; };
@@ -615,6 +628,8 @@ namespace GEM.Emulation
             audio["CH2"].ToolTip = "Channel 2: Square wave 2";
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
+
+            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("made by André Mauser", _notificationStyle, NotificationType.Information); };
 
             // quit
             current = mainMenu["Quit"];
@@ -884,8 +899,8 @@ namespace GEM.Emulation
             float pixelSize = MathHelper.Min(viewport.Height / 144f,
                                              viewport.Width / 160f);
 
-            _screenWidth = (int)pixelSize * 160;
-            _screenHeight = (int)pixelSize * 144;
+            _screenWidth = (int)(pixelSize * 160);
+            _screenHeight = (int)(pixelSize * 144);
             _screenLeft = (viewport.Width - _screenWidth) / 2;
             _screenTop = (viewport.Height - _screenHeight) / 2;
 
@@ -905,11 +920,6 @@ namespace GEM.Emulation
                 {
                     drawMouseMarker(pixelSize, _screenLeft, _screenTop);
                 }
-            }
-
-            foreach (BaseControl control in _controls)
-            {
-                control.Draw(_spriteBatch);
             }
         }
         private void drawMouseMarker(float size, int left, int top)

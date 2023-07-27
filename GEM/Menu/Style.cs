@@ -101,9 +101,7 @@ namespace GEM.Menu
         public void SetColor(Element element, State state, Color color, float alpha)
         {
             SetColor(element, state, color);
-            int i = (int)element;
-            int j = (int)state;
-            _colorAlpha[i, j] = alpha;
+            SetAlpha(element, state, alpha);
         }
         public void SetColor(Element element, State state, int paletteIndex)
         {
@@ -114,6 +112,10 @@ namespace GEM.Menu
         public void SetColor(Element element, State state, int paletteIndex, float alpha)
         {
             SetColor(element, state, paletteIndex);
+            SetAlpha(element, state, alpha);
+        }
+        public void SetAlpha(Element element, State state, float alpha)
+        {
             int i = (int)element;
             int j = (int)state;
             _colorAlpha[i, j] = alpha;

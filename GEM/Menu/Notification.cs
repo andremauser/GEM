@@ -25,7 +25,11 @@ namespace GEM.Menu
             _button = new MenuButton(this, null, message, style, MenuType.StandAlone);
             _button.Label.HorizontalAlign = Align.Right;
             _button.Label.Margin = 60;
-            _button.Width = _button.Label.Width + _button.Label.Margin.Left + 20;
+            int roundValue = 20;
+            int roundWidth = _button.Label.Width + _button.Label.Margin.Left + 20;
+            roundWidth -= roundWidth % roundValue;
+            roundWidth += roundValue;
+            _button.Width = roundWidth;
             _button.Height = HEIGHT;
             _button.Left = -_button.Width;
             _button.Top = -HEIGHT;
