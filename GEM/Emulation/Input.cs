@@ -1,12 +1,9 @@
-﻿using GEM.Menu;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Text;
 
 namespace GEM.Emulation
 {
@@ -179,6 +176,36 @@ namespace GEM.Emulation
                 if (gamepadState.IsButtonDown(btn))
                 {
                     pressedButtons.Add(btn);
+                }
+            }
+
+            // left thumbstick triggers dpad
+            float x = gamepadState.ThumbSticks.Left.X;
+            float y = gamepadState.ThumbSticks.Left.Y;
+            float distance = gamepadState.ThumbSticks.Left.Length();
+            float threshhold = 0.5f;
+            float threshholdProjection = (float)(threshhold * Math.Sin(2 * Math.PI / 16f));
+            if (distance >= threshhold)
+            {
+                if (x >= threshholdProjection && !pressedButtons.Contains(Buttons.DPadRight))
+                {
+                    // right
+                    pressedButtons.Add(Buttons.DPadRight);
+                }
+                if (x <= -threshholdProjection && !pressedButtons.Contains(Buttons.DPadLeft))
+                {
+                    // left
+                    pressedButtons.Add(Buttons.DPadLeft);
+                }
+                if (y >= threshholdProjection && !pressedButtons.Contains(Buttons.DPadUp))
+                {
+                    // up
+                    pressedButtons.Add(Buttons.DPadUp);
+                }
+                if (y <= -threshholdProjection && !pressedButtons.Contains(Buttons.DPadDown))
+                {
+                    // down
+                    pressedButtons.Add(Buttons.DPadDown);
                 }
             }
 
