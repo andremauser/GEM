@@ -24,12 +24,7 @@ namespace GEM.Emulation
         #region Constructors
         public Cartridge()
         {
-            _data = new byte[0x8000];
-            _ram = new byte[0x2000];
-            _isCartridgeLoaded = false;
-            _romBank = 1;
-            _ramBank = 0;
-            Title = "";
+            Reset();
         }
         #endregion
 
@@ -39,8 +34,8 @@ namespace GEM.Emulation
         #region Methods
         public void Reset()
         {
-            _data = new byte[0x8000];
-            _ram = new byte[0x2000];
+            _data = new byte[0];
+            _ram = new byte[0];
             _isCartridgeLoaded = false;
             _romBank = 1;
             _ramBank = 0;
@@ -48,8 +43,8 @@ namespace GEM.Emulation
         }
         public void Load(string file)
         {
-            if (file == null)
-                return;
+            if (file == null) return;
+
             Reset();
 
             // Game file
@@ -67,7 +62,7 @@ namespace GEM.Emulation
                 IsCGB = (Read(0x143) & 0x80) == 1;
             }
 
-            // Save file
+            // load save file
             int slashPos = file.LastIndexOf('/') + 1;
             int dotPos = file.LastIndexOf('.');
             string baseName = file.Substring(slashPos, dotPos - slashPos);
@@ -230,6 +225,7 @@ namespace GEM.Emulation
                 File.WriteAllBytes(_saveFile, _ram);
             }
         }
+
         #endregion
     }
 }

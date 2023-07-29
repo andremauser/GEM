@@ -1,8 +1,6 @@
-﻿using GEM.Menu;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
-using System.Threading.Channels;
 
 namespace GEM.Emulation
 {
@@ -43,7 +41,6 @@ namespace GEM.Emulation
             _cycleCount = 0;
             IsRunning = false;
             IsPowerOn= false;
-            SwitchedOn = false;
             _nullTexture = new Texture2D(graphicsDevice, 1, 1);
             _nullTexture.SetData(new Color[] { Color.Black });
         }
@@ -57,11 +54,8 @@ namespace GEM.Emulation
                 return _mmu.Cartridge.Title;
             }
         }
-        public bool StopAfterFrame { get; set; }
-        public bool StopAfterStep { get; set; }
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
-        public bool SwitchedOn { get; private set; }
         public bool[] IsChannelOn
         {
             get
@@ -155,8 +149,6 @@ namespace GEM.Emulation
             _mmu.Reset();
             _cpu.Reset();
             _gpu.Reset();
-            StopAfterFrame = false;
-            StopAfterStep = false;
         }
         public void SaveRAM()
         {
@@ -174,20 +166,6 @@ namespace GEM.Emulation
             {
                 _mmu.IsLCDOn = true;
             }
-            StopAfterFrame = false;
-            StopAfterStep = false;
-        }
-        public void PauseAfterFrame()
-        {
-            PauseToggle(this, EventArgs.Empty);
-            StopAfterFrame = true;
-            StopAfterStep = false;
-        }
-        public void PauseAfterStep()
-        {
-            PauseToggle(this, EventArgs.Empty);
-            StopAfterFrame = false;
-            StopAfterStep = true;
         }
 
         public void Pause()
@@ -283,12 +261,10 @@ namespace GEM.Emulation
                     // INTERRUPTS
                     checkInterrupts();
 
-                    IsRunning &= !StopAfterStep;
                     if (!IsRunning) break;
                 }
 
                 _cycleCount -= 70224;
-                IsRunning &= !StopAfterFrame;
             }
         }
         // ---

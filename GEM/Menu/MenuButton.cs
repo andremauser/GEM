@@ -476,9 +476,9 @@ namespace GEM.Menu
                 _gamepadRequest = State.Press;
             }
         }
-        public void ButtonUpHandler(Buttons key)
+        public void ButtonUpHandler(Buttons button)
         {
-            if (key == BtnBinding)
+            if (button == BtnBinding)
             {
                 _gamepadRequest = State.Idle;
             }
