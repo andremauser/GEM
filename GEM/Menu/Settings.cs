@@ -32,6 +32,10 @@ namespace GEM.Menu
         public Buttons B_ButtonBinding { get; set; }
         public Buttons Start_ButtonBinding { get; set; }
         public Buttons Select_ButtonBinding { get; set; }
+        public Buttons EmuOkay_ButtonBinding { get; set; }
+        public Buttons EmuBack_ButtonBinding { get; set; }
+        public Buttons EmuMenu_ButtonBindung { get; set; }
+        public Buttons EmuFps_ButtonBinding { get; set; }
         public Keys Up_KeyBinding { get; set; }
         public Keys Down_KeyBinding { get; set; }
         public Keys Left_KeyBinding { get; set; }
@@ -40,6 +44,10 @@ namespace GEM.Menu
         public Keys B_KeyBinding { get; set; }
         public Keys Start_KeyBinding { get; set; }
         public Keys Select_KeyBinding { get; set; }
+        public Keys EmuOkay_KeyBinding { get; set; }
+        public Keys EmuBack_KeyBinding { get; set; }
+        public Keys EmuMenu_KeyBindung { get; set; }
+        public Keys EmuFps_KeyBinding { get; set; }
 
         public Settings()
         {
@@ -70,6 +78,10 @@ namespace GEM.Menu
             B_ButtonBinding = Buttons.A;
             Start_ButtonBinding = Buttons.Start;
             Select_ButtonBinding = Buttons.Back;
+            EmuOkay_ButtonBinding = Buttons.A;
+            EmuBack_ButtonBinding = Buttons.B;
+            EmuMenu_ButtonBindung = Buttons.LeftShoulder;
+            EmuFps_ButtonBinding = Buttons.RightShoulder;
             Up_KeyBinding = Keys.Up;
             Down_KeyBinding = Keys.Down;
             Left_KeyBinding = Keys.Left;
@@ -78,6 +90,10 @@ namespace GEM.Menu
             B_KeyBinding = Keys.Y;
             Start_KeyBinding = Keys.Enter;
             Select_KeyBinding = Keys.Back;
+            EmuOkay_KeyBinding = Keys.X;
+            EmuBack_KeyBinding = Keys.Y;
+            EmuMenu_KeyBindung = Keys.LeftControl;
+            EmuFps_KeyBinding = Keys.RightControl;
         }
 
         public void SaveSettings()

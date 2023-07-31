@@ -130,6 +130,7 @@ namespace GEM.Emulation
             _Font = content.Load<SpriteFont>("Console");
             // load settings
             _settings = _settings.LoadSettings();
+            MenuButton.Settings = _settings;
             // volumes
             _volumeList = new float[] { 0f, 0.01f, 0.02f, 0.05f, 0.1f, 0.2f, 0.5f, 1f };
             // colors
@@ -576,7 +577,7 @@ namespace GEM.Emulation
             foreach (MenuButton menu in gbGamepad.SubMenu.Values)
             {
                 menu.Height = 40;
-                menu.Width = 200;
+                menu.Width = 250;
                 menu.Enabled = false;
                 Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
                 label.HorizontalAlign = Align.Left;
@@ -594,7 +595,7 @@ namespace GEM.Emulation
             foreach (MenuButton menu in gbKeyboard.SubMenu.Values)
             {
                 menu.Height = 40;
-                menu.Width = 200;
+                menu.Width = 250;
                 menu.Enabled = false;
                 Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
                 label.HorizontalAlign = Align.Left;
@@ -672,7 +673,42 @@ namespace GEM.Emulation
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
 
-            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("GEM by André Mauser\ngithub.com/andremauser", _notificationStyle, NotificationType.Information); };
+
+            MenuButton emuInput = current.AddSubMenu("Emu Controls");
+
+            MenuButton emuGamepad = emuInput.AddSubMenu("Gamepad");
+            MenuButton emuKeyboard = emuInput.AddSubMenu("Keyboard");
+
+            emuGamepad.AddSubMenu("Accept").AddLabel(_settings.EmuOkay_ButtonBinding.ToString());
+            emuGamepad.AddSubMenu("Back").AddLabel(_settings.EmuBack_ButtonBinding.ToString());
+            emuGamepad.AddSubMenu("Menu").AddLabel(_settings.EmuMenu_ButtonBindung.ToString());
+            emuGamepad.AddSubMenu("FPS").AddLabel(_settings.EmuFps_ButtonBinding.ToString());
+            foreach (MenuButton menu in emuGamepad.SubMenu.Values)
+            {
+                menu.Height = 40;
+                menu.Width = 250;
+                menu.Enabled = false;
+                Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
+                label.HorizontalAlign = Align.Left;
+                label.Margin = 100;
+            }
+
+            emuKeyboard.AddSubMenu("Accept").AddLabel(_settings.EmuOkay_KeyBinding.ToString());
+            emuKeyboard.AddSubMenu("Back").AddLabel(_settings.EmuBack_KeyBinding.ToString());
+            emuKeyboard.AddSubMenu("Menu").AddLabel(_settings.EmuMenu_KeyBindung.ToString());
+            emuKeyboard.AddSubMenu("FPS").AddLabel(_settings.EmuFps_KeyBinding.ToString());
+            foreach (MenuButton menu in emuKeyboard.SubMenu.Values)
+            {
+                menu.Height = 40;
+                menu.Width = 250;
+                menu.Enabled = false;
+                Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
+                label.HorizontalAlign = Align.Left;
+                label.Margin = 100;
+            }
+
+            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("github.com/andremauser", _notificationStyle, NotificationType.Information); };
+
 
             // quit
             current = mainMenu["Quit"];

@@ -24,6 +24,65 @@ namespace GEM.Menu
 
     internal class MenuButton : BaseControl
     {
+        #region Static
+        static MenuButton _focus;
+        public static MenuButton Focus
+        {
+            get
+            {
+                return _focus;
+            }
+            set
+            {
+                MenuButton oldFocus = _focus;
+                MenuButton newFocus = value;
+
+                // last focus
+                if (_focus != null)
+                {
+                    if (value != _focus)
+                    {
+                        _focus.OnFocusOut?.Invoke(_focus, EventArgs.Empty);
+                    }
+                    Input.OnKeyDown -= _focus.NavigationHandlerDown;
+                    Input.OnKeyUp -= _focus.NavigationHandlerUp;
+                    Input.OnButtonDown -= _focus.NavigationHandlerDown;
+                    Input.OnButtonUp -= _focus.NavigationHandlerUp;
+                }
+                // new focus
+                if (value == null)
+                {
+                    _focus = null;
+
+                    OnFocusChange?.Invoke(null, EventArgs.Empty);
+                    return;
+                }
+                if (value.ParentControl != null)
+                {
+                    _focus = value;
+                }
+                if (_focus != null && value.Visible)
+                {
+                    Input.OnKeyDown += _focus.NavigationHandlerDown;
+                    Input.OnKeyUp += _focus.NavigationHandlerUp;
+                    Input.OnButtonDown += _focus.NavigationHandlerDown;
+                    Input.OnButtonUp += _focus.NavigationHandlerUp;
+                }
+
+                OnFocusChange?.Invoke(null, EventArgs.Empty);
+            }
+        }
+        public static bool IsFocusSet
+        {
+            get
+            {
+                return Focus != null;
+            }
+        }
+        public static event EventHandler OnFocusChange;
+        public static Settings Settings { get; set; }
+        #endregion
+
         #region Fields
         // constants
         const int DEFAULT_WIDTH = 150;
@@ -37,8 +96,6 @@ namespace GEM.Menu
         // menu structure events
         public event EventHandler OnOpen;
         public event EventHandler OnClose;
-        // focus events
-        public static event EventHandler OnFocusChange;
         // menu structure
         public Dictionary<string, MenuButton> SubMenu = new Dictionary<string, MenuButton>();
         int _menuIndex;
@@ -47,7 +104,6 @@ namespace GEM.Menu
         Keys _keyBinding;
         Buttons _buttonBinding;
         string _toolTip;
-        static MenuButton _focus;
         // button functionality
         bool _clickStarted = false;
         State _gamepadRequest;
@@ -216,59 +272,6 @@ namespace GEM.Menu
                 _buttonBinding = value;
                 Input.OnButtonDown += ButtonDownHandler;
                 Input.OnButtonUp += ButtonUpHandler;
-            }
-        }
-        public static MenuButton Focus
-        {
-            get
-            {
-                return _focus;
-            }
-            set
-            {
-                MenuButton oldFocus = _focus;
-                MenuButton newFocus = value;
-
-                // last focus
-                if (_focus != null)
-                {
-                    if (value != _focus)
-                    {
-                        _focus.OnFocusOut?.Invoke(_focus, EventArgs.Empty);
-                    }
-                    Input.OnKeyDown -= _focus.NavigationHandlerDown;
-                    Input.OnKeyUp -= _focus.NavigationHandlerUp;
-                    Input.OnButtonDown -= _focus.NavigationHandlerDown;
-                    Input.OnButtonUp -= _focus.NavigationHandlerUp;
-                }
-                // new focus
-                if (value == null)
-                {
-                    _focus = null;
-
-                    OnFocusChange?.Invoke(null, EventArgs.Empty);
-                    return;
-                }
-                if (value.ParentControl != null)
-                {
-                    _focus = value;
-                }
-                if (_focus != null && value.Visible)
-                {
-                    Input.OnKeyDown += _focus.NavigationHandlerDown;
-                    Input.OnKeyUp += _focus.NavigationHandlerUp;
-                    Input.OnButtonDown += _focus.NavigationHandlerDown;
-                    Input.OnButtonUp += _focus.NavigationHandlerUp;
-                }
-                
-                OnFocusChange?.Invoke(null, EventArgs.Empty);
-            }
-        }
-        public static bool IsFocusSet
-        {
-            get
-            {
-                return Focus != null;
             }
         }
         public string ToolTip 
@@ -521,24 +524,24 @@ namespace GEM.Menu
             // only continue if fokus on current control
             if (Focus != this) return;
 
-            if (key == Keys.Down)
+            if (key == Settings.Down_KeyBinding)
             {
                 navigationRoll(1);
             }
-            if (key == Keys.Up)
+            if (key == Settings.Up_KeyBinding)
             {
                 navigationRoll(-1);
             }
-            if (key == Keys.Right)
+            if (key == Settings.Right_KeyBinding)
             {
                 navigationRight();
             }
-            if (key == Keys.Left || key == Keys.Escape)
+            if (key == Settings.Left_KeyBinding || key == Settings.EmuBack_KeyBinding || key == Keys.Escape)
             {
                 navigationLeft();
             }
 
-            if (key == Keys.Enter || key == Keys.X)
+            if (key == Settings.EmuOkay_KeyBinding || key == Keys.Enter)
             {
                 if (Focus.Enabled && Focus.Visible)
                 {
@@ -551,24 +554,24 @@ namespace GEM.Menu
             // only continue if fokus on current control
             if (Focus != this) return;
 
-            if (btn == Buttons.DPadDown)
+            if (btn == Settings.Down_ButtonBinding)
             {
                 navigationRoll(1);
             }
-            if (btn == Buttons.DPadUp)
+            if (btn == Settings.Up_ButtonBinding)
             {
                 navigationRoll(-1);
             }
-            if (btn == Buttons.DPadRight)
+            if (btn == Settings.Right_ButtonBinding)
             {
                 navigationRight();
             }
-            if (btn == Buttons.DPadLeft || btn == Buttons.B)
+            if (btn == Settings.Left_ButtonBinding || btn == Settings.EmuBack_ButtonBinding)
             {
                 navigationLeft();
             }
 
-            if (btn == Buttons.A || btn == Buttons.Start)
+            if (btn == Settings.EmuOkay_ButtonBinding)
             {
                 if (Focus.Enabled && Focus.Visible)
                 {
@@ -578,14 +581,14 @@ namespace GEM.Menu
         }
         public void NavigationHandlerUp(Keys key)
         {
-            if (key == Keys.Enter || key == Keys.X)
+            if (key == Settings.EmuOkay_KeyBinding || key == Keys.Enter)
             {
                 Focus._keyboardRequest = State.Idle;
             }
         }
         public void NavigationHandlerUp(Buttons btn)
         {
-            if (btn == Buttons.A || btn == Buttons.Start)
+            if (btn == Settings.EmuOkay_ButtonBinding)
             {
                 Focus._gamepadRequest = State.Idle;
             }
