@@ -128,8 +128,10 @@ namespace GEM.Emulation
         public void LoadContent(ContentManager content)
         {
             _Font = content.Load<SpriteFont>("Console");
+            // load settings
+            _settings = _settings.LoadSettings();
             // volumes
-            _volumeList = new float[] { 0f, 0.01f, 0.05f, 0.1f, 0.25f, 0.5f, 0.75f, 1f };
+            _volumeList = new float[] { 0f, 0.01f, 0.02f, 0.05f, 0.1f, 0.2f, 0.5f, 1f };
             // colors
             _emuPalette = new Color[][]
             {
@@ -288,8 +290,7 @@ namespace GEM.Emulation
                 _settings.ScreenHeight = Game1._Instance.Window.ClientBounds.Height;
             };
 
-            // load settings
-            _settings = _settings.LoadSettings();
+            // apply settings
             EmuColorIndex = _settings.ColorIndex;
             Game1._Graphics.IsFullScreen = _settings.IsFullScreen;
             Game1._Graphics.PreferredBackBufferWidth = _settings.ScreenWidth;
@@ -559,6 +560,48 @@ namespace GEM.Emulation
                 temp.OnClick += (o, e) => { VolumeIndex = ((MenuButton)o).ButtonData; };
             }
 
+            MenuButton gbInput = current.AddSubMenu("GB Controls");
+
+            MenuButton gbGamepad = gbInput.AddSubMenu("Gamepad");
+            MenuButton gbKeyboard = gbInput.AddSubMenu("Keyboard");
+
+            gbGamepad.AddSubMenu("Up").AddLabel(_settings.Up_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("Down").AddLabel(_settings.Down_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("Left").AddLabel(_settings.Left_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("Right").AddLabel(_settings.Right_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("A").AddLabel(_settings.A_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("B").AddLabel(_settings.B_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("Start").AddLabel(_settings.Start_ButtonBinding.ToString());
+            gbGamepad.AddSubMenu("Select").AddLabel(_settings.Select_ButtonBinding.ToString());
+            foreach (MenuButton menu in gbGamepad.SubMenu.Values)
+            {
+                menu.Height = 40;
+                menu.Width = 200;
+                menu.Enabled = false;
+                Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
+                label.HorizontalAlign = Align.Left;
+                label.Margin = 100;
+            }
+
+            gbKeyboard.AddSubMenu("Up").AddLabel(_settings.Up_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("Down").AddLabel(_settings.Down_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("Left").AddLabel(_settings.Left_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("Right").AddLabel(_settings.Right_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("A").AddLabel(_settings.A_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("B").AddLabel(_settings.B_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("Start").AddLabel(_settings.Start_KeyBinding.ToString());
+            gbKeyboard.AddSubMenu("Select").AddLabel(_settings.Select_KeyBinding.ToString());
+            foreach (MenuButton menu in gbKeyboard.SubMenu.Values)
+            {
+                menu.Height = 40;
+                menu.Width = 200;
+                menu.Enabled = false;
+                Label label = (Label)menu.EmbeddedControls.ElementAt(menu.EmbeddedControls.Count - 1);
+                label.HorizontalAlign = Align.Left;
+                label.Margin = 100;
+            }
+
+
             // emulator
             current = mainMenu["Emulator"];
 
@@ -778,8 +821,8 @@ namespace GEM.Emulation
             dpadUp.Left = -50;
             dpadUp.Top = -120;
             dpadUp.Image.Rotation = 90;
-            dpadUp.KeyBinding = Keys.Up;
-            dpadUp.BtnBinding = Buttons.DPadUp;
+            dpadUp.KeyBinding = _settings.Up_KeyBinding;
+            dpadUp.BtnBinding = _settings.Up_ButtonBinding;
             dpadUp.OnPress += (o, e) => _gameboy.IsButton_Up = true;
             dpadUp.OnRelease += (o, e) => _gameboy.IsButton_Up = false;
             dpad.Add(dpadUp);
@@ -790,8 +833,8 @@ namespace GEM.Emulation
             dpadDown.Left = -50;
             dpadDown.Top = 20;
             dpadDown.Image.Rotation = 270;
-            dpadDown.KeyBinding = Keys.Down;
-            dpadDown.BtnBinding = Buttons.DPadDown;
+            dpadDown.KeyBinding = _settings.Down_KeyBinding;
+            dpadDown.BtnBinding = _settings.Down_ButtonBinding;
             dpadDown.OnPress += (o, e) => _gameboy.IsButton_Down = true;
             dpadDown.OnRelease += (o, e) => _gameboy.IsButton_Down = false;
             dpad.Add(dpadDown);
@@ -801,8 +844,8 @@ namespace GEM.Emulation
             dpadRight = new MenuButton(dpad, null, "->", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
             dpadRight.Left = 20;
             dpadRight.Top = -50;
-            dpadRight.KeyBinding = Keys.Right;
-            dpadRight.BtnBinding = Buttons.DPadRight;
+            dpadRight.KeyBinding = _settings.Right_KeyBinding;
+            dpadRight.BtnBinding = _settings.Right_ButtonBinding;
             dpadRight.OnPress += (o, e) => _gameboy.IsButton_Right = true;
             dpadRight.OnRelease += (o, e) => _gameboy.IsButton_Right = false;
             dpad.Add(dpadRight);
@@ -813,8 +856,8 @@ namespace GEM.Emulation
             dpadLeft.Left = -120;
             dpadLeft.Top = -50;
             dpadLeft.Image.Rotation = 180;
-            dpadLeft.KeyBinding = Keys.Left;
-            dpadLeft.BtnBinding = Buttons.DPadLeft;
+            dpadLeft.KeyBinding = _settings.Left_KeyBinding;
+            dpadLeft.BtnBinding = _settings.Left_ButtonBinding;
             dpadLeft.OnPress += (o, e) => _gameboy.IsButton_Left = true;
             dpadLeft.OnRelease += (o, e) => _gameboy.IsButton_Left = false;
             dpad.Add(dpadLeft);
@@ -835,8 +878,8 @@ namespace GEM.Emulation
             btnA.Left = 0;
             btnA.Top = -70;
             btnA.Image.Rotation = 20;
-            btnA.KeyBinding = Keys.X;
-            btnA.BtnBinding = Buttons.B;
+            btnA.KeyBinding = _settings.A_KeyBinding;
+            btnA.BtnBinding = _settings.A_ButtonBinding;
             btnA.OnPress += (o, e) => _gameboy.IsButton_A = true;
             btnA.OnRelease += (o, e) => _gameboy.IsButton_A = false;
             btns.Add(btnA);
@@ -847,8 +890,8 @@ namespace GEM.Emulation
             btnB.Left = -120;
             btnB.Top = -30;
             btnB.Image.Rotation = 20;
-            btnB.KeyBinding = Keys.Y;
-            btnB.BtnBinding = Buttons.A;
+            btnB.KeyBinding = _settings.B_KeyBinding;
+            btnB.BtnBinding = _settings.B_ButtonBinding;
             btnB.OnPress += (o, e) => _gameboy.IsButton_B = true;
             btnB.OnRelease += (o, e) => _gameboy.IsButton_B = false;
             btns.Add(btnB);
@@ -857,8 +900,8 @@ namespace GEM.Emulation
             MenuButton btnStart;
             btnStart = new MenuButton(null, null, "Start", _onScreenStyle, MenuType.StandAlone, "stasel", 4, 100, 100);
             btnStart.Image.Rotation = 20;
-            btnStart.KeyBinding = Keys.Enter;
-            btnStart.BtnBinding = Buttons.Start;
+            btnStart.KeyBinding = _settings.Start_KeyBinding;
+            btnStart.BtnBinding = _settings.Start_ButtonBinding;
             btnStart.OnPress += (o, e) => _gameboy.IsButton_Start = true;
             btnStart.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
             btnStart.OnDraw += (o, e) =>
@@ -872,8 +915,8 @@ namespace GEM.Emulation
             MenuButton btnSelect;
             btnSelect = new MenuButton(null, null, "Select", _onScreenStyle, MenuType.StandAlone, "stasel", 4, 100, 100);
             btnSelect.Image.Rotation = 20;
-            btnSelect.KeyBinding = Keys.Back;
-            btnSelect.BtnBinding = Buttons.Back;
+            btnSelect.KeyBinding = _settings.Select_KeyBinding;
+            btnSelect.BtnBinding = _settings.Select_ButtonBinding;
             btnSelect.OnPress += (o, e) => _gameboy.IsButton_Select = true;
             btnSelect.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
             btnSelect.OnDraw += (o, e) =>

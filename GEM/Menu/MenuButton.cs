@@ -670,13 +670,15 @@ namespace GEM.Menu
         {
             if (SubMenu.Count == 0) return;
             if (!Panel.Visible) Open(null, EventArgs.Empty);
-            int i = 0;
-            do
+            bool quit = false;
+            foreach (MenuButton sub in SubMenu.Values)
             {
-                Focus = SubMenu.Values.ToArray<MenuButton>()[i];
-                i++;
-                i %= SubMenu.Count;
-            } while (!Focus.Enabled || !Focus.Visible);
+                if (sub.Enabled && sub.Visible && quit == false)
+                {
+                    Focus = sub;
+                    quit = true;
+                }
+            }
         }
         private void navigationLeft()
         {
