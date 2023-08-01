@@ -228,6 +228,8 @@ namespace GEM.Emulation
                 OnMouseUp?.Invoke();
             }
         }
+
+        
         #endregion
 
     }

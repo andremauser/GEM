@@ -111,6 +111,7 @@ namespace GEM.Menu
         State _mouseRequest;
         State _touchRequest;
         public int ButtonData;
+        public string ButtonStringData;
         Image _arrow;
         MenuType _menuType;
         public bool IsClosedOnClickOutside = true;
@@ -524,24 +525,24 @@ namespace GEM.Menu
             // only continue if fokus on current control
             if (Focus != this) return;
 
-            if (key == Settings.Down_KeyBinding)
+            if (key == Settings.KeyBindings["Down"])
             {
                 navigationRoll(1);
             }
-            if (key == Settings.Up_KeyBinding)
+            if (key == Settings.KeyBindings["Up"])
             {
                 navigationRoll(-1);
             }
-            if (key == Settings.Right_KeyBinding)
+            if (key == Settings.KeyBindings["Right"])
             {
                 navigationRight();
             }
-            if (key == Settings.Left_KeyBinding || key == Settings.EmuBack_KeyBinding || key == Keys.Escape)
+            if (key == Settings.KeyBindings["Left"] || key == Settings.KeyBindings["Back"] || key == Keys.Escape)
             {
                 navigationLeft();
             }
 
-            if (key == Settings.EmuOkay_KeyBinding || key == Keys.Enter)
+            if (key == Settings.KeyBindings["Accept"] || key == Keys.Enter)
             {
                 if (Focus.Enabled && Focus.Visible)
                 {
@@ -554,24 +555,24 @@ namespace GEM.Menu
             // only continue if fokus on current control
             if (Focus != this) return;
 
-            if (btn == Settings.Down_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Down"])
             {
                 navigationRoll(1);
             }
-            if (btn == Settings.Up_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Up"])
             {
                 navigationRoll(-1);
             }
-            if (btn == Settings.Right_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Right"])
             {
                 navigationRight();
             }
-            if (btn == Settings.Left_ButtonBinding || btn == Settings.EmuBack_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Left"] || btn == Settings.ButtonBindings["Back"])
             {
                 navigationLeft();
             }
 
-            if (btn == Settings.EmuOkay_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Accept"])
             {
                 if (Focus.Enabled && Focus.Visible)
                 {
@@ -581,14 +582,14 @@ namespace GEM.Menu
         }
         public void NavigationHandlerUp(Keys key)
         {
-            if (key == Settings.EmuOkay_KeyBinding || key == Keys.Enter)
+            if (key == Settings.KeyBindings["Accept"] || key == Keys.Enter)
             {
                 Focus._keyboardRequest = State.Idle;
             }
         }
         public void NavigationHandlerUp(Buttons btn)
         {
-            if (btn == Settings.EmuOkay_ButtonBinding)
+            if (btn == Settings.ButtonBindings["Accept"])
             {
                 Focus._gamepadRequest = State.Idle;
             }
