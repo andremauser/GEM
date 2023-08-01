@@ -49,36 +49,8 @@ namespace GEM.Menu
             IsWindowHighlighted = false;
             IsSpritesHighlighted = false;
             AudioChannels = new bool[] { true, true, true, true };
-            ButtonBindings = new Dictionary<string, Buttons>
-            {
-                { "Up",     Buttons.DPadUp },
-                { "Down",   Buttons.DPadDown },
-                { "Left",   Buttons.DPadLeft },
-                { "Right",  Buttons.DPadRight },
-                { "A",      Buttons.B },
-                { "B",      Buttons.A },
-                { "Start",  Buttons.Start },
-                { "Select", Buttons.Back },
-                { "Accept", Buttons.A },
-                { "Back",   Buttons.B },
-                { "Menu",   Buttons.LeftShoulder },
-                { "FPS",    Buttons.RightShoulder }
-            };
-            KeyBindings = new Dictionary<string, Keys>()
-            {
-                { "Up",     Keys.Up },
-                { "Down",   Keys.Down },
-                { "Left",   Keys.Left },
-                { "Right",  Keys.Right },
-                { "A",      Keys.X },
-                { "B",      Keys.Y },
-                { "Start",  Keys.Enter },
-                { "Select", Keys.Back },
-                { "Accept", Keys.X },
-                { "Back",   Keys.Y },
-                { "Menu",   Keys.LeftControl },
-                { "FPS",    Keys.RightControl }
-            };
+            ResetButtonBindings();
+            ResetKeyBindings();
         }
 
         public void SaveSettings()
@@ -103,6 +75,43 @@ namespace GEM.Menu
                 settings = new Settings();
             }
             return settings;
+        }
+
+        public void ResetKeyBindings()
+        {
+            KeyBindings = new Dictionary<string, Keys>()
+            {
+                { "Up",     Keys.Up },
+                { "Down",   Keys.Down },
+                { "Left",   Keys.Left },
+                { "Right",  Keys.Right },
+                { "A",      Keys.X },
+                { "B",      Keys.Y },
+                { "Start",  Keys.Enter },
+                { "Select", Keys.Back },
+                { "Accept", Keys.X },
+                { "Back",   Keys.Y },
+                { "Menu",   Keys.LeftControl },
+                { "FPS",    Keys.RightControl }
+            };
+        }
+        public void ResetButtonBindings()
+        {
+            ButtonBindings = new Dictionary<string, Buttons>
+            {
+                { "Up",     Buttons.DPadUp },
+                { "Down",   Buttons.DPadDown },
+                { "Left",   Buttons.DPadLeft },
+                { "Right",  Buttons.DPadRight },
+                { "A",      Buttons.B },
+                { "B",      Buttons.A },
+                { "Start",  Buttons.Start },
+                { "Select", Buttons.Back },
+                { "Accept", Buttons.A },
+                { "Back",   Buttons.B },
+                { "Menu",   Buttons.LeftShoulder },
+                { "FPS",    Buttons.RightShoulder }
+            };
         }
     }
 }

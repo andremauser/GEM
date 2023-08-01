@@ -22,6 +22,8 @@ namespace GEM.Emulation
 
         const int OPEN_ENTRIES = 12;
         const int SAVE_DELAY_MS = 500;
+        const Buttons CANCEL_BUTTON = Buttons.RightStick;
+        const Keys CANCEL_KEY = Keys.Escape;
 
         Gameboy _gameboy;
         GraphicsDevice _graphicsDevice;
@@ -41,7 +43,7 @@ namespace GEM.Emulation
         Style _onScreenStyle;
         Style _toolTipStyle;
         Style _notificationStyle;
-        Style _changeBindingStyle;
+        Style _actionNotificationStyle;
 
         // events
         public delegate void PaletteChange(Color[] colors);
@@ -294,6 +296,10 @@ namespace GEM.Emulation
                 _settings.ScreenHeight = Game1._Instance.Window.ClientBounds.Height;
             };
 
+            // Input Binding
+            Input.OnButtonDown += cancelBinding;
+            Input.OnKeyDown += cancelBinding;
+
             // apply settings
             EmuColorIndex = _settings.ColorIndex;
             Game1._Graphics.IsFullScreen = _settings.IsFullScreen;
@@ -453,8 +459,8 @@ namespace GEM.Emulation
             _toolTipStyle = new Style(_menuStyle);
             _notificationStyle = new Style(_menuStyle);
 
-            _changeBindingStyle = new Style(_notificationStyle);
-            _changeBindingStyle.SetColor(Element.Background, State.Disabled, 2);
+            _actionNotificationStyle = new Style(_notificationStyle);
+            _actionNotificationStyle.SetColor(Element.Background, State.Disabled, 2);
         }
         private MenuButton mainMenu()
         {
@@ -534,9 +540,14 @@ namespace GEM.Emulation
                         _buttonBindingKey = ((MenuButton)o).ButtonStringData;
                         Input.OnButtonDown += changeBinding;
                     }
-                    _notifications.Push("Press [ Button ] for \" " + binding.Key + " \" - Right Stick to Cancel", _changeBindingStyle, NotificationType.Information, 3, "button").TimerEnabled = false;
+                    _notifications.Push("Press [ Button ] for \" " + binding.Key + " \" - " + CANCEL_BUTTON.ToString() + " to Cancel", _actionNotificationStyle, NotificationType.Action, 3, "button").TimerEnabled = false;
                 };
             }
+            temp = gamepad.AddSubMenu("[ Reset Default ]");
+            temp.OnClick += (o, e) => { _settings.ResetButtonBindings(); };
+            temp.Height = 40;
+            temp.Width = 250;
+            temp.Label.HorizontalAlign = Align.Center;
 
             MenuButton keyboard = input.AddSubMenu("Keyboard");
             foreach (var binding in _settings.KeyBindings)
@@ -560,9 +571,14 @@ namespace GEM.Emulation
                         _keyBindingKey = ((MenuButton)o).ButtonStringData;
                         Input.OnKeyDown += changeBinding;
                     }
-                    _notifications.Push("Press [ Key ] for \" " + binding.Key + " \" - ESC to Cancel", _changeBindingStyle, NotificationType.Information, 3, "key").TimerEnabled = false;
+                    _notifications.Push("Press [ Key ] for \" " + binding.Key + " \" - " + CANCEL_KEY.ToString() + " to Cancel", _actionNotificationStyle, NotificationType.Action, 3, "key").TimerEnabled = false;
                 };
             }
+            temp = keyboard.AddSubMenu("[ Reset Default ]");
+            temp.OnClick += (o, e) => { _settings.ResetKeyBindings(); };
+            temp.Height = 40;
+            temp.Width = 250;
+            temp.Label.HorizontalAlign = Align.Center;
 
 
             MenuButton colorList = current.AddSubMenu("Color Palette");
@@ -704,7 +720,6 @@ namespace GEM.Emulation
 
             return mainMenu;
         }
-
         private MenuButton fpsMenu()
         {
             MenuButton fpsMenu;
@@ -1120,12 +1135,7 @@ namespace GEM.Emulation
         }
         private void changeBinding(Buttons button)
         {
-            if (button == Buttons.RightStick)
-            {
-                _notifications.CloseID("button");
-                Input.OnButtonDown -= changeBinding;
-                return;
-            }
+            if (button == CANCEL_BUTTON) return;
             _settings.ButtonBindings[_buttonBindingKey] = button;
             _notifications.CloseID("button");
             Input.OnButtonDown -= changeBinding;
@@ -1133,12 +1143,7 @@ namespace GEM.Emulation
         }
         private void changeBinding(Keys key)
         {
-            if (key == Keys.Escape)
-            {
-                _notifications.CloseID("key");
-                Input.OnKeyDown -= changeBinding;
-                return;
-            }
+            if (key == CANCEL_KEY) return;
             _settings.KeyBindings[_keyBindingKey] = key;
             _notifications.CloseID("key");
             Input.OnKeyDown -= changeBinding;
@@ -1150,6 +1155,26 @@ namespace GEM.Emulation
             MenuButton.Focus = null;
             MenuButton.Focus = temp;
         }
-#endregion
+        private void cancelBinding(Buttons button)
+        {
+            if (button == CANCEL_BUTTON)
+            {
+                _notifications.CloseID("button");
+                _notifications.CloseID("key");
+                Input.OnButtonDown -= changeBinding;
+                Input.OnKeyDown -= changeBinding;
+            }
+        }
+        private void cancelBinding(Keys key)
+        {
+            if (key == CANCEL_KEY)
+            {
+                _notifications.CloseID("button");
+                _notifications.CloseID("key");
+                Input.OnButtonDown -= changeBinding;
+                Input.OnKeyDown -= changeBinding;
+            }
+        }
+        #endregion
     }
 }

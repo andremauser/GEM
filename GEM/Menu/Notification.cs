@@ -7,7 +7,8 @@ namespace GEM.Menu
     {
         Success,
         Information,
-        Alert
+        Alert,
+        Action
     }
 
     internal class Notification : BaseControl
@@ -51,6 +52,9 @@ namespace GEM.Menu
                     break;
                 case NotificationType.Alert:
                     pic = "quit"; 
+                    break;
+                case NotificationType.Action:
+                    pic = "action";
                     break;
                 default:
                     pic = "info";
