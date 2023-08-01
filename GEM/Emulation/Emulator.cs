@@ -41,6 +41,7 @@ namespace GEM.Emulation
         Style _onScreenStyle;
         Style _toolTipStyle;
         Style _notificationStyle;
+        Style _changeBindingStyle;
 
         // events
         public delegate void PaletteChange(Color[] colors);
@@ -451,6 +452,9 @@ namespace GEM.Emulation
 
             _toolTipStyle = new Style(_menuStyle);
             _notificationStyle = new Style(_menuStyle);
+
+            _changeBindingStyle = new Style(_notificationStyle);
+            _changeBindingStyle.SetColor(Element.Background, State.Disabled, 2);
         }
         private MenuButton mainMenu()
         {
@@ -525,9 +529,12 @@ namespace GEM.Emulation
                 // change binding
                 temp.OnClick += (o, e) =>
                 {
-                    _buttonBindingKey = ((MenuButton)o).ButtonStringData;
-                    Input.OnButtonDown += changeBinding;
-                    _notifications.Push("Press Button", _notificationStyle, NotificationType.Success);
+                    if (!_notifications.ExistsID("button"))
+                    {
+                        _buttonBindingKey = ((MenuButton)o).ButtonStringData;
+                        Input.OnButtonDown += changeBinding;
+                    }
+                    _notifications.Push("Press [ Button ] for \" " + binding.Key + " \" - Right Stick to Cancel", _changeBindingStyle, NotificationType.Information, 3, "button").TimerEnabled = false;
                 };
             }
 
@@ -548,9 +555,12 @@ namespace GEM.Emulation
                 // change binding
                 temp.OnClick += (o, e) =>
                 {
-                    _keyBindingKey = ((MenuButton)o).ButtonStringData;
-                    Input.OnKeyDown += changeBinding;
-                    _notifications.Push("Press Key", _notificationStyle, NotificationType.Success);
+                    if (!_notifications.ExistsID("key"))
+                    {
+                        _keyBindingKey = ((MenuButton)o).ButtonStringData;
+                        Input.OnKeyDown += changeBinding;
+                    }
+                    _notifications.Push("Press [ Key ] for \" " + binding.Key + " \" - ESC to Cancel", _changeBindingStyle, NotificationType.Information, 3, "key").TimerEnabled = false;
                 };
             }
 
@@ -685,7 +695,7 @@ namespace GEM.Emulation
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
 
-            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("github.com/andremauser", _notificationStyle, NotificationType.Information); };
+            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("github.com/andremauser", _notificationStyle, NotificationType.Information, 5 , "about"); };
 
 
             // quit
@@ -1110,13 +1120,27 @@ namespace GEM.Emulation
         }
         private void changeBinding(Buttons button)
         {
+            if (button == Buttons.RightStick)
+            {
+                _notifications.CloseID("button");
+                Input.OnButtonDown -= changeBinding;
+                return;
+            }
             _settings.ButtonBindings[_buttonBindingKey] = button;
+            _notifications.CloseID("button");
             Input.OnButtonDown -= changeBinding;
             reloadFocus();
         }
         private void changeBinding(Keys key)
         {
+            if (key == Keys.Escape)
+            {
+                _notifications.CloseID("key");
+                Input.OnKeyDown -= changeBinding;
+                return;
+            }
             _settings.KeyBindings[_keyBindingKey] = key;
+            _notifications.CloseID("key");
             Input.OnKeyDown -= changeBinding;
             reloadFocus();
         }

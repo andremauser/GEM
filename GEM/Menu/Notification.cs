@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System.Threading;
 
 namespace GEM.Menu
 {
@@ -12,16 +13,19 @@ namespace GEM.Menu
     internal class Notification : BaseControl
     {
         #region Fields
-        double _seconds;
+        public double Timer;
         MenuButton _button;
         public static int HEIGHT = 60;
-        static float MOVETIME = 0.25f;
+        public static float MOVETIME = 0.25f;
         #endregion
 
         #region Constructors
-        public Notification(BaseControl parentControl, string message, Style style, NotificationType type, double seconds) : base(parentControl)
+        public Notification(BaseControl parentControl, string message, Style style, NotificationType type, double seconds, string id) : base(parentControl)
         {
-            _seconds = seconds;
+            Timer = seconds;
+            ID = id;
+            TimerEnabled = true;
+            //TimerEnabled = (id == 0);
             _button = new MenuButton(this, null, message, style, MenuType.StandAlone);
             _button.Label.HorizontalAlign = Align.Right;
             _button.Label.Margin = 60;
@@ -67,17 +71,22 @@ namespace GEM.Menu
         #endregion
 
         #region Properties
+        public string ID { get; set; }
+        public bool TimerEnabled { get; set; }
         #endregion
 
         #region Methods
         public override void Update(GameTime gameTime)
         {
-            _seconds -= gameTime.ElapsedGameTime.TotalSeconds;
-            if (_seconds <= MOVETIME && !_isMoving)
+            if (TimerEnabled)
+            {
+                Timer -= gameTime.ElapsedGameTime.TotalSeconds;
+            }
+            if (Timer < MOVETIME && !_isMoving)
             {
                 MoveTo(_button.Width, 0, MOVETIME);
             }
-            if (_seconds <= 0)
+            if (Timer <= 0)
             {
                 ((NotificationPanel)ParentControl).Pop(this);
             }

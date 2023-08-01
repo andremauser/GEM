@@ -154,21 +154,11 @@ namespace GEM.Emulation
         }
         static Buttons[] GetPressedButtons(GamePadState gamepadState)
         {
-            List<Buttons> buttons = new List<Buttons>()
+            List<Buttons> buttons = new List<Buttons>();
+            foreach (Buttons button in Enum.GetValues(typeof(Buttons)))
             {
-                Buttons.A,
-                Buttons.B,
-                Buttons.X,
-                Buttons.Y,
-                Buttons.Start,
-                Buttons.Back,
-                Buttons.DPadLeft,
-                Buttons.DPadRight,
-                Buttons.DPadUp,
-                Buttons.DPadDown,
-                Buttons.LeftShoulder,
-                Buttons.RightShoulder
-            };
+                buttons.Add(button);
+            }
             List<Buttons> pressedButtons = new List<Buttons>();
 
             foreach (Buttons btn in buttons)

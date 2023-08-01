@@ -1,8 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace GEM.Menu
 {
@@ -47,15 +45,56 @@ namespace GEM.Menu
                 notification.Draw(spriteBatch);
             }
         }
-        public void Push(string message, Style style, NotificationType type = NotificationType.Information, double seconds = 3.0d)
+        public Notification Push(string message, Style style, NotificationType type = NotificationType.Information, double seconds = 3.0d, string id = "")
         {
-            Notification notification = new Notification(this, message, style, type, seconds);
-            _notifications.Add(notification);
-
+            Notification returnValue = null;
+            bool alreadyThere = false;
+            foreach (Notification n in _notifications)
+            {
+                if (id == n.ID)
+                {
+                    alreadyThere = true;
+                    returnValue = n;
+                }
+            }
+            if (!alreadyThere)
+            {
+                Notification notification = new Notification(this, message, style, type, seconds, id);
+                _notifications.Add(notification);
+                returnValue = notification;
+            }
+            else
+            {
+                CloseID(id);
+            }
+            return returnValue;
         }
         public void Pop(Notification notification) 
         {
             _delete.Add(notification);
+        }
+        public void CloseID(string id)
+        {
+            foreach (Notification notification in _notifications)
+            {
+                if (notification.ID == id)
+                {
+                    notification.TimerEnabled = true;
+                    notification.Timer = Notification.MOVETIME;
+                }
+            }
+        }
+        public bool ExistsID(string id)
+        {
+            bool exists = false;
+            foreach (Notification notification in _notifications)
+            {
+                if (notification.ID == id)
+                {
+                    exists = true;
+                }
+            }
+            return exists;
         }
 
         #endregion
