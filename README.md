@@ -8,8 +8,7 @@ GEM is a Game Boy emulator written in C# using [MonoGame](https://www.monogame.o
 This is a personal hobby and learning project inspired by [The Ultimate Game Boy Talk by Michael Steil](https://media.ccc.de/v/33c3-8029-the_ultimate_game_boy_talk).
 
 ## Disclaimer
-- :warning: Work in progress - expect glitches and crashes 
-- :warning: Executable seems to cause virus alerts on windows
+:warning: Work in progress - expect glitches and crashes 
 
 ## Screenshots
 <p float="left">
@@ -17,6 +16,13 @@ This is a personal hobby and learning project inspired by [The Ultimate Game Boy
   <img src="screenshot02.png" width="49%" />
 </p>
 
+## Features
+- OS: Win (x64), Linux (x64)
+- Input: Gamepad, Keyboard, Mouse
+- UI Language: English
+- ROM: *.gb
+- Savegames :white_check_mark:
+- Sound :white_check_mark:
 
 ## References
 Game Boy is well documented and there are many great reference pages out there. This is a small selection of those which helped me most:
