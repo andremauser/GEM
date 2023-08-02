@@ -26,7 +26,6 @@ namespace GEM.Menu
             Timer = seconds;
             ID = id;
             TimerEnabled = true;
-            //TimerEnabled = (id == 0);
             _button = new MenuButton(this, null, message, style, MenuType.StandAlone);
             _button.Label.HorizontalAlign = Align.Right;
             _button.Label.Margin = 60;

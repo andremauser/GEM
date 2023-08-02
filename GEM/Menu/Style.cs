@@ -48,12 +48,10 @@ namespace GEM.Menu
                 _emu = copyFrom._emu;
                 _emu.OnPaletteChange += updatePalette;
             }
-            BorderWidth = copyFrom.BorderWidth;
         }
         #endregion
 
         #region Properties
-        public int BorderWidth { get; set; }
         #endregion
 
         #region Methods
@@ -77,8 +75,6 @@ namespace GEM.Menu
                     _colorAlpha[i, j] = 1.0f;
                 }
             };
-            // no border
-            BorderWidth = 0;
         }
         public void updatePalette(Color[] newPalette)
         {

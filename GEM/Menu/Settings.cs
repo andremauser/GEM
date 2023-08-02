@@ -18,12 +18,12 @@ namespace GEM.Menu
         public bool IsOnScreenButtonsVisible { get; set; }
         public bool IsNotificationsVisible { get; set; }
         public bool IsGridVisible { get; set; }
-        public bool IsBackgroundVisible { get; set; }
-        public bool IsWindowVisible { get; set; }
-        public bool IsSpritesVisible { get; set; }
-        public bool IsBackgroundHighlighted { get; set; }
-        public bool IsWindowHighlighted { get; set; }
-        public bool IsSpritesHighlighted { get; set; }
+        public bool IsBackgroundLayerVisible { get; set; }
+        public bool IsWindowLayerVisible { get; set; }
+        public bool IsSpritesLayerVisible { get; set; }
+        public bool IsBackgroundLayerHighlighted { get; set; }
+        public bool IsWindowLayerHighlighted { get; set; }
+        public bool IsSpritesLayerHighlighted { get; set; }
         public bool[] AudioChannels { get; set; }
         public Dictionary<string, Buttons> ButtonBindings { get; set; }
         public Dictionary<string, Keys> KeyBindings { get; set; }
@@ -42,12 +42,12 @@ namespace GEM.Menu
             IsOnScreenButtonsVisible = false;
             IsNotificationsVisible = true;
             IsGridVisible = false;
-            IsBackgroundVisible = true;
-            IsWindowVisible = true;
-            IsSpritesVisible = true;
-            IsBackgroundHighlighted = false;
-            IsWindowHighlighted = false;
-            IsSpritesHighlighted = false;
+            IsBackgroundLayerVisible = true;
+            IsWindowLayerVisible = true;
+            IsSpritesLayerVisible = true;
+            IsBackgroundLayerHighlighted = false;
+            IsWindowLayerHighlighted = false;
+            IsSpritesLayerHighlighted = false;
             AudioChannels = new bool[] { true, true, true, true };
             ResetButtonBindings();
             ResetKeyBindings();

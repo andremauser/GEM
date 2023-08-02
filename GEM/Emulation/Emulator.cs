@@ -283,7 +283,7 @@ namespace GEM.Emulation
             _controls.Add(_notifications);
 
             // set notifications
-            _notifications.Push("Welcome to GEM", _notificationStyle, NotificationType.Information, 10);
+            _notifications.Push("Welcome to GEM", _notificationStyle, NotificationType.Information, 5);
             _gameboy.OnPowerOn += (o, e) => { _notifications.Push(CartridgeTitle, _notificationStyle, NotificationType.Information); };
 
             // save RAM event
@@ -440,7 +440,6 @@ namespace GEM.Emulation
             _menuStyle.SetColor(Element.Border, State.Hover, Color.Transparent, 0f);
             _menuStyle.SetColor(Element.Border, State.Press, Color.Transparent, 0f);
             _menuStyle.SetColor(Element.Border, State.Disabled, Color.Transparent, 0f);
-            _menuStyle.BorderWidth = 1;
 
             _menuButtonStyle = new Style(_menuStyle);
             _menuButtonStyle.SetColor(Element.Background, State.Idle, Color.Transparent, 0f);
@@ -472,8 +471,8 @@ namespace GEM.Emulation
             mainMenu = new MenuButton(image: "menu", width: 60, height: 60, style: _menuStyle);
             mainMenu.PanelAnchorPoint.HorizontalAlign = Align.Left;
             mainMenu.PanelAnchorPoint.VerticalAlign = Align.Bottom;
-            mainMenu.KeyBinding = Keys.LeftControl;
-            mainMenu.BtnBinding = Buttons.LeftShoulder;
+            mainMenu.KeyBinding = _settings.KeyBindings["Menu"];
+            mainMenu.BtnBinding = _settings.ButtonBindings["Menu"];
             mainMenu.OnOpen += setFocusToFirstEntry;
             mainMenu.OnClose += setFocusToNull;
             // add menu entries
@@ -543,8 +542,12 @@ namespace GEM.Emulation
                     _notifications.Push("Press [ Button ] for \" " + binding.Key + " \" - " + CANCEL_BUTTON.ToString() + " to Cancel", _actionNotificationStyle, NotificationType.Action, 3, "button").TimerEnabled = false;
                 };
             }
-            temp = gamepad.AddSubMenu("[ Reset Default ]");
-            temp.OnClick += (o, e) => { _settings.ResetButtonBindings(); };
+            temp = gamepad.AddSubMenu("[ Reset to default ]");
+            temp.OnClick += (o, e) => { 
+                _settings.ResetButtonBindings();
+                _menu.BtnBinding = _settings.ButtonBindings["Menu"];
+                _fps.BtnBinding = _settings.ButtonBindings["FPS"];
+            };
             temp.Height = 40;
             temp.Width = 250;
             temp.Label.HorizontalAlign = Align.Center;
@@ -574,8 +577,12 @@ namespace GEM.Emulation
                     _notifications.Push("Press [ Key ] for \" " + binding.Key + " \" - " + CANCEL_KEY.ToString() + " to Cancel", _actionNotificationStyle, NotificationType.Action, 3, "key").TimerEnabled = false;
                 };
             }
-            temp = keyboard.AddSubMenu("[ Reset Default ]");
-            temp.OnClick += (o, e) => { _settings.ResetKeyBindings(); };
+            temp = keyboard.AddSubMenu("[ Reset to default ]");
+            temp.OnClick += (o, e) => { 
+                _settings.ResetKeyBindings();
+                _menu.KeyBinding = _settings.KeyBindings["Menu"];
+                _fps.KeyBinding = _settings.KeyBindings["FPS"];
+            };
             temp.Height = 40;
             temp.Width = 250;
             temp.Label.HorizontalAlign = Align.Center;
@@ -678,25 +685,25 @@ namespace GEM.Emulation
 
             MenuButton draw = layers.AddSubMenu("Visible");
             temp = draw.AddSubMenu("Background");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundVisible); };
-            temp.OnClick += (o, e) => { _settings.IsBackgroundVisible = !_settings.IsBackgroundVisible; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundLayerVisible); };
+            temp.OnClick += (o, e) => { _settings.IsBackgroundLayerVisible = !_settings.IsBackgroundLayerVisible; };
             temp = draw.AddSubMenu("Window");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowVisible); };
-            temp.OnClick += (o, e) => { _settings.IsWindowVisible = !_settings.IsWindowVisible; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowLayerVisible); };
+            temp.OnClick += (o, e) => { _settings.IsWindowLayerVisible = !_settings.IsWindowLayerVisible; };
             temp = draw.AddSubMenu("Sprites");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesVisible); };
-            temp.OnClick += (o, e) => { _settings.IsSpritesVisible = !_settings.IsSpritesVisible; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesLayerVisible); };
+            temp.OnClick += (o, e) => { _settings.IsSpritesLayerVisible = !_settings.IsSpritesLayerVisible; };
 
             MenuButton mark = layers.AddSubMenu("Highlight");
             temp = mark.AddSubMenu("Background");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundHighlighted); };
-            temp.OnClick += (o, e) => { _settings.IsBackgroundHighlighted = !_settings.IsBackgroundHighlighted; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsBackgroundLayerHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsBackgroundLayerHighlighted = !_settings.IsBackgroundLayerHighlighted; };
             temp = mark.AddSubMenu("Window");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowHighlighted); };
-            temp.OnClick += (o, e) => { _settings.IsWindowHighlighted = !_settings.IsWindowHighlighted; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsWindowLayerHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsWindowLayerHighlighted = !_settings.IsWindowLayerHighlighted; };
             temp = mark.AddSubMenu("Sprites");
-            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesHighlighted); };
-            temp.OnClick += (o, e) => { _settings.IsSpritesHighlighted = !_settings.IsSpritesHighlighted; };
+            temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_settings.IsSpritesLayerHighlighted); };
+            temp.OnClick += (o, e) => { _settings.IsSpritesLayerHighlighted = !_settings.IsSpritesLayerHighlighted; };
 
             audio = current.AddSubMenu("Channels");
             for (int i = 0; i < 4; i++)
@@ -711,7 +718,22 @@ namespace GEM.Emulation
             audio["CH3"].ToolTip = "Channel 3: Custom wave";
             audio["CH4"].ToolTip = "Channel 4: Noise";
 
-            current.AddSubMenu("About").OnClick += (o, e) => { _notifications.Push("github.com/andremauser", _notificationStyle, NotificationType.Information, 5 , "about"); };
+            current.AddSubMenu("About").OnClick += (o, e) => {
+                if (_notifications.ExistsID("about"))
+                {
+                    _notifications.CloseID("about");
+                }
+                else
+                {
+                    _notifications.Push("github.com/andremauser", _notificationStyle, NotificationType.Information, 5, "about");
+                }
+                if (!_notifications.Visible)
+                {
+                    _notifications.Visible = true;
+                    _settings.IsNotificationsVisible = _notifications.Visible;
+                    _notifications.Push("Notifications enabled", _notificationStyle, NotificationType.Success);
+                }
+            };
 
 
             // quit
@@ -728,8 +750,8 @@ namespace GEM.Emulation
             int subMenuWidth = 200;
 
             fpsMenu = new MenuButton(null, null, "fps", _menuStyle, MenuType.Default) { Width = 60, Height = 60 };
-            fpsMenu.KeyBinding = Keys.RightControl;
-            fpsMenu.BtnBinding = Buttons.RightShoulder;
+            fpsMenu.KeyBinding = _settings.KeyBindings["FPS"];
+            fpsMenu.BtnBinding = _settings.ButtonBindings["FPS"];
             fpsMenu.ToolTip = "Current Frame Rate";
             fpsMenu.Visible = false;
             fpsMenu.Label.HorizontalAlign = Align.Center;
@@ -988,9 +1010,9 @@ namespace GEM.Emulation
             _screenTop = (viewport.Height - _screenHeight) / 2;
 
             // Draw Screen
-            if (_settings.IsBackgroundVisible) _spriteBatch.Draw(screens[0], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsBackgroundHighlighted ? _pixelMarkerTextColor : Color.White);
-            if (_settings.IsWindowVisible) _spriteBatch.Draw(screens[1], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsWindowHighlighted ? _pixelMarkerTextColor : Color.White);
-            if (_settings.IsSpritesVisible) _spriteBatch.Draw(screens[2], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsSpritesHighlighted ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsBackgroundLayerVisible) _spriteBatch.Draw(screens[0], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsBackgroundLayerHighlighted ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsWindowLayerVisible) _spriteBatch.Draw(screens[1], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsWindowLayerHighlighted ? _pixelMarkerTextColor : Color.White);
+            if (_settings.IsSpritesLayerVisible) _spriteBatch.Draw(screens[2], new Rectangle(_screenLeft, _screenTop, _screenWidth, _screenHeight), _settings.IsSpritesLayerHighlighted ? _pixelMarkerTextColor : Color.White);
 
             // Draw Grid
             if (_settings.IsGridVisible)
@@ -1140,6 +1162,8 @@ namespace GEM.Emulation
             _notifications.CloseID("button");
             Input.OnButtonDown -= changeBinding;
             reloadFocus();
+            _menu.BtnBinding = _settings.ButtonBindings["Menu"];
+            _fps.BtnBinding = _settings.ButtonBindings["FPS"];
         }
         private void changeBinding(Keys key)
         {
@@ -1148,6 +1172,8 @@ namespace GEM.Emulation
             _notifications.CloseID("key");
             Input.OnKeyDown -= changeBinding;
             reloadFocus();
+            _menu.KeyBinding = _settings.KeyBindings["Menu"];
+            _fps.KeyBinding = _settings.KeyBindings["FPS"];
         }
         private void reloadFocus()
         {

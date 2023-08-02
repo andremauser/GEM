@@ -51,7 +51,7 @@ namespace GEM.Menu
             bool alreadyThere = false;
             foreach (Notification n in _notifications)
             {
-                if (id == n.ID)
+                if (id == n.ID && id != "")
                 {
                     alreadyThere = true;
                     returnValue = n;
@@ -62,10 +62,6 @@ namespace GEM.Menu
                 Notification notification = new Notification(this, message, style, type, seconds, id);
                 _notifications.Add(notification);
                 returnValue = notification;
-            }
-            else
-            {
-                CloseID(id);
             }
             return returnValue;
         }

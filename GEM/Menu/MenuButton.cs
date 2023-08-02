@@ -257,6 +257,8 @@ namespace GEM.Menu
             }
             set
             {
+                Input.OnKeyDown -= KeyDownHandler;
+                Input.OnKeyUp -= KeyUpHandler;
                 _keyBinding = value;
                 Input.OnKeyDown += KeyDownHandler;
                 Input.OnKeyUp += KeyUpHandler;
@@ -270,6 +272,8 @@ namespace GEM.Menu
             }
             set
             {
+                Input.OnButtonDown -= ButtonDownHandler;
+                Input.OnButtonUp -= ButtonUpHandler;
                 _buttonBinding = value;
                 Input.OnButtonDown += ButtonDownHandler;
                 Input.OnButtonUp += ButtonUpHandler;
@@ -349,18 +353,6 @@ namespace GEM.Menu
             }
             // draw box
             spriteBatch.Draw(_pixel, new Rectangle(LocationX, LocationY, Width, Height), color);
-            // draw border
-            int borderWidth = Style.BorderWidth;
-            Color borderColor = Style.BorderColor(_state);
-            int x = LocationX;// - borderWidth / 2;
-            int y = LocationY;// - borderWidth / 2;
-            int w = Width;// + borderWidth;
-            int h = Height;// + borderWidth;
-            //spriteBatch.Draw(_pixel, new Rectangle(x, y, w, borderWidth), borderColor); // top
-            //spriteBatch.Draw(_pixel, new Rectangle(x, y + Height - borderWidth, w, borderWidth), borderColor); // bottom
-            spriteBatch.Draw(_pixel, new Rectangle(x, y, borderWidth, h), borderColor); // left
-            //spriteBatch.Draw(_pixel, new Rectangle(x + Width - borderWidth, y, borderWidth, h), borderColor); // right
-            // draw label, image and submenu
             base.Draw(spriteBatch);
         }
 
