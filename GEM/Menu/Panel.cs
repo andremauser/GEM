@@ -92,10 +92,13 @@ namespace GEM.Menu
                 int top = 0;
                 for (int i = 0; i < EmbeddedControls.Count; i++)
                 {
-                    EmbeddedControls[i].Top = top;
-                    top += EmbeddedControls[i].Height;
+                    if (EmbeddedControls[i].Visible)
+                    {
+                        EmbeddedControls[i].Top = top;
+                        top += EmbeddedControls[i].Height;
 
-                    EmbeddedControls[i].Left = 0;
+                        EmbeddedControls[i].Left = 0;
+                    }
                 }
             }
 
@@ -105,10 +108,13 @@ namespace GEM.Menu
                 int left = 0;
                 for (int i = 0; i < EmbeddedControls.Count; i++)
                 {
-                    EmbeddedControls[i].Left = left;
-                    left += EmbeddedControls[i].Width;
+                    if (EmbeddedControls[i].Visible)
+                    {
+                        EmbeddedControls[i].Left = left;
+                        left += EmbeddedControls[i].Width;
 
-                    EmbeddedControls[i].Top = 0;
+                        EmbeddedControls[i].Top = 0;
+                    }
                 }
             }
         }

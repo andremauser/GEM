@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
+using static GEM.Emulation.Emulator;
+using Microsoft.Xna.Framework;
 
 namespace GEM.Emulation
 {
@@ -9,11 +9,15 @@ namespace GEM.Emulation
     {
 
         #region Fields
+        byte[] _dmgBootROM;
+        byte[] _cgbBootROM;
         byte[] _bootROM;
         byte[] _videoRAM;
         byte[] _workRAM;
         byte[] _oamRAM;
         byte[] _highRAM;
+        byte[] _BGColorRAM;
+        byte[] _OBColorRAM;
         // Timer
         int _divCycleCount;
         int _timaCycleCount;
@@ -30,45 +34,58 @@ namespace GEM.Emulation
         public EventHandler CH2TriggerEvent;
         public EventHandler CH3TriggerEvent;
         public EventHandler CH4TriggerEvent;
+
         #endregion
 
         #region Constructors
         public MMU()
         {
-            _bootROM = new byte[] { 0x31, 0xFE, 0xFF, 0xAF, 0x21, 0xFF, 0x9F, 0x32, 0xCB, 0x7C, 0x20, 0xFB, 0x21, 0x26, 0xFF, 0x0E,
-                                    0x11, 0x3E, 0x80, 0x32, 0xE2, 0x0C, 0x3E, 0xF3, 0xE2, 0x32, 0x3E, 0x77, 0x77, 0x3E, 0xFC, 0xE0,
-                                    0x47, 0x11, 0x04, 0x01, 0x21, 0x10, 0x80, 0x1A, 0xCD, 0x95, 0x00, 0xCD, 0x96, 0x00, 0x13, 0x7B,
-                                    0xFE, 0x34, 0x20, 0xF3, 0x11, 0xD8, 0x00, 0x06, 0x08, 0x1A, 0x13, 0x22, 0x23, 0x05, 0x20, 0xF9,
-                                    0x3E, 0x19, 0xEA, 0x10, 0x99, 0x21, 0x2F, 0x99, 0x0E, 0x0C, 0x3D, 0x28, 0x08, 0x32, 0x0D, 0x20,
-                                    0xF9, 0x2E, 0x0F, 0x18, 0xF3, 0x67, 0x3E, 0x64, 0x57, 0xE0, 0x42, 0x3E, 0x91, 0xE0, 0x40, 0x04,
-                                    0x1E, 0x02, 0x0E, 0x0C, 0xF0, 0x44, 0xFE, 0x90, 0x20, 0xFA, 0x0D, 0x20, 0xF7, 0x1D, 0x20, 0xF2,
-                                    0x0E, 0x13, 0x24, 0x7C, 0x1E, 0x83, 0xFE, 0x62, 0x28, 0x06, 0x1E, 0xC1, 0xFE, 0x64, 0x20, 0x06,
-                                    0x7B, 0xE2, 0x0C, 0x3E, 0x87, 0xE2, 0xF0, 0x42, 0x90, 0xE0, 0x42, 0x15, 0x20, 0xD2, 0x05, 0x20,
-                                    0x4F, 0x16, 0x20, 0x18, 0xCB, 0x4F, 0x06, 0x04, 0xC5, 0xCB, 0x11, 0x17, 0xC1, 0xCB, 0x11, 0x17,
-                                    0x05, 0x20, 0xF5, 0x22, 0x23, 0x22, 0x23, 0xC9, 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B,
-                                    0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E,
-                                    0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC,
-                                    0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E, 0x3C, 0x42, 0xB9, 0xA5, 0xB9, 0xA5, 0x42, 0x3C,
-                                    0x21, 0x04, 0x01, 0x11, 0xA8, 0x00, 0x1A, 0x13, 0xBE, 0x20, 0xFE, 0x23, 0x7D, 0xFE, 0x34, 0x20,
-                                    0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50 };
+            _dmgBootROM = File.ReadAllBytes("boot/dmg_boot.bin");
+            _cgbBootROM = File.ReadAllBytes("boot/cgb_boot.bin");
+            SetBootROM(Mode.GB);
             Cartridge = new Cartridge();
-            _videoRAM = new byte[0x2000];
-            _workRAM = new byte[0x2000];
-            _oamRAM = new byte[160];
-            _highRAM = new byte[0x100];
-            IME = true;
-            IsBooting = true;
+            DMG_ColorPalette = new Color[] 
+            { 
+                // temporary colors - overwritten by chosen emulator palette
+                Color.White,
+                Color.LightGray,
+                Color.DarkGray,
+                Color.Black
+            };
+            CGB_BG_ColorPalettes = new Color[8][]
+            {
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4]
+            };
+            CGB_OB_ColorPalettes = new Color[8][]
+            {
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4],
+                new Color[4]
+            };
+            Reset();
         }
         #endregion
 
         #region Properties
         public Cartridge Cartridge { get; set; }
         public bool IsBooting { get; set; }
-        public bool IsCGB
+        public bool IsCGBMode
         {
             get
             {
-                return Cartridge.IsCGB;
+                return ((Cartridge.IsCGB || IsBooting) && _bootROM == _cgbBootROM);
             }
         }
         public bool IME { get; set; }
@@ -81,20 +98,31 @@ namespace GEM.Emulation
             }
         }
 
+        public Color[] DMG_ColorPalette { get; set; }
+        public Color[][] CGB_BG_ColorPalettes { get; private set; }
+        public Color[][] CGB_OB_ColorPalettes { get; private set; }
+
+
         #region IO Registers
-        public Register P1;     // 0xFF00
-        public Register SB;     // 0xFF01
-        public Register SC;     // 0xFF02
-
-        public Register DIV;    // 0xFF04
-        public Register TIMA;   // 0xFF05
-        public Register TMA;    // 0xFF06
-        public Register TAC;    // 0xFF07
-
-        public Register IF;     // 0xFF0F
-        public Register NR10;   // 0xFF10   Sound CH1 sweep
-        public Register NR11;   // 0xFF11   Sound CH1 length + duty cycle
-        public Register NR12    // 0xFF12   Sound CH1 volume + envelope
+        public Register P1;         // 0xFF00
+        public Register SB;         // 0xFF01
+        public Register SC;         // 0xFF02
+                                    // 0xFF03
+        public Register DIV;        // 0xFF04
+        public Register TIMA;       // 0xFF05
+        public Register TMA;        // 0xFF06
+        public Register TAC;        // 0xFF07
+                                    // 0xFF08
+                                    // 0xFF09
+                                    // 0xFF0A
+                                    // 0xFF0B
+                                    // 0xFF0C
+                                    // 0xFF0D
+                                    // 0xFF0E
+        public Register IF;         // 0xFF0F
+        public Register NR10;       // 0xFF10   Sound CH1 sweep
+        public Register NR11;       // 0xFF11   Sound CH1 length + duty cycle
+        public Register NR12        // 0xFF12   Sound CH1 volume + envelope
         {
             get
             {
@@ -106,8 +134,8 @@ namespace GEM.Emulation
                 if ((_nr12 & 0b11111000) == 0) IsCH1On = false; // turn DAC off
             }
         }
-        public Register NR13;   // 0xFF13   Sound CH1 frequency low
-        public Register NR14    // 0xFF14   Sound CH1 frequency high + control
+        public Register NR13;       // 0xFF13   Sound CH1 frequency low
+        public Register NR14        // 0xFF14   Sound CH1 frequency high + control
         {
             get
             {
@@ -124,9 +152,9 @@ namespace GEM.Emulation
                 }
             }
         }
-
-        public Register NR21;   // 0xFF16   Sound CH2 length + duty cycle
-        public Register NR22    // 0xFF17   Sound CH2 volume + envelope
+                                    // 0xFF15
+        public Register NR21;       // 0xFF16   Sound CH2 length + duty cycle
+        public Register NR22        // 0xFF17   Sound CH2 volume + envelope
         {
             get
             {
@@ -138,8 +166,8 @@ namespace GEM.Emulation
                 if ((_nr22 & 0b11111000) == 0) IsCH2On = false; // turn DAC off
             }
         }
-        public Register NR23;   // 0xFF18   Sound CH2 frequency low
-        public Register NR24    // 0xFF19   Sound CH2 frequency high + control
+        public Register NR23;       // 0xFF18   Sound CH2 frequency low
+        public Register NR24        // 0xFF19   Sound CH2 frequency high + control
         {
             get
             {
@@ -156,8 +184,7 @@ namespace GEM.Emulation
                 }
             }
         }
-
-        public Register NR30    // 0xFF1A   Sound CH3 DAC
+        public Register NR30        // 0xFF1A   Sound CH3 DAC
         {
             get
             {
@@ -169,10 +196,10 @@ namespace GEM.Emulation
                 if (_nr30[7] == 0) IsCH3On = false; // turn DAC off
             }
         }
-        public Register NR31;   // 0xFF1B   Sound CH3 length
-        public Register NR32;   // 0xFF1C   Sound CH3 volume
-        public Register NR33;   // 0xFF1D   Sound CH3 frequency low
-        public Register NR34    // 0xFF1E   Sound CH3 frequency high + control
+        public Register NR31;       // 0xFF1B   Sound CH3 length
+        public Register NR32;       // 0xFF1C   Sound CH3 volume
+        public Register NR33;       // 0xFF1D   Sound CH3 frequency low
+        public Register NR34        // 0xFF1E   Sound CH3 frequency high + control
         {
             get
             {
@@ -188,9 +215,9 @@ namespace GEM.Emulation
                 }
             }
         }
-
-        public Register NR41;   // 0xFF20   Sound CH4 length
-        public Register NR42    // 0xFF21   Sound CH4 volume + envelope
+                                    // 0xFF1F
+        public Register NR41;       // 0xFF20   Sound CH4 length
+        public Register NR42        // 0xFF21   Sound CH4 volume + envelope
         {
             get
             {
@@ -202,8 +229,8 @@ namespace GEM.Emulation
                 if ((_nr42 & 0b11111000) == 0) IsCH4On = false; // turn DAC off
             }
         }
-        public Register NR43;   // 0xFF22   Sound CH4 frequency + randomness
-        public Register NR44    // 0xFF23   Sound CH4 control
+        public Register NR43;       // 0xFF22   Sound CH4 frequency + randomness
+        public Register NR44        // 0xFF23   Sound CH4 control
         {
             get
             {
@@ -219,26 +246,85 @@ namespace GEM.Emulation
                 }
             }
         }
+        public Register NR50;       // 0xFF24   Sound volume left/right
+        public Register NR51;       // 0xFF25   Sound mix to left/right
+        public Register NR52;       // 0xFF26   Sound on/off and status
+                                    // 0xFF27
+                                    // 0xFF28
+                                    // 0xFF29
+                                    // 0xFF2A
+                                    // 0xFF2B
+                                    // 0xFF2C
+                                    // 0xFF2D
+                                    // 0xFF2E
+                                    // 0xFF2F
+                                    // 0xFF30
+                                    // 0xFF31
+                                    // 0xFF32
+                                    // 0xFF33
+                                    // 0xFF34
+                                    // 0xFF35
+                                    // 0xFF36
+                                    // 0xFF37
+                                    // 0xFF38
+                                    // 0xFF39
+                                    // 0xFF3A
+                                    // 0xFF3B
+                                    // 0xFF3C
+                                    // 0xFF3D
+                                    // 0xFF3E
+                                    // 0xFF3F
+        public Register LCDC;       // 0xFF40
+        public Register STAT;       // 0xFF41
+        public Register SCY;        // 0xFF42
+        public Register SCX;        // 0xFF43
+        public Register LY;         // 0xFF44
+        public Register LYC;        // 0xFF45
+                                    // 0xFF46
+        public Register BGP;        // 0xFF47
+        public Register OBP0;       // 0xFF48
+        public Register OBP1;       // 0xFF49
+        public Register WY;         // 0xFF4A
+        public Register WX;         // 0xFF4B
+                                    // 0xFF4C
+        public Register KEY1;       // 0xFF4D   CGB: Prepare speed switch
+                                    // 0xFF4E
+        public Register VBK;        // 0xFF4F   CGB: VRAM bank
+                                    // 0xFF50
+        public Register HDMA1;      // 0xFF51   CGB: VRAM DMA source
+        public Register HDMA2;      // 0xFF52   CGB: VRAM DMA source
+        public Register HDMA3;      // 0xFF53   CGB: VRAM DMA destination
+        public Register HDMA4;      // 0xFF54   CGB: VRAM DMA destination
+        public Register HDMA5;      // 0xFF55   CGB: VRAM DMA length/mode/start
+        public Register RP;         // 0xFF56   CGB: Infrared communication
+                                    // 0xFF57
+                                    // 0xFF58
+                                    // 0xFF59
+                                    // 0xFF5A
+                                    // 0xFF5B
+                                    // 0xFF5C
+                                    // 0xFF5D
+                                    // 0xFF5E
+                                    // 0xFF5F
+                                    // 0xFF60
+                                    // 0xFF61
+                                    // 0xFF62
+                                    // 0xFF63
+                                    // 0xFF64
+                                    // 0xFF65
+                                    // 0xFF66
+                                    // 0xFF67
+        public Register BCPS_BGPI;  // 0xFF68   CGB: BG color palette spec & index
+                                    // 0xFF69   CGB: BG color palette data
+        public Register OCPS_OBPI;  // 0xFF6A   CGB: OB color palette spec & index
+                                    // 0xFF6B   CGB: OB color palette data
+        public Register OPRI;       // 0xFF6C   CGB: Object priority mode
+                                    // 0xFF6D
+                                    // 0xFF6E
+                                    // 0xFF6F
+        public Register SVBK;       // 0xFF70   CGB: WRAM bank
 
-        public Register NR50;   // 0xFF24   Sound volume left/right
-        public Register NR51;   // 0xFF25   Sound mix to left/right
-        public Register NR52;   // 0xFF26   Sound on/off and status
-
-        public Register LCDC;   // 0xFF40
-        public Register STAT;   // 0xFF41
-        public Register SCY;    // 0xFF42
-        public Register SCX;    // 0xFF43
-        public Register LY;     // 0xFF44
-        public Register LYC;    // 0xFF45
-
-        public Register BGP;    // 0xFF47
-        public Register OBP0;   // 0xFF48
-        public Register OBP1;   // 0xFF49
-
-        public Register WY;     // 0xFF4A
-        public Register WX;     // 0xFF4B
-
-        public Register IE;     // 0xFFFF
+        public Register IE;         // 0xFFFF
         #endregion
 
         #region Bit Properties
@@ -839,7 +925,7 @@ namespace GEM.Emulation
             get { return Convert.ToBoolean(LCDC[5]); }
             set { LCDC[5] = Convert.ToInt32(value); }
         }
-        public int WindowMap
+        public int WDMap
         {
             get { return LCDC[6]; }
             set { LCDC[6] = value; }
@@ -888,19 +974,70 @@ namespace GEM.Emulation
             get { return STAT[6]; }
             set { STAT[6] = value; }
         }
+
+        // VBK (0xFF4F)
+        public int VRAMBank
+        {
+            get
+            {
+                return IsCGBMode ? VBK[0] : 0;
+            }
+            set
+            {
+                VBK[0] = value;
+            }
+        }
+
+        // SVBK (0xFF70)
+        public int WRAMBank
+        {
+            get
+            {
+                if (!IsCGBMode) return 1;
+                int bank = SVBK[2] << 2 | SVBK[1] << 1 | SVBK[0];
+                bank = bank == 0 ? 1 : bank;
+                return bank;
+            }
+            set
+            {
+                SVBK[2] = (value >> 2) & 1;
+                SVBK[1] = (value >> 1) & 1;
+                SVBK[0] = (value >> 0) & 1;
+            }
+        }
         #endregion
 
         #endregion
 
         #region Methods
-
+        public void SetBootROM(Mode gbMode)
+        {
+            switch (gbMode)
+            {
+                case Mode.GB:
+                    _bootROM = _dmgBootROM;
+                    break;
+                case Mode.GBC:
+                    _bootROM = _cgbBootROM;
+                    break;
+                default:
+                    _bootROM = _dmgBootROM;
+                    break;
+            }
+        }
         public void Reset()
         {
-            //Cartridge.Reset();
-            _videoRAM = new byte[0x2000];
-            _workRAM = new byte[0x2000];
+            _videoRAM = new byte[0x4000];
+            _workRAM = new byte[0x8000];
             _oamRAM = new byte[160];
             _highRAM = new byte[0x100];
+            _BGColorRAM = new byte[64]; // 8 palettes * 4 colors/palette * 2 bytes/color
+            _OBColorRAM = new byte[64];
+            for (int i = 0; i < 64; i++)
+            {
+                _BGColorRAM[i] = 0xFF;
+                _OBColorRAM[i] = 0xFF;
+            }
             _divCycleCount = 0;
             _timaCycleCount = 0;
             IME = true;
@@ -930,7 +1067,6 @@ namespace GEM.Emulation
             IsCH3On = false;
             IsCH4On = false;
         }
-
         public void UpdateTimers(int cycles)
         {
             // DIV
@@ -978,21 +1114,22 @@ namespace GEM.Emulation
                 _timaCycleCount -= timaClock;
             }
         }
-
         public byte Read(ushort address)
         {
             // Boot ROM
-            if (address <= 0x00FF && IsBooting) return _bootROM[address];
+            if ((address < 0x100 || address >= 0x200) && address < _bootROM.Length && IsBooting) return _bootROM[address];
             // Cartridge ROM
             else if (address <= 0x7FFF) return Cartridge.Read(address);
             // Video RAM
-            else if (address >= 0x8000 && address <= 0x9FFF) return _videoRAM[address - 0x8000];
+            else if (address >= 0x8000 && address <= 0x9FFF) return _videoRAM[address - 0x8000 + VRAMBank * 0x2000];
             // Cartridge RAM
             else if (address >= 0xA000 && address <= 0xBFFF) return Cartridge.ReadRAM((ushort)(address - 0xA000));
-            // Work RAM
-            else if (address >= 0xC000 && address <= 0xDFFF) return _workRAM[address - 0xC000];
+            // Work RAM Bank 0
+            else if (address >= 0xC000 && address <= 0xCFFF) return _workRAM[address - 0xC000];
+            // Work RAM Bank 1-7
+            else if (address >= 0xD000 && address <= 0xDFFF) return _workRAM[address - 0xD000 + WRAMBank * 0x1000];
             // Work RAM (Shadow)
-            else if (address >= 0xE000 && address <= 0xFDFF) return _workRAM[address - 0xC000 - 0x2000];
+            else if (address >= 0xE000 && address <= 0xFDFF) return Read((ushort)(address - 0x2000));
             // OAM RAM
             else if (address >= 0xFE00 && address <= 0xFE9F) return _oamRAM[address - 0xFE00];
             // IO, High RAM
@@ -1049,6 +1186,29 @@ namespace GEM.Emulation
                 if (address == 0xFF4A) return WY;
                 if (address == 0xFF4B) return WX;
 
+                if (address == 0xFF4D) return KEY1;
+
+                if (address == 0xFF4F)
+                {
+                    VBK = (byte)(VBK | 0b11111110);
+                    return VBK;
+                }
+
+                if (address == 0xFF51) return HDMA1;
+                if (address == 0xFF52) return HDMA2;
+                if (address == 0xFF53) return HDMA3;
+                if (address == 0xFF54) return HDMA4;
+                if (address == 0xFF55) return HDMA5;
+                if (address == 0xFF56) return RP;
+
+                if (address == 0xFF68) return BCPS_BGPI;
+                if (address == 0xFF69) return _BGColorRAM[BCPS_BGPI & 0b00111111];
+                if (address == 0xFF6A) return OCPS_OBPI;
+                if (address == 0xFF6B) return _OBColorRAM[OCPS_OBPI & 0b00111111];
+                if (address == 0xFF6C) return OPRI;
+
+                if (address == 0xFF70) return SVBK;
+
                 if (address == 0xFFFF) return IE;
 
                 // else
@@ -1059,6 +1219,14 @@ namespace GEM.Emulation
                 return 0xFF;
             }
         }
+        public byte ReadVRAM(ushort address, int bank)
+        {
+            // direct VRAM access - not the 'official' read by emulation
+            int relativeAddress = address - 0x8000;
+            int bankOffset = bank * 0x2000;
+            int vramAddress = Math.Clamp(relativeAddress + bankOffset, 0, 0x3FFF);
+            return _videoRAM[vramAddress];
+        }
         public void Write(ushort address, byte value)
         {
             // Boot ROM
@@ -1066,7 +1234,7 @@ namespace GEM.Emulation
             // Cartridge ROM
             else if (address <= 0x7FFF) Cartridge.Write(address, value);
             // Video RAM
-            else if (address >= 0x8000 && address <= 0x9FFF) _videoRAM[address - 0x8000] = value;
+            else if (address >= 0x8000 && address <= 0x9FFF) _videoRAM[address - 0x8000 + VRAMBank * 0x2000] = value;
             // Cartridge RAM
             else if (address >= 0xA000 && address <= 0xBFFF) Cartridge.WriteRAM((ushort)(address - 0xA000), value);
             // Work RAM
@@ -1130,6 +1298,67 @@ namespace GEM.Emulation
                 if (address == 0xFF4A) WY = value;
                 if (address == 0xFF4B) WX = value;
 
+                if (address == 0xFF4D) KEY1 = value;
+
+                if (address == 0xFF4F) VBK = value;
+
+                if (address == 0xFF51) HDMA1 = value;
+                if (address == 0xFF52) HDMA2 = value;
+                if (address == 0xFF53) HDMA3 = value;
+                if (address == 0xFF54) HDMA4 = value;
+                if (address == 0xFF55) dmaTransfer(value);
+                if (address == 0xFF56) RP = value;
+
+                if (address == 0xFF68) BCPS_BGPI = value;
+                if (address == 0xFF69)
+                {
+                    // save color RAM
+                    int RAMAddress = (BCPS_BGPI & 0b00111111);
+                    _BGColorRAM[RAMAddress] = value;
+                    // extract color
+                    int paletteIndex = (RAMAddress & 0b00111000) >> 3;
+                    int colorIndex   = (RAMAddress & 0b00000110) >> 1;
+                    int baseAddress  = (RAMAddress & 0b00111110);
+                    int ramColor = (_BGColorRAM[baseAddress + 1] << 8) | _BGColorRAM[baseAddress];
+                    int red   =  ramColor & 0b0000000000011111;
+                    int green = (ramColor & 0b0000001111100000) >> 5;
+                    int blue  = (ramColor & 0b0111110000000000) >> 10;
+                    CGB_BG_ColorPalettes[paletteIndex][colorIndex] = new Color(red / 31f, green / 31f, blue / 31f);
+                    // increment address
+                    int addressIncrement = (BCPS_BGPI & 0b10000000) >> 7;
+                    if (addressIncrement == 1)
+                    {
+                        RAMAddress++;
+                        BCPS_BGPI = (byte)( (1 << 7) | (RAMAddress & 0b00111111) );
+                    }
+                }
+                if (address == 0xFF6A) OCPS_OBPI = value;
+                if (address == 0xFF6B)
+                {
+                    // save color RAM
+                    int RAMAddress = (BCPS_BGPI & 0b00111111);
+                    _OBColorRAM[RAMAddress] = value;
+                    // extract color
+                    int paletteIndex = (RAMAddress & 0b00111000) >> 3;
+                    int colorIndex = (RAMAddress & 0b00000110) >> 1;
+                    int baseAddress = (RAMAddress & 0b00111110);
+                    int ramColor = (_OBColorRAM[baseAddress + 1] << 8) | _OBColorRAM[baseAddress];
+                    int red = ramColor & 0b0000000000011111;
+                    int green = (ramColor & 0b0000001111100000) >> 5;
+                    int blue = (ramColor & 0b0111110000000000) >> 10;
+                    CGB_OB_ColorPalettes[paletteIndex][colorIndex] = new Color(red / 31f, green / 31f, blue / 31f);
+                    // increment address
+                    int addressIncrement = (BCPS_BGPI & 0b10000000) >> 7;
+                    if (addressIncrement == 1)
+                    {
+                        RAMAddress++;
+                        BCPS_BGPI = (byte)((1 << 7) | (RAMAddress & 0b00111111));
+                    }
+                }
+                if (address == 0xFF6C) OPRI = value;
+
+                if (address == 0xFF70) SVBK = value;
+
                 if (address == 0xFFFF) IE = value;
 
                 // else
@@ -1137,7 +1366,6 @@ namespace GEM.Emulation
             }
             else { }
         }
-
         public ushort ReadWord(ushort address)
         {
             return (ushort)(Read(address) + (Read((ushort)(address + 1)) << 8));
@@ -1147,7 +1375,6 @@ namespace GEM.Emulation
             Write(address, (byte)(value & 0xFF));
             Write((ushort)(address + 1), (byte)(value >> 8));
         }
-
         public int GetChannel3WaveRamValue(int position)
         {
             int selectByte = position / 2;
@@ -1163,7 +1390,6 @@ namespace GEM.Emulation
             }
             return Read((ushort)(0xFF30 + selectByte)) >> shiftRight & 0b1111;
         }
-
         private void oamTransfer(byte source)
         {
             ushort sourceAddress = (ushort)(source << 8);
@@ -1172,7 +1398,43 @@ namespace GEM.Emulation
                 Write((ushort)(0xFE00 + i), Read((ushort)(sourceAddress + i)));
             }
         }
-
+        private void dmaTransfer(byte value)
+        {
+            // CGB: DMA Transfer
+            HDMA5 = value;
+            // source address: last 4 bit ignored
+            int sourceAddress = (HDMA1 << 8) | (HDMA2);
+            sourceAddress &= 0b1111111111110000;
+            // target address: last 4 bit ignored, first 3 bit ignored, VRAM address space
+            int targetAddress = (HDMA3 << 8) | (HDMA3);
+            targetAddress &= 0b0001111111110000;
+            targetAddress += 0x8000;
+            // length to be copied (lengths of $10-$800 bytes defined by the values $00-$7F)
+            int length = HDMA5 & 0b01111111;
+            length++;
+            length *= 0x10;
+            // DMA transfer mode (HBlank DMA not implemented)
+            int mode = (HDMA5 & 0b10000000) >> 7;
+            if (mode == 0 ||
+                mode == 1) // TODO: implement HBlank DMA
+            {
+                // General-Purpose DMA
+                int cycles = 0;
+                for (int i = 0; i < length; i++)
+                {
+                    Write((ushort)(targetAddress + i), Read((ushort)(sourceAddress + i)));
+                    cycles += 2;
+                }
+                // instructionCycles += cycles
+                // duration not implemented. Here: Instant transfer
+                // set finish flag
+                HDMA5 = 0xFF;
+            }
+            else
+            {
+                // HBlank DMA
+            }
+        }
         #endregion
 
     }

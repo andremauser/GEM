@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using System;
 using System.Threading;
 
 namespace GEM.Menu
@@ -67,6 +68,16 @@ namespace GEM.Menu
             img.HorizontalAlign = Align.Right;
             img.VerticalAlign = Align.Center;
             img.ForeColor = _button.Style.ForeColor(State.Disabled);
+
+            Label counter = _button.AddLabel("");
+            counter.HorizontalAlign = Align.Left;
+            counter.VerticalAlign = Align.Top;
+            counter.Left = 5;
+            counter.OnDraw += (o, e) => {
+                ((Label)o).Caption = string.Format("{0}", Math.Ceiling(Timer).ToString());
+                ((Label)o).ForeColor = Color.DarkGray;
+            };
+            counter.Visible = false; // Hide Countdown
 
             Left = _button.Width;
             MoveTo(0, 0, MOVETIME);

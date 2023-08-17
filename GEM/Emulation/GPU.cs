@@ -1,67 +1,70 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace GEM.Emulation
 {
     public class GPU
     {
-
         #region Fields
-
         MMU _mmu;
-        Sprite[] _spriteList;
+        Sprite[] _obList;
 
+        Tile[,] _bgMap;
+        Tile[,] _wdMap;
+
+        Color[] _bgColorList;
+        Color[] _wdColorList;
+        Color[] _obColorList;
         #endregion
 
         #region Constructors
-
         public GPU(MMU mmu, GraphicsDevice graphicsDevice)
         {
             _mmu = mmu;
             ModeClock = 0;
             _mmu.LCDMode = 2;
 
-            BackgroundMap = new Layer(256, 256, graphicsDevice);
-            WindowMap = new Layer(256, 256, graphicsDevice);
-            TileMap = new Layer(128, 192, graphicsDevice);
-
-            Background = new Layer(160, 144, graphicsDevice);
-            Window = new Layer(160, 144, graphicsDevice);
-            Sprites = new Layer(160, 144, graphicsDevice);
-            Screen = new Layer(160, 144, graphicsDevice);
-
-            _spriteList = new Sprite[40];
+            // initialize tilesets
+            _bgMap = new Tile[32, 32];
+            _wdMap = new Tile[32, 32];
+            for (int x = 0; x < 32; x++)
+            {
+                for (int y = 0; y < 32; y++)
+                {
+                    _bgMap[x, y] = new Tile(_mmu);
+                    _wdMap[x, y] = new Tile(_mmu);
+                }
+            }
+            _obList = new Sprite[40];
             for (int i = 0; i < 40; i++)
             {
-                _spriteList[i] = new Sprite(_mmu, (ushort)(0xFE00 + i * 4));
+                _obList[i] = new Sprite(_mmu, (ushort)(0xFE00 + i * 4));
             }
-        }
 
+            // texture sources
+            _bgColorList = new Color[160 * 144];
+            _wdColorList = new Color[160 * 144];
+            _obColorList = new Color[160 * 144];
+
+            // screen textures
+            BGTexture = new Texture2D(graphicsDevice, 160, 144);
+            WDTexture = new Texture2D(graphicsDevice, 160, 144);
+            OBTexture = new Texture2D(graphicsDevice, 160, 144);
+        }
         #endregion
 
         #region Properties
-
         public int ModeClock { get; private set; }
         public bool IsDrawTime { get; private set; }
 
-        public Layer Screen { get; private set; }
-
-        public Layer Background { get; private set; }
-        public Layer Window { get; private set; }
-        public Layer Sprites { get; private set; }
-
-        public Layer BackgroundMap { get; private set; }
-        public Layer WindowMap { get; private set; }
-        public Layer TileMap { get; private set; }
-
+        public Texture2D BGTexture { get; private set; }
+        public Texture2D WDTexture { get; private set; }
+        public Texture2D OBTexture { get; private set; }
         #endregion
 
         #region Methods
-
         public void Reset()
         {
             ModeClock = 0;
@@ -92,22 +95,24 @@ namespace GEM.Emulation
                     break;
                 case 3: // Scanline: VRAM Read
                     if (ModeClock >= 172)
-                        afterVRAMRead(); // <-- renderScanline()
+                        afterVRAMRead();    // <-- renderScanline() incl. OAM search
                     break;
                 case 0: // Horizontal Blank
                     if (ModeClock >= 204)
-                        afterHBlank();
+                        afterHBlank();      // <-- Draw screen after last Line
                     break;
                 case 1: // Vertical Blank (10 lines)
                     if (ModeClock >= 456)
-                        afterVBlank();
+                        afterVBlank();      // <-- build tileMaps for next frame
                     break;
             }
 
             if (_mmu.LY == _mmu.LYC)
             {
-                _mmu.LYCFlag = 1;                                                       // Set LYC=LY Flag
-                if (_mmu.LYCIE == 1) { _mmu.IF |= 0b00000010; }                         // Request LCD STAT Interrupt
+                // Set LYC=LY Flag
+                _mmu.LYCFlag = 1;
+                // Request LCD STAT Interrupt
+                if (_mmu.LYCIE == 1) { _mmu.IF |= 0b00000010; }
             }
             else
             {
@@ -147,6 +152,11 @@ namespace GEM.Emulation
                 _mmu.IF |= 0b00000001;                                      // Request VBlank Interrupt
                 if (_mmu.Mode1IE == 1) { _mmu.IF |= 0b00000010; }           // Request LCD STAT Interrupt
 
+                // create textures from lists (built during scanlines)
+                BGTexture.SetData(_bgColorList);
+                WDTexture.SetData(_wdColorList);
+                OBTexture.SetData(_obColorList);
+
                 IsDrawTime = true;                                          // Synchronize CPU
             }
         }
@@ -156,23 +166,28 @@ namespace GEM.Emulation
             _mmu.LY++;
             if (_mmu.LY > 153)
             {
-                _mmu.LCDMode = 2;                                           // Enter Mode 2 => OAM Search, first line
-                if (_mmu.Mode2IE == 1) { _mmu.IF |= 0b00000010; }           // Request LCD STAT Interrupt
+                // Enter Mode 2 => OAM Search, first line
+                _mmu.LCDMode = 2;
+                // Request LCD STAT Interrupt
+                if (_mmu.Mode2IE == 1) { _mmu.IF |= 0b00000010; }
 
-                // Refresh Screens
-                BackgroundMap.RawData = renderBGWData(_mmu.BGMap);
-                BackgroundMap.PaletteData = renderPaletteData(BackgroundMap.RawData, _mmu.BGP);
+                // prepare next frame
+                // build bg/wd maps from VRAM
+                int bgMapBase = (_mmu.BGMap == 1) ? 0x9C00 : 0x9800;
+                int wdMapBase = (_mmu.WDMap == 1) ? 0x9C00 : 0x9800;
+                for (int x = 0; x < 32; x++)
+                {
+                    for (int y = 0; y < 32; y++)
+                    {
+                        _bgMap[x, y].ReadTile(bgMapBase + y * 32 + x);
+                        _wdMap[x, y].ReadTile(wdMapBase + y * 32 + x);
 
-                WindowMap.RawData = renderBGWData(_mmu.WindowMap);
-                WindowMap.PaletteData = renderPaletteData(WindowMap.RawData, _mmu.BGP);
-
-                TileMap.RawData = renderTileset();
-                TileMap.PaletteData = renderPaletteData(TileMap.RawData, _mmu.BGP);
-
-                // refresh sprites
+                    }
+                }
+                // refresh sprite list
                 for (int i = 0; i < 40; i++)
                 {
-                    _spriteList[i].Refresh();
+                    _obList[i].ReadSprite();
                 }
 
                 _mmu.LY = 0;
@@ -181,208 +196,122 @@ namespace GEM.Emulation
 
         private void renderScanline()
         {
-            int y = _mmu.LY;
-            List<Sprite> sprites = oamSearch(y);
-
+            int screenPixelY = _mmu.LY;
+            List<Sprite> sprites = oamSearch(screenPixelY);
 
             // Render each Pixel
-            for (int x = 0; x < 160; x++)
+            for (int screenPixelX = 0; screenPixelX < 160; screenPixelX++)
             {
-                int backgroundPixel = -1;   // background layer
-                int windowPixel = -1;       // window layer
-                int spritePixel = -1;       // sprite layer
-                int screenPixel = -1;       // combined screen
-
+                // initial values
+                Color bgPixelColor = Color.Transparent;
+                Color wdPixelColor = Color.Transparent;
+                Color obPixelColor = Color.Transparent;
+                // priority check
                 int bgPixelData = 0;
-                int bgPixelPalette = 0;
 
-                // resolve Background Pixel
+                Sprite spriteOnPixel = null;
+
+                // Background
                 if (_mmu.IsBGEnabled)
                 {
-                    // Background
-                    int posX = x + _mmu.SCX & 0xFF;
-                    int posY = y + _mmu.SCY & 0xFF;
-                    int index = 256 * posY + posX;
-                    bgPixelData = BackgroundMap.RawData[index];
-                    backgroundPixel = BackgroundMap.PaletteData[index];
-                    bgPixelPalette = backgroundPixel;
-                }
-                if (_mmu.IsWindowEnabled && y >= _mmu.WY && x >= _mmu.WX - 7)
-                {
-                    // Window overwriting Background Pixel
-                    int posX = x - (_mmu.WX - 7);
-                    int posY = y - _mmu.WY;
-                    int index = 256 * posY + posX;
-                    bgPixelData = WindowMap.RawData[index];
-                    windowPixel = WindowMap.PaletteData[index];
-                    bgPixelPalette = windowPixel;
+                    int bgMapPixelX = (screenPixelX + _mmu.SCX) % 256;
+                    int bgMapPixelY = (screenPixelY + _mmu.SCY) % 256;
+                    int bgTileX = bgMapPixelX / 8;
+                    int bgTileY = bgMapPixelY / 8;
+                    int bgTilePixelX = bgMapPixelX % 8;
+                    int bgTilePixelY = bgMapPixelY % 8;
+                    // bg pixel for ob priority check
+                    bgPixelData  = _bgMap[bgTileX, bgTileY].PixelData[bgTilePixelX, bgTilePixelY];
+                    // set bg pixel
+                    bgPixelColor = _bgMap[bgTileX, bgTileY].PixelColor[bgTilePixelX, bgTilePixelY];
                 }
 
-                // resolve sprite priority
-                // list of sprites already sorted depending on CGB-Mode
-                // first non-transparent pixel in sprite in List "wins"
-                int spritePixelData = 0;
-                Sprite spriteOnPixel = null;
-                if (_mmu.IsOBJEnabled)                              // TODO: implement 16-pixel Sprites 
+                // Window
+                if (_mmu.IsWindowEnabled && screenPixelY >= _mmu.WY && screenPixelX >= _mmu.WX - 7)
                 {
-                    foreach (Sprite sprite in sprites)
+                    int wdMapPixelX = screenPixelX - (_mmu.WX - 7);
+                    int wdMapPixelY = screenPixelY - _mmu.WY;
+                    int wdTileX = wdMapPixelX / 8;
+                    int wdTileY = wdMapPixelY / 8;
+                    int wdTilePixelX = wdMapPixelX % 8;
+                    int wdTilePixelY = wdMapPixelY % 8;
+                    // overwrite bg priority pixel
+                    bgPixelData  = _wdMap[wdTileX, wdTileY].PixelData[wdTilePixelX, wdTilePixelY];
+                    // set wd pixel
+                    wdPixelColor = _wdMap[wdTileX, wdTileY].PixelColor[wdTilePixelX, wdTilePixelY];
+                }
+
+                // Objects (Sprites)
+                // get pixel data for priority check
+                Color obPixelColorTemp = Color.Transparent;
+                if (_mmu.IsOBJEnabled)  // TODO: implement 16-pixel Sprites 
+                {
+                    foreach (Sprite sprite in sprites) // list is priority sorted by oamSearch
                     {
-                        if (sprite.PosX - 8 <= x && sprite.PosX > x)
+                        if (screenPixelX >= sprite.PosX - 8 && screenPixelX < sprite.PosX) // sprite over current pixel
                         {
-                            int pixelData = sprite.SpriteData[y - (sprite.PosY - 16), x - (sprite.PosX - 8)];
-                            if (pixelData != 0)
+                            int pixelData = sprite.PixelData[screenPixelX - (sprite.PosX - 8), screenPixelY - (sprite.PosY - 16)];
+                            obPixelColorTemp = sprite.PixelColor[screenPixelX - (sprite.PosX - 8), screenPixelY - (sprite.PosY - 16)];
+                            if (pixelData != 0) // and pixel not transparent
                             {
-                                spritePixelData = pixelData;
                                 spriteOnPixel = sprite;
-                                break;
+                                break; // first sprite wins
                             }
                         }
                     }
                 }
-
-                // Assign scanline pixel depending on sprite's bg-priority
-                if (spriteOnPixel != null && (spriteOnPixel.Priority == 0 ||                     // Sprite on Top
-                                              spriteOnPixel.Priority == 1 && bgPixelData == 0))  // Sprite in Background, but BG transparent
+                // priority check &  set ob pixel 
+                // TODO: add CGB priority
+                if (spriteOnPixel != null && (spriteOnPixel.BGPrio == 0 ||                     // Sprite on Top
+                                              spriteOnPixel.BGPrio == 1 && bgPixelData == 0))  // Sprite in Background, but BG transparent
                 {
-                    spritePixel = spriteOnPixel.PixelPalette(spritePixelData);
-                    screenPixel = spritePixel;
-                }
-                else
-                {
-                    screenPixel = bgPixelPalette;
+                    //spritePixel = spriteOnPixel.PixelPalette(obPixelData);
+                    obPixelColor = obPixelColorTemp;
                 }
 
-                int pos = 160 * y + x;
-                Background.PaletteData[pos] = backgroundPixel;
-                Window.PaletteData[pos] = windowPixel;
-                Sprites.PaletteData[pos] = spritePixel;
-                Screen.PaletteData[pos] = screenPixel;
-            }
-        }
-
-        private int[] renderBGWData(int mapLocation)
-        {
-            // returns a 256 x 256 Pixel Data Layer based on Tile Map Location (BG & Window)
-
-            int[] layer = new int[256 * 256];
-
-            // Map Location
-            ushort mapAddress = 0x9800;
-            if (mapLocation == 1) mapAddress = 0x9C00;
-
-            // Data Location
-            ushort dataAddress = 0x8000;
-            if (_mmu.BGWData == 0) dataAddress = 0x9000; // signed
-
-            // Fill Map (32 x 32 Tiles = 256 x 256 Pixels)
-            for (int mapY = 0; mapY < 32; mapY++)
-            {
-                for (int mapX = 0; mapX < 32; mapX++)
-                {
-                    // Read Tile Index from Map
-                    int readIndex = _mmu.Read((ushort)(mapAddress + mapY * 32 + mapX));
-                    int tileIndex;
-                    if (dataAddress == 0x9000) { tileIndex = unchecked((sbyte)readIndex); } else { tileIndex = readIndex; }
-
-                    // Tile Data Location
-                    ushort tileDataAddress = (ushort)(dataAddress + tileIndex * 16);
-
-                    // Decode Tile (8 x 8 Pixels)
-                    decodeTile(ref layer, tileDataAddress, mapY, mapX, 256);
-                }
-            }
-            return layer;
-        }
-        private int[] renderTileset()
-        {
-            int numRows = 24;
-            int numCols = 16;
-            int[] tileset = new int[numRows * 8 * numCols * 8];
-
-            for (ushort address = 0x8000; address < 0x9800; address += 0x10)
-            {
-                int addressIndex = (address - 0x8000) / 0x10;
-                int mapY = addressIndex / numCols;
-                int mapX = addressIndex % numCols;
-                decodeTile(ref tileset, address, mapY, mapX, numCols * 8);
-            }
-            return tileset;
-        }
-        private int[] renderPaletteData(int[] dataLayer, int palette)
-        {
-            // Returns Palette Layer from Data Layer
-            int num = dataLayer.GetLength(0);
-            int[] paletteData = new int[num];
-            for (int i = 0; i < num; i++)
-            {
-                switch (dataLayer[i])
-                {
-                    default:
-                    case 0:
-                        paletteData[i] = (palette & 0b00000011) >> 0; break;
-                    case 1:
-                        paletteData[i] = (palette & 0b00001100) >> 2; break;
-                    case 2:
-                        paletteData[i] = (palette & 0b00110000) >> 4; break;
-                    case 3:
-                        paletteData[i] = (palette & 0b11000000) >> 6; break;
-                }
-            }
-            return paletteData;
-        }
-
-        private void decodeTile(ref int[] refData, ushort tileDataAddress, int top, int left, int width)
-        {
-            // Decode Tile (8 x 8 Pixels)
-            int pixelHeight = 8;
-            for (int tileY = 0; tileY < pixelHeight; tileY++)
-            {
-                byte lowerByte = _mmu.Read((ushort)(tileDataAddress + 2 * tileY));
-                byte higherByte = _mmu.Read((ushort)(tileDataAddress + 2 * tileY + 1));
-
-                for (int tileX = 0; tileX < 8; tileX++)
-                {
-                    int lowerBit = lowerByte >> 7 - tileX & 1;
-                    int higherBit = higherByte >> 7 - tileX & 1;
-                    int pixelData = higherBit << 1 | lowerBit;
-
-                    refData[(top * 8 + tileY) * width + left * 8 + tileX] = pixelData;
-                }
+                int pos = 160 * screenPixelY + screenPixelX;
+                _bgColorList[pos] = bgPixelColor;
+                _wdColorList[pos] = wdPixelColor;
+                _obColorList[pos] = obPixelColor;
             }
         }
 
         private List<Sprite> oamSearch(int scanLine)
         {
+            // returns a priority-sorted list of visible sprites per scanline
             List<Sprite> visibleSprites = new List<Sprite>();
             int spriteHeight = _mmu.OBJSize == 1 ? 16 : 8;
 
+            // check if sprite on current scanline
             for (int i = 0; i < 40; i++)
             {
-                // only 10 sprites per line visible
-                if (visibleSprites.Count >= 10) break;
-
-                int posX = _spriteList[i].PosX;
-                int posY = _spriteList[i].PosY;
-
-                // Check if sprite on current Scanline (X position not being checked)
-                if (scanLine >= posY - 16 && scanLine < posY - 16 + spriteHeight)
+                int posY = _obList[i].PosY - 16;
+                if (scanLine >= posY && scanLine < posY + spriteHeight)
                 {
-                    visibleSprites.Add(_spriteList[i]);
+                    visibleSprites.Add(_obList[i]);
                 }
             }
-            if (_mmu.IsCGB)
+
+            // sprite priority
+            if (_mmu.IsCGBMode)
             {
-                // Non-CGB mode: X-Coordinate Priority
-                visibleSprites.OrderBy(x => x.PosX);
+                // CGB-Mode: OAM-Location Priority
+                visibleSprites = visibleSprites.OrderBy(x => x.OAMAddress).ToList();
             }
             else
             {
-                // CGB-Mode: OAM-Loacation Priority (Probably already is...)
-                visibleSprites.OrderBy(x => x.Address);
+                // Non-CGB mode: X-Coordinate Priority
+                visibleSprites = visibleSprites.OrderBy(x => x.PosX).ToList();
+            }
+
+            // only 10 sprites per line visible
+            int maxSprites = 10;
+            if (visibleSprites.Count > maxSprites)
+            { 
+                visibleSprites.RemoveRange(maxSprites, visibleSprites.Count - maxSprites);
             }
             return visibleSprites;
         }
-
         #endregion
 
     }

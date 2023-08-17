@@ -19,8 +19,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Gameboy.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\GPU.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Input.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Layer.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\MMU.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emulation\Tile.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\Settings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Menu\Style.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Struct\Offset.cs" />
@@ -37,36 +37,42 @@
     <Compile Include="$(MSBuildThisFileDirectory)Menu\SwitchControl.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="$(MSBuildThisFileDirectory)Content\arrow.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\btna.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\btnb.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\dpad.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\info.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\max.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\menu.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\quit.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\raw\cart.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\sound.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\stasel.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\success.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\switch.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\volminus.png" />
-    <Content Include="$(MSBuildThisFileDirectory)Content\volplus.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\arrow.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\btna.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\btnb.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\dpad.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\info.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\max.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\menu.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\quit.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\raw\cart.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\sound.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\stasel.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\success.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\switch.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\volminus.png" />
+    <Content Include="$(MSBuildThisFileDirectory)content\volplus.png" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)Content\Console.spritefont" />
-    <None Include="$(MSBuildThisFileDirectory)Content\Content.mgcb" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\arrow.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\btna.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\btnb.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\dpad.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\max.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\menu.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\quit.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\sound.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\stasel.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\switch.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\volminus.xcf" />
-    <None Include="$(MSBuildThisFileDirectory)Content\raw\volplus.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)boot\cgb_boot.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)boot\dmg_boot.bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="$(MSBuildThisFileDirectory)content\Console.spritefont" />
+    <None Include="$(MSBuildThisFileDirectory)content\Content.mgcb" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\arrow.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\btna.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\btnb.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\dpad.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\max.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\menu.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\quit.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\sound.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\stasel.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\switch.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\volminus.xcf" />
+    <None Include="$(MSBuildThisFileDirectory)content\raw\volplus.xcf" />
   </ItemGroup>
 </Project>

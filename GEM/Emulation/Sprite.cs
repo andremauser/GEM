@@ -1,89 +1,96 @@
 ﻿using Microsoft.Xna.Framework;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace GEM.Emulation
 {
     class Sprite
     {
-        private MMU _mmu;
-        public ushort Address;
-        private Register _flags;
-        private int _flipY;
-        private int _flipX;
-        private byte _palette;
-        private int _spriteHeight;
-        public int[,] SpriteData { get; private set; }
-        public int PosY { get; private set; }
-        public int PosX { get; private set; }
-        public int TileNumber { get; private set; }
-        public int Priority { get; private set; }
+        // static
+        public static Color[] DMGPalette;
 
-        public Sprite(MMU mmu, ushort address)
+        #region Fields
+        MMU _mmu;
+        #endregion
+
+        #region Constructors
+        public Sprite(MMU mmu, ushort oamAddress)
         {
             _mmu = mmu;
-            Address = address;
-            Refresh();
+            PixelData = new int[8, 8];
+            PixelColor = new Color[8, 8];
+            OAMAddress = oamAddress;
         }
+        #endregion
 
-        public int PixelPalette(int pixelData)
+        #region Properties
+        public int[,] PixelData { get; private set; }
+        public Color[,] PixelColor { get; private set; }
+        // GPU access
+        public ushort OAMAddress { get; private set; }
+        public int PosX { get; private set; }
+        public int PosY { get; private set; }
+        public int BGPrio { get; private set; }
+        #endregion
+
+        #region Methods
+        public void ReadSprite()
         {
-            int pixel;
-            switch (pixelData)
+            // re-create arrays on sprite height change
+            int spriteHeight = _mmu.OBJSize == 1 ? 16 : 8;
+            if (PixelData.GetLength(1) != spriteHeight)
             {
-                default:
-                case 0:
-                    pixel = (_palette & 0b00000011) >> 0; break;
-                case 1:
-                    pixel = (_palette & 0b00001100) >> 2; break;
-                case 2:
-                    pixel = (_palette & 0b00110000) >> 4; break;
-                case 3:
-                    pixel = (_palette & 0b11000000) >> 6; break;
+                PixelData = new int[8, spriteHeight];
+                PixelColor = new Color[8, spriteHeight];
             }
-            return pixel;
-        }
 
-        public void Refresh()
-        {
-            _spriteHeight = _mmu.OBJSize == 1 ? 16 : 8;
-            SpriteData = new int[_spriteHeight, 8];
+            // attributes
+            PosY =                  _mmu.Read((ushort)(OAMAddress + 0));
+            PosX =                  _mmu.Read((ushort)(OAMAddress + 1));
+            int tileIndex =         _mmu.Read((ushort)(OAMAddress + 2));
+            Register attributes =   _mmu.Read((ushort)(OAMAddress + 3));
+            int paletteIndex =  attributes & 0b00000111;
+            int tileBankIndex = _mmu.IsCGBMode ? attributes[3] : 0;
+            int dmgPalette =    attributes[4];
+            bool hFlip =        attributes[5] == 1;
+            bool vFlip =        attributes[6] == 1;
+            BGPrio =            attributes[7];
 
-            PosY = _mmu.Read(Address);
-            PosX = _mmu.Read((ushort)(Address + 1));
-            TileNumber = _mmu.Read((ushort)(Address + 2));
-            _flags = _mmu.Read((ushort)(Address + 3));
-            Priority = _flags[7];
-            _flipY = _flags[6];
-            _flipX = _flags[5];
-            switch (_flags[4])
+            // color palette
+            Color[] palette = new Color[4];
+            if (_mmu.IsCGBMode)
             {
-                default:
-                case 0:
-                    _palette = _mmu.OBP0; break;
-                case 1:
-                    _palette = _mmu.OBP1; break;
+                palette = _mmu.CGB_OB_ColorPalettes[paletteIndex];
+            }
+            else
+            {
+                Register bgp = (dmgPalette == 0) ? _mmu.OBP0 : _mmu.OBP1;
+                palette[0] = DMGPalette[bgp[1] << 1 | bgp[0]];
+                palette[1] = DMGPalette[bgp[3] << 1 | bgp[2]];
+                palette[2] = DMGPalette[bgp[5] << 1 | bgp[4]];
+                palette[3] = DMGPalette[bgp[7] << 1 | bgp[6]];
             }
             // Tile Data Location
-            ushort tileDataAddress = (ushort)(0x8000 + TileNumber * 16);
+            ushort tileDataAddress = (ushort)(0x8000 + tileIndex * 16);
 
             // Decode Tile
-            for (int y = 0; y < _spriteHeight; y++)
+            for (int y = 0; y < spriteHeight; y++)
             {
-                byte lowerByte = _mmu.Read((ushort)(tileDataAddress + 2 * y));
-                byte higherByte = _mmu.Read((ushort)(tileDataAddress + 2 * y + 1));
+                byte lowerByte  = _mmu.ReadVRAM((ushort)(tileDataAddress + 2 * y + 0), tileBankIndex);
+                byte higherByte = _mmu.ReadVRAM((ushort)(tileDataAddress + 2 * y + 1), tileBankIndex);
 
                 for (int x = 0; x < 8; x++)
                 {
-                    int lowerBit = lowerByte >> 7 - x & 1;
-                    int higherBit = higherByte >> 7 - x & 1;
+                    int lowerBit  = (lowerByte  >> (7 - x)) & 1;
+                    int higherBit = (higherByte >> (7 - x)) & 1;
                     int pixelData = higherBit << 1 | lowerBit;
 
-                    // set pixel data and apply flip
-                    SpriteData[_flipY == 1 ? _spriteHeight - 1 - y : y, _flipX == 1 ? 7 - x : x] = pixelData;
+                    int pixelX = hFlip ? (7 - x) : x;
+                    int pixelY = vFlip ? (spriteHeight - 1 - y) : y;
+
+                    PixelData[pixelX, pixelY] = pixelData;
+                    PixelColor[pixelX, pixelY] = palette[pixelData];
                 }
             }
         }
+        #endregion
     }
 }

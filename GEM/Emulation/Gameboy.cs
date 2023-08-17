@@ -10,18 +10,10 @@ namespace GEM.Emulation
     internal class Gameboy
     {
         #region Fields
-        MMU _mmu;
-        CPU _cpu;
-        GPU _gpu;
-        APU _apu;
         int _cycleCount;
         Texture2D _nullTexture;
 
         // input
-        bool _isButton_A;
-        bool _isButton_B;
-        bool _isButton_Start;
-        bool _isButton_Select;
         bool _isButton_Left;
         bool _isButton_Right;
         bool _isButton_Up;
@@ -34,10 +26,10 @@ namespace GEM.Emulation
         #region Constructors
         public Gameboy(GraphicsDevice graphicsDevice)
         {
-            _mmu = new MMU();
-            _gpu = new GPU(_mmu, graphicsDevice);
-            _cpu = new CPU(_mmu);
-            _apu = new APU(_mmu);
+            MMU = new MMU();
+            GPU = new GPU(MMU, graphicsDevice);
+            CPU = new CPU(MMU);
+            APU = new APU(MMU);
             _cycleCount = 0;
             IsRunning = false;
             IsPowerOn= false;
@@ -47,62 +39,19 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public string CartridgeTitle
-        {
-            get
-            {
-                return _mmu.Cartridge.Title;
-            }
-        }
+        public MMU MMU { get; private set; }
+        public CPU CPU { get; private set; }
+        public GPU GPU { get; private set; }
+        public APU APU { get; private set; }
+
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
-        public bool[] IsChannelOn
-        {
-            get
-            {
-                return _mmu.IsChannelOn;
-            }
-        }
-        public bool[] MasterSwitch
-        {
-            get
-            {
-                return _apu.MasterSwitch;
-            }
-            set
-            {
-                _apu.MasterSwitch = value;
-            }
-        }
-        public bool[] IsChannelOutput
-        {
-            get
-            {
-                return _apu.IsChannelOutput;
-            }
-        }
 
         // input
-        public bool IsButton_A
-        {
-            get { return _isButton_A; }
-            set { _isButton_A = value; }
-        }
-        public bool IsButton_B
-        {
-            get { return _isButton_B; }
-            set { _isButton_B = value; }
-        }
-        public bool IsButton_Start
-        {
-            get { return _isButton_Start; }
-            set { _isButton_Start = value; }
-        }
-        public bool IsButton_Select
-        {
-            get { return _isButton_Select; }
-            set { _isButton_Select = value; }
-        }
+        public bool IsButton_A { get; set; }
+        public bool IsButton_B { get; set; }
+        public bool IsButton_Start { get; set; }
+        public bool IsButton_Select { get; set; }
         public bool IsButton_Left
         {
             get { return _isButton_Left && !_isButton_Right; }
@@ -128,31 +77,31 @@ namespace GEM.Emulation
         #region Methods
         public void InsertCartridge(string game)
         {
-            _mmu.Cartridge.Load(game);
+            MMU.Cartridge.Load(game);
         }
         public void EjectCartridge(object sender, EventArgs e)
         {
             PowerOff();
-            _mmu.Cartridge.Reset();
+            MMU.Cartridge.Reset();
         }
         public void PowerOn()
         {
-            _mmu.IsLCDOn = true;
+            MMU.IsLCDOn = true;
             IsRunning = true;
             OnPowerOn?.Invoke(this, EventArgs.Empty);
         }
         public void PowerOff()
         {
             IsRunning = false;
-            _mmu.IsLCDOn = false;
+            MMU.IsLCDOn = false;
             _cycleCount = 0;
-            _mmu.Reset();
-            _cpu.Reset();
-            _gpu.Reset();
+            MMU.Reset();
+            CPU.Reset();
+            GPU.Reset();
         }
         public void SaveRAM()
         {
-            _mmu.Cartridge.SaveToFile();
+            MMU.Cartridge.SaveToFile();
         }
         public void Reset(object sender, EventArgs e)
         {
@@ -164,7 +113,7 @@ namespace GEM.Emulation
             IsRunning = !IsRunning;
             if (IsRunning)
             {
-                _mmu.IsLCDOn = true;
+                MMU.IsLCDOn = true;
             }
         }
 
@@ -179,53 +128,7 @@ namespace GEM.Emulation
 
         public void SetVolume(float volume)
         {
-            _apu.MasterVolume = volume;
-        }
-
-        public Texture2D[] GetScreens(Color[] palette)
-        {
-            Texture2D[] screens = new Texture2D[3];
-
-            if (!_mmu.IsLCDOn)
-            {
-                screens[0] = _nullTexture;
-                screens[1] = _nullTexture;
-                screens[2] = _nullTexture;
-                return screens;
-            }
-
-            _gpu.Background.ColorGrid = renderColorData(_gpu.Background.PaletteData, palette);
-            _gpu.Background.Texture.SetData(_gpu.Background.ColorGrid);
-            screens[0] = _gpu.Background.Texture;
-
-            _gpu.Window.ColorGrid = renderColorData(_gpu.Window.PaletteData, palette);
-            _gpu.Window.Texture.SetData(_gpu.Window.ColorGrid);
-            screens[1] = _gpu.Window.Texture;
-
-            _gpu.Sprites.ColorGrid = renderColorData(_gpu.Sprites.PaletteData, palette);
-            _gpu.Sprites.Texture.SetData(_gpu.Sprites.ColorGrid);
-            screens[2] = _gpu.Sprites.Texture;
-
-
-            return screens;
-        }
-        public Texture2D BackgroundTexture(Color[] palette)
-        {
-            _gpu.BackgroundMap.ColorGrid = renderColorData(_gpu.BackgroundMap.PaletteData, palette);
-            _gpu.BackgroundMap.Texture.SetData(_gpu.BackgroundMap.ColorGrid);
-            return _gpu.BackgroundMap.Texture;
-        }
-        public Texture2D WindowTexture(Color[] palette)
-        {
-            _gpu.WindowMap.ColorGrid = renderColorData(_gpu.WindowMap.PaletteData, palette);
-            _gpu.WindowMap.Texture.SetData(_gpu.WindowMap.ColorGrid);
-            return _gpu.WindowMap.Texture;
-        }
-        public Texture2D TilesetTexture(Color[] palette)
-        {
-            _gpu.TileMap.ColorGrid = renderColorData(_gpu.TileMap.PaletteData, palette);
-            _gpu.TileMap.Texture.SetData(_gpu.TileMap.ColorGrid);
-            return _gpu.TileMap.Texture;
+            APU.MasterVolume = volume;
         }
 
         // ---
@@ -233,30 +136,26 @@ namespace GEM.Emulation
         {
             if (IsRunning && Game1._Instance.IsActive)
             {
-                // compute 70.224 OpCodes for 1 frame (456 T-Cycles per line @ 154 lines)
+                // compute opCodes for 1 frame (456 T-Cycles per line @ 154 lines = 70.224)
                 while (_cycleCount < 70224)
                 {
                     // FETCH //
-                    byte opCode = _mmu.Read(_cpu.PC);
+                    byte opCode = MMU.Read(CPU.PC);
 
                     // DECODE //
                     //  and
                     // EXECUTE //  
-                    _cpu.InstructionSet[opCode]();              // PC is pushed forward by instruction
-                    if (_cpu.PC == 0x100)
-                    {
-                        _mmu.IsBooting = false;
-                        //_cpu.A = 0x11; // unlock CGB functions
-                    }
+                    CPU.InstructionSet[opCode]();              // PC is pushed forward by instruction
+                    if (CPU.PC == 0x100) MMU.IsBooting = false;
 
                     // UPDATE //
-                    _cycleCount += _cpu.InstructionCycles;
-                    _mmu.UpdateTimers(_cpu.InstructionCycles);  // Timers
-                    _gpu.Update(_cpu.InstructionCycles);        // GPU
-                    _apu.Update(_cpu.InstructionCycles);        // SPU
+                    _cycleCount += CPU.InstructionCycles;
+                    MMU.UpdateTimers(CPU.InstructionCycles);  // Timers
+                    GPU.Update(CPU.InstructionCycles);        // GPU
+                    APU.Update(CPU.InstructionCycles);        // SPU
 
                     // SYNC //
-                    if (_gpu.IsDrawTime && _cycleCount < 70224) _cycleCount = 70224 + _gpu.ModeClock;   // exits loop when screen is drawn
+                    if (GPU.IsDrawTime && _cycleCount < 70224) _cycleCount = 70224 + GPU.ModeClock;   // exits loop when screen is drawn
 
                     // INTERRUPTS
                     checkInterrupts();
@@ -275,18 +174,18 @@ namespace GEM.Emulation
             checkInputRequest();
 
             // On HALT-Mode: Interrupt
-            if (_cpu.IsCPUHalt && (_mmu.IE & _mmu.IF) > 0)
+            if (CPU.IsCPUHalt && (MMU.IE & MMU.IF) > 0)
             {
                 // Exit HALT-Mode
-                _cpu.IsCPUHalt = false;
+                CPU.IsCPUHalt = false;
                 // IME not set: Continue on next opCode without serving interrrupt
-                if (!_mmu.IME) _cpu.PC++;                   // TODO: Implement HALT-Bug (Next Opcode handled twice)
+                if (!MMU.IME) CPU.PC++;                   // TODO: Implement HALT-Bug (Next Opcode handled twice)
                                                             // IME set: Continue with standard interrupt routine below
-                if (_mmu.IME) _cpu.PC++;                    // incrementing for ISR not jumping back to HALT instruction
+                if (MMU.IME) CPU.PC++;                    // incrementing for ISR not jumping back to HALT instruction
             }
 
             // Standard Interrupt Routine
-            if (_mmu.IME && (_mmu.IE & _mmu.IF) > 0)
+            if (MMU.IME && (MMU.IE & MMU.IF) > 0)
             {
                 checkInterrupt(0, 0x40);                    // VBlank
                 checkInterrupt(1, 0x48);                    // LCD
@@ -299,61 +198,42 @@ namespace GEM.Emulation
         {
             // Handle Input (0 = pressed)
             // else case:
-            _mmu.P1 |= 0b11001111;
+            MMU.P1 |= 0b11001111;
             // INPUT interrupt
-            if (_mmu.P1[4] == 0 && _mmu.P1[5] == 1)
+            if (MMU.P1[4] == 0 && MMU.P1[5] == 1)
             {
-                if (IsButton_Right) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
-                if (IsButton_Left) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
-                if (IsButton_Up) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
-                if (IsButton_Down) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
+                if (IsButton_Right) { MMU.IF[4] = 1; MMU.P1[0] = 0; }
+                if (IsButton_Left) { MMU.IF[4] = 1; MMU.P1[1] = 0; }
+                if (IsButton_Up) { MMU.IF[4] = 1; MMU.P1[2] = 0; }
+                if (IsButton_Down) { MMU.IF[4] = 1; MMU.P1[3] = 0; }
             }
-            if (_mmu.P1[4] == 1 && _mmu.P1[5] == 0)
+            if (MMU.P1[4] == 1 && MMU.P1[5] == 0)
             {
-                if (IsButton_A) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
-                if (IsButton_B) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
-                if (IsButton_Select) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
-                if (IsButton_Start) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
+                if (IsButton_A) { MMU.IF[4] = 1; MMU.P1[0] = 0; }
+                if (IsButton_B) { MMU.IF[4] = 1; MMU.P1[1] = 0; }
+                if (IsButton_Select) { MMU.IF[4] = 1; MMU.P1[2] = 0; }
+                if (IsButton_Start) { MMU.IF[4] = 1; MMU.P1[3] = 0; }
             }
         }
         private void checkInterrupt(int index, ushort isrAddress)
         {
-            if (_mmu.IME &&
-                _mmu.IE[index] == 1 &&
-                _mmu.IF[index] == 1)
+            if (MMU.IME &&
+                MMU.IE[index] == 1 &&
+                MMU.IF[index] == 1)
             {
-                _cpu.SP -= 2;                                   // save current position on stack
-                _mmu.WriteWord(_cpu.SP, _cpu.PC);
-                _cpu.PC = isrAddress;                           // set PC to ISR for next iteration
-                _cpu.InstructionCycles = 16;
-                _mmu.IME = false;                               // disable Interrupts
-                _mmu.IF[index] = 0;                             // reset Flag
+                CPU.SP -= 2;                                   // save current position on stack
+                MMU.WriteWord(CPU.SP, CPU.PC);
+                CPU.PC = isrAddress;                           // set PC to ISR for next iteration
+                CPU.InstructionCycles = 16;
+                MMU.IME = false;                               // disable Interrupts
+                MMU.IF[index] = 0;                             // reset Flag
 
                 // UPDATE //
-                _cycleCount += _cpu.InstructionCycles;
-                _mmu.UpdateTimers(_cpu.InstructionCycles);      // Timers
-                _gpu.Update(_cpu.InstructionCycles);            // GPU
-                _apu.Update(_cpu.InstructionCycles);            // SPU
+                _cycleCount += CPU.InstructionCycles;
+                MMU.UpdateTimers(CPU.InstructionCycles);      // Timers
+                GPU.Update(CPU.InstructionCycles);            // GPU
+                APU.Update(CPU.InstructionCycles);            // SPU
             }
-        }
-
-        private Color[] renderColorData(int[] dataLayer, Color[] palette)
-        {
-            // Returns Color Layer from (Palette-)Data Layer
-            int num = dataLayer.GetLength(0);
-            Color[] colorData = new Color[num];
-            for (int i = 0; i < num; i++)
-            {
-                if (dataLayer[i] >= 0)
-                {
-                    colorData[i] = palette[dataLayer[i]];
-                }
-                else
-                {
-                    colorData[i] = Color.Transparent;
-                }
-            }
-            return colorData;
         }
         #endregion
 

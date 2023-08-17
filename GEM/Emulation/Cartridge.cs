@@ -29,6 +29,7 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
+        public string FileType { get; private set; }
         #endregion
 
         #region Methods
@@ -59,12 +60,13 @@ namespace GEM.Emulation
                     if (Read(i) != 0) { Title += (char)Read(i); }
                 }
                 _mbc = Read(0x147);
-                IsCGB = (Read(0x143) & 0x80) == 1;
+                IsCGB = (Read(0x143) & 0x80) == 0x80;
             }
 
             // load save file
             int slashPos = file.LastIndexOf('/') + 1;
             int dotPos = file.LastIndexOf('.');
+            FileType = file.Substring(dotPos + 1, file.Length - dotPos - 1);
             string baseName = file.Substring(slashPos, dotPos - slashPos);
             _saveFile = string.Format("save/{0}.sav", baseName);
             if (File.Exists(_saveFile))

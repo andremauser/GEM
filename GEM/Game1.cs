@@ -28,7 +28,7 @@ namespace GEM
         {
             _Graphics = new GraphicsDeviceManager(this);
             _Instance = this;
-            Content.RootDirectory = "Content";
+            Content.RootDirectory = "content";
             _Content = Content;
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
