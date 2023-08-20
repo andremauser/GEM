@@ -363,6 +363,16 @@ namespace GEM.Emulation
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             drawEmulator(viewport);
+            /*
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 4; x++)
+                {
+                    _spriteBatch.Draw(_Pixel, new Rectangle(x * 20, y * 20, 20, 20), _gameboy.MMU.CGB_BG_ColorPalettes[y][x]);
+                    _spriteBatch.Draw(_Pixel, new Rectangle(x * 20 + 100, y * 20, 20, 20), _gameboy.MMU.CGB_OB_ColorPalettes[y][x]);
+                }
+            }
+            */
             _spriteBatch.End();
 
             // draw controls
