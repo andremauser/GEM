@@ -9,9 +9,11 @@ namespace GEM.Emulation
     {
 
         #region Fields
+        // boot rom containers
         byte[] _dmgBootROM;
         byte[] _cgbBootROM;
         byte[] _bootROM;
+        // RAM arrays
         byte[] _videoRAM;
         byte[] _workRAM;
         byte[] _oamRAM;
@@ -1225,7 +1227,7 @@ namespace GEM.Emulation
         public void Write(ushort address, byte value)
         {
             // Boot ROM
-            if (address <= 0x00FF && IsBooting) { }
+            if (address < _bootROM.Length && IsBooting) { }
             // Cartridge ROM
             else if (address <= 0x7FFF) Cartridge.Write(address, value);
             // Video RAM
@@ -1243,8 +1245,11 @@ namespace GEM.Emulation
             // IO, High RAM
             else if (address >= 0xFF00)
             {
-                if (address == 0xFF00)
-                    P1 = value;
+                // else
+                _highRAM[address - 0xFF00] = value;
+
+
+                if (address == 0xFF00) P1 = value;
                 if (address == 0xFF01) SB = value;
                 if (address == 0xFF02) SC = value;
 
@@ -1320,6 +1325,9 @@ namespace GEM.Emulation
                     int red = ramColor & 0b0000000000011111;
                     int green = (ramColor & 0b0000001111100000) >> 5;
                     int blue = (ramColor & 0b0111110000000000) >> 10;
+                    red   = (int)(red     * 4 / 3f - 0x08);
+                    green = (int)(green   * 4 / 3f - 0x08);
+                    blue  = (int)(blue    * 4 / 3f - 0x08);
                     CGB_BG_ColorPalettes[paletteIndex][colorIndex] = new Color(red / 31f, green / 31f, blue / 31f);
                     // increment address
                     int addressIncrement = (BCPS_BGPI & 0b10000000) >> 7;
@@ -1343,6 +1351,9 @@ namespace GEM.Emulation
                     int red = ramColor & 0b0000000000011111;
                     int green = (ramColor & 0b0000001111100000) >> 5;
                     int blue = (ramColor & 0b0111110000000000) >> 10;
+                    red = (int)(red * 4 / 3f - 0x08);
+                    green = (int)(green * 4 / 3f - 0x08);
+                    blue = (int)(blue * 4 / 3f - 0x08);
                     CGB_OB_ColorPalettes[paletteIndex][colorIndex] = new Color(red / 31f, green / 31f, blue / 31f);
                     // increment address
                     int addressIncrement = (BCPS_BGPI & 0b10000000) >> 7;
@@ -1358,8 +1369,6 @@ namespace GEM.Emulation
 
                 if (address == 0xFFFF) IE = value;
 
-                // else
-                _highRAM[address - 0xFF00] = value;
             }
             else { }
         }

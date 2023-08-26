@@ -416,8 +416,24 @@ namespace GEM.Emulation
                     string fullName = _romList[index];
                     string fileName = fullName.Substring(fullName.LastIndexOf("/") + 1);
                     parent[i.ToString()].ToolTip = fileName;
-                    parent[i.ToString()].Label.Caption = fileName.Substring(0, Math.Min(fileName.Length, 26));
-                    parent[i.ToString()].Label.HorizontalAlign = Align.Left;
+                    Label lbl = parent[i.ToString()].Label;
+                    lbl.HorizontalAlign = Align.Left;
+                    lbl.Visible = true;
+                    // gbc image
+                    string fileType = fileName.Substring(fileName.LastIndexOf(".") + 1);
+                    Image img = parent[i.ToString()].Image;
+                    img.HorizontalAlign = Align.Left;
+                    img.Visible = fileType == "gbc";
+                    img.Margin = 5;
+                    lbl.Margin = img.Width + 2 * img.Margin.Left;
+                    // text width
+                    int maxWidth = 260;
+                    int maxChars = 0;
+                    for (int j = 10; j < fileName.Length; j++)
+                    {
+                        if (_Font.MeasureString(fileName.Substring(0, j)).X <= maxWidth) maxChars = j;
+                    }
+                    lbl.Caption = fileName.Substring(0, maxChars);
                 }
                 else
                 {
@@ -527,7 +543,7 @@ namespace GEM.Emulation
             };
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
-                romBrowser.AddSubMenu(i.ToString(), null, 300, 40).OnClick += openRomHandler; // add empty entry dummies
+                romBrowser.AddSubMenu(i.ToString(), "gbc", 300, 40).OnClick += openRomHandler; // add empty entry dummies
             }
             temp = romBrowser.AddSubMenu("Scroll down", "arrow", 300, 40);
             temp.Image.Rotation = -90;
