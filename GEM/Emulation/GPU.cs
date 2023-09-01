@@ -181,7 +181,6 @@ namespace GEM.Emulation
                     {
                         _bgMap[x, y].ReadTile(bgMapBase + y * 32 + x);
                         _wdMap[x, y].ReadTile(wdMapBase + y * 32 + x);
-
                     }
                 }
                 // refresh sprite list

@@ -10,7 +10,7 @@ namespace GEM.Emulation
     internal class Gameboy
     {
         #region Fields
-        int _cycleCount;
+        int _elapsedFrameCycles;
         Texture2D _nullTexture;
 
         // input
@@ -30,7 +30,7 @@ namespace GEM.Emulation
             GPU = new GPU(MMU, graphicsDevice);
             CPU = new CPU(MMU);
             APU = new APU(MMU);
-            _cycleCount = 0;
+            _elapsedFrameCycles = 0;
             IsRunning = false;
             IsPowerOn= false;
             _nullTexture = new Texture2D(graphicsDevice, 1, 1);
@@ -75,6 +75,7 @@ namespace GEM.Emulation
         #endregion
 
         #region Methods
+        // Gameboy functionality
         public void InsertCartridge(string game)
         {
             MMU.Cartridge.Load(game);
@@ -94,38 +95,11 @@ namespace GEM.Emulation
         {
             IsRunning = false;
             MMU.IsLCDOn = false;
-            _cycleCount = 0;
+            _elapsedFrameCycles = 0;
             MMU.Reset();
             CPU.Reset();
             GPU.Reset();
         }
-        public void SaveRAM()
-        {
-            MMU.Cartridge.SaveToFile();
-        }
-        public void Reset(object sender, EventArgs e)
-        {
-            PowerOff();
-            PowerOn();
-        }
-        public void PauseToggle(object sender, EventArgs e)
-        {
-            IsRunning = !IsRunning;
-            if (IsRunning)
-            {
-                MMU.IsLCDOn = true;
-            }
-        }
-
-        public void Pause()
-        {
-            IsRunning = false;
-        }
-        public void Resume()
-        {
-            IsRunning = true;
-        }
-
         public void SetVolume(float volume)
         {
             APU.MasterVolume = volume;
@@ -137,7 +111,7 @@ namespace GEM.Emulation
             if (IsRunning && Game1._Instance.IsActive)
             {
                 // compute opCodes for 1 frame (456 T-Cycles per line @ 154 lines = 70.224)
-                while (_cycleCount < 70224)
+                while (_elapsedFrameCycles < 70224)
                 {
                     // FETCH //
                     byte opCode = MMU.Read(CPU.PC);
@@ -145,17 +119,17 @@ namespace GEM.Emulation
                     // DECODE //
                     //  and
                     // EXECUTE //  
-                    CPU.InstructionSet[opCode]();              // PC is pushed forward by instruction
+                    CPU.InstructionSet[opCode]();             // PC is pushed forward by instruction
                     if (CPU.PC == 0x100) MMU.IsBooting = false;
 
                     // UPDATE //
-                    _cycleCount += CPU.InstructionCycles;
+                    _elapsedFrameCycles += CPU.InstructionCycles;
                     MMU.UpdateTimers(CPU.InstructionCycles);  // Timers
                     GPU.Update(CPU.InstructionCycles);        // GPU
                     APU.Update(CPU.InstructionCycles);        // SPU
 
                     // SYNC //
-                    if (GPU.IsDrawTime && _cycleCount < 70224) _cycleCount = 70224 + GPU.ModeClock;   // exits loop when screen is drawn
+                    if (GPU.IsDrawTime && _elapsedFrameCycles < 70224) _elapsedFrameCycles = 70224 + GPU.ModeClock;   // exits loop when screen is drawn
 
                     // INTERRUPTS
                     checkInterrupts();
@@ -163,7 +137,7 @@ namespace GEM.Emulation
                     if (!IsRunning) break;
                 }
 
-                _cycleCount -= 70224;
+                _elapsedFrameCycles -= 70224;
             }
         }
         // ---
@@ -180,7 +154,7 @@ namespace GEM.Emulation
                 CPU.IsCPUHalt = false;
                 // IME not set: Continue on next opCode without serving interrrupt
                 if (!MMU.IME) CPU.PC++;                   // TODO: Implement HALT-Bug (Next Opcode handled twice)
-                                                            // IME set: Continue with standard interrupt routine below
+                                                          // IME set: Continue with standard interrupt routine below
                 if (MMU.IME) CPU.PC++;                    // incrementing for ISR not jumping back to HALT instruction
             }
 
@@ -229,11 +203,15 @@ namespace GEM.Emulation
                 MMU.IF[index] = 0;                             // reset Flag
 
                 // UPDATE //
-                _cycleCount += CPU.InstructionCycles;
+                _elapsedFrameCycles += CPU.InstructionCycles;
                 MMU.UpdateTimers(CPU.InstructionCycles);      // Timers
                 GPU.Update(CPU.InstructionCycles);            // GPU
                 APU.Update(CPU.InstructionCycles);            // SPU
             }
+        }
+        public void SaveRAM()
+        {
+            MMU.Cartridge.SaveToFile();
         }
         #endregion
 

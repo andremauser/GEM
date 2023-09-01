@@ -553,7 +553,7 @@ namespace GEM.Emulation
                 MenuButton.Focus = romBrowser.SubMenu.Values.ToArray()[1];
             };
 
-            current.AddSubMenu("Reset ROM").OnClick += _gameboy.Reset;
+            current.AddSubMenu("Reset ROM").OnClick += (o, e) => { _gameboy.PowerOff(); _gameboy.PowerOn(); };
             current.AddSubMenu("Exit ROM").OnClick += _gameboy.EjectCartridge;
 
             // settings

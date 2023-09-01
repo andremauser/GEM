@@ -7,7 +7,6 @@ namespace GEM.Emulation
 {
     public class MMU
     {
-
         #region Fields
         // boot rom containers
         byte[] _dmgBootROM;
@@ -84,22 +83,14 @@ namespace GEM.Emulation
 
 
         #region IO Registers
-        public Register P1;         // 0xFF00
-        public Register SB;         // 0xFF01
-        public Register SC;         // 0xFF02
-                                    // 0xFF03
-        public Register DIV;        // 0xFF04
-        public Register TIMA;       // 0xFF05
-        public Register TMA;        // 0xFF06
-        public Register TAC;        // 0xFF07
-                                    // 0xFF08
-                                    // 0xFF09
-                                    // 0xFF0A
-                                    // 0xFF0B
-                                    // 0xFF0C
-                                    // 0xFF0D
-                                    // 0xFF0E
-        public Register IF;         // 0xFF0F
+        public Register P1;         // 0xFF00   Joypad
+        public Register SB;         // 0xFF01   Serial transfer data
+        public Register SC;         // 0xFF02   Serial transfer control
+        public Register DIV;        // 0xFF04   Divider register
+        public Register TIMA;       // 0xFF05   Timer counter
+        public Register TMA;        // 0xFF06   Timer modulo
+        public Register TAC;        // 0xFF07   Timer control
+        public Register IF;         // 0xFF0F   Interrupt flag
         public Register NR10;       // 0xFF10   Sound CH1 sweep
         public Register NR11;       // 0xFF11   Sound CH1 length + duty cycle
         public Register NR12        // 0xFF12   Sound CH1 volume + envelope
@@ -132,7 +123,6 @@ namespace GEM.Emulation
                 }
             }
         }
-                                    // 0xFF15
         public Register NR21;       // 0xFF16   Sound CH2 length + duty cycle
         public Register NR22        // 0xFF17   Sound CH2 volume + envelope
         {
@@ -195,7 +185,6 @@ namespace GEM.Emulation
                 }
             }
         }
-                                    // 0xFF1F
         public Register NR41;       // 0xFF20   Sound CH4 length
         public Register NR42        // 0xFF21   Sound CH4 volume + envelope
         {
@@ -229,81 +218,50 @@ namespace GEM.Emulation
         public Register NR50;       // 0xFF24   Sound volume left/right
         public Register NR51;       // 0xFF25   Sound mix to left/right
         public Register NR52;       // 0xFF26   Sound on/off and status
-                                    // 0xFF27
-                                    // 0xFF28
-                                    // 0xFF29
-                                    // 0xFF2A
-                                    // 0xFF2B
-                                    // 0xFF2C
-                                    // 0xFF2D
-                                    // 0xFF2E
-                                    // 0xFF2F
-                                    // 0xFF30
-                                    // 0xFF31
-                                    // 0xFF32
-                                    // 0xFF33
-                                    // 0xFF34
-                                    // 0xFF35
-                                    // 0xFF36
-                                    // 0xFF37
-                                    // 0xFF38
-                                    // 0xFF39
-                                    // 0xFF3A
-                                    // 0xFF3B
-                                    // 0xFF3C
-                                    // 0xFF3D
-                                    // 0xFF3E
-                                    // 0xFF3F
-        public Register LCDC;       // 0xFF40
-        public Register STAT;       // 0xFF41
-        public Register SCY;        // 0xFF42
-        public Register SCX;        // 0xFF43
-        public Register LY;         // 0xFF44
-        public Register LYC;        // 0xFF45
-                                    // 0xFF46
-        public Register BGP;        // 0xFF47
-        public Register OBP0;       // 0xFF48
-        public Register OBP1;       // 0xFF49
-        public Register WY;         // 0xFF4A
-        public Register WX;         // 0xFF4B
-                                    // 0xFF4C
+                                    // 0xFF30   Wave RAM
+                                    // 0xFF31   Wave RAM
+                                    // 0xFF32   Wave RAM
+                                    // 0xFF33   Wave RAM
+                                    // 0xFF34   Wave RAM
+                                    // 0xFF35   Wave RAM
+                                    // 0xFF36   Wave RAM
+                                    // 0xFF37   Wave RAM
+                                    // 0xFF38   Wave RAM
+                                    // 0xFF39   Wave RAM
+                                    // 0xFF3A   Wave RAM
+                                    // 0xFF3B   Wave RAM
+                                    // 0xFF3C   Wave RAM
+                                    // 0xFF3D   Wave RAM
+                                    // 0xFF3E   Wave RAM
+                                    // 0xFF3F   Wave RAM
+        public Register LCDC;       // 0xFF40   LCD control
+        public Register STAT;       // 0xFF41   LCD status
+        public Register SCY;        // 0xFF42   Viewport Y position
+        public Register SCX;        // 0xFF43   Viewport X position
+        public Register LY;         // 0xFF44   LCD Y coordinate
+        public Register LYC;        // 0xFF45   LY compare
+                                    // 0xFF46   OAM DMA source address & start
+        public Register BGP;        // 0xFF47   BG palette data
+        public Register OBP0;       // 0xFF48   OBJ palette 0 data
+        public Register OBP1;       // 0xFF49   OBJ palette 1 data
+        public Register WY;         // 0xFF4A   Window Y position
+        public Register WX;         // 0xFF4B   Window X position plus 7
         public Register KEY1;       // 0xFF4D   CGB: Prepare speed switch
-                                    // 0xFF4E
         public Register VBK;        // 0xFF4F   CGB: VRAM bank
-                                    // 0xFF50
         public Register HDMA1;      // 0xFF51   CGB: VRAM DMA source
         public Register HDMA2;      // 0xFF52   CGB: VRAM DMA source
         public Register HDMA3;      // 0xFF53   CGB: VRAM DMA destination
         public Register HDMA4;      // 0xFF54   CGB: VRAM DMA destination
         public Register HDMA5;      // 0xFF55   CGB: VRAM DMA length/mode/start
         public Register RP;         // 0xFF56   CGB: Infrared communication
-                                    // 0xFF57
-                                    // 0xFF58
-                                    // 0xFF59
-                                    // 0xFF5A
-                                    // 0xFF5B
-                                    // 0xFF5C
-                                    // 0xFF5D
-                                    // 0xFF5E
-                                    // 0xFF5F
-                                    // 0xFF60
-                                    // 0xFF61
-                                    // 0xFF62
-                                    // 0xFF63
-                                    // 0xFF64
-                                    // 0xFF65
-                                    // 0xFF66
-                                    // 0xFF67
         public Register BCPS_BGPI;  // 0xFF68   CGB: BG color palette spec & index
                                     // 0xFF69   CGB: BG color palette data
         public Register OCPS_OBPI;  // 0xFF6A   CGB: OB color palette spec & index
                                     // 0xFF6B   CGB: OB color palette data
         public Register OPRI;       // 0xFF6C   CGB: Object priority mode
-                                    // 0xFF6D
-                                    // 0xFF6E
-                                    // 0xFF6F
         public Register SVBK;       // 0xFF70   CGB: WRAM bank
-
+                                    // 0xFF76   CGB: Audio digital outputs 1 & 2
+                                    // 0xFF77   CGB: Audio digital outputs 3 & 4
         public Register IE;         // 0xFFFF
         #endregion
 
@@ -1416,7 +1374,7 @@ namespace GEM.Emulation
             targetAddress &= 0b0001111111110000;
             targetAddress += 0x8000;
             // length to be copied (lengths of $10-$800 bytes defined by the values $00-$7F)
-            int length = HDMA5 & 0b01111111;
+            int length = HDMA5 & 0b01111111; // 0x7F
             length++;
             length *= 0x10;
             // DMA transfer mode (HBlank DMA not implemented)
@@ -1426,7 +1384,7 @@ namespace GEM.Emulation
             {
                 // General-Purpose DMA
                 int cycles = 0;
-                for (int i = 0; i < length; i++)
+                for (int i = 0; i <= length; i++)
                 {
                     Write((ushort)(targetAddress + i), Read((ushort)(sourceAddress + i)));
                     cycles += 2;
