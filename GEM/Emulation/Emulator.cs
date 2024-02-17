@@ -408,7 +408,9 @@ namespace GEM.Emulation
             parent["Scroll up"].Enabled = (_openStartIndex - OPEN_ENTRIES) >= 0;
             for (int i = 0; i < OPEN_ENTRIES; i++)
             {
-                int index = _openStartIndex + i;
+                int index = _openStartIndex + i; 
+                Image img = parent[i.ToString()].Image;
+                img.Visible = false;
                 if (index < _romList.Count)
                 {
                     parent[i.ToString()].Enabled = true;
@@ -421,7 +423,6 @@ namespace GEM.Emulation
                     lbl.Visible = true;
                     // gbc image
                     string fileType = fileName.Substring(fileName.LastIndexOf(".") + 1);
-                    Image img = parent[i.ToString()].Image;
                     img.HorizontalAlign = Align.Left;
                     img.Visible = fileType == "gbc";
                     img.Margin = 5;
