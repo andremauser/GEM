@@ -5,13 +5,24 @@ using System;
 namespace GEM.Emulation
 {
     /// <summary>
-    /// Representation of a physical Gameboy. Receives user input and outputs a gameboy screen (and maybe sound in future)
+    /// Representation of a physical Gameboy. Receives user input and outputs a gameboy screen
     /// </summary>
-    internal class Gameboy
+    public class Gameboy
     {
+        public enum Mode
+        {
+            GB, GBC
+        }
+
         #region Fields
-        int _elapsedFrameCycles;
+        int _frameCycles;
         Texture2D _nullTexture;
+        Mode _gbMode;
+
+        MMU _mmu;
+        CPU _cpu;
+        PPU _ppu;
+        APU _apu;
 
         // input
         bool _isButton_Left;
@@ -26,11 +37,12 @@ namespace GEM.Emulation
         #region Constructors
         public Gameboy(GraphicsDevice graphicsDevice)
         {
-            MMU = new MMU();
-            GPU = new GPU(MMU, graphicsDevice);
-            CPU = new CPU(MMU);
-            APU = new APU(MMU);
-            _elapsedFrameCycles = 0;
+            Cartridge = new Cartridge();
+            _mmu = new MMU(Cartridge);
+            _ppu = new PPU(_mmu, graphicsDevice);
+            _cpu = new CPU(_mmu);
+            _apu = new APU(_mmu);
+            _frameCycles = 0;
             IsRunning = false;
             IsPowerOn= false;
             _nullTexture = new Texture2D(graphicsDevice, 1, 1);
@@ -39,13 +51,37 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public MMU MMU { get; private set; }
-        public CPU CPU { get; private set; }
-        public GPU GPU { get; private set; }
-        public APU APU { get; private set; }
+
+        public Mode GbMode
+        {
+            get
+            {
+                return _gbMode;
+            }
+            set
+            {
+                _gbMode = value;
+                _mmu.SetBootROM(_gbMode);
+            }
+        }
+
+        public bool[] AudioMasterSwitch
+        {
+            get
+            {
+                return _apu.MasterSwitch;
+            }
+            set
+            {
+                _apu.MasterSwitch = value;
+            }
+        }
+        public bool[] IsAudioChannelOn { get { return _apu.IsChannelOn; } }
+        public bool[] IsAudioChannelOutput { get { return _apu.IsChannelOutput; } }
 
         public bool IsRunning { get; private set; }
         public bool IsPowerOn { get; private set; }
+        public Cartridge Cartridge { get; private set; }
 
         // input
         public bool IsButton_A { get; set; }
@@ -72,146 +108,149 @@ namespace GEM.Emulation
             get { return _isButton_Down && !_isButton_Up; }
             set { _isButton_Down = value; }
         }
+
+        // output
+        public Texture2D BGTexture
+        {
+            get
+            {
+                return _ppu.BGTexture;
+            }
+        }
+        public Texture2D WDTexture
+        {
+            get
+            {
+                return _ppu.WDTexture;
+            }
+        }
+        public Texture2D OBTexture
+        {
+            get
+            {
+                return _ppu.OBTexture;
+            }
+        }
         #endregion
 
         #region Methods
         // Gameboy functionality
         public void InsertCartridge(string game)
         {
-            MMU.Cartridge.Load(game);
+            Cartridge.LoadFromFile(game);
+            GbMode = Cartridge.FileType == "gbc" ? Mode.GBC : Mode.GB;
         }
         public void EjectCartridge(object sender, EventArgs e)
         {
             PowerOff();
-            MMU.Cartridge.Reset();
+            Cartridge.Reset();
         }
         public void PowerOn()
         {
-            MMU.IsLCDOn = true;
+            _mmu.IsLCDOn = true;
             IsRunning = true;
             OnPowerOn?.Invoke(this, EventArgs.Empty);
         }
         public void PowerOff()
         {
             IsRunning = false;
-            MMU.IsLCDOn = false;
-            _elapsedFrameCycles = 0;
-            MMU.Reset();
-            CPU.Reset();
-            GPU.Reset();
+            _mmu.IsLCDOn = false;
+            _frameCycles = 0;
+            _mmu.Reset();
+            _cpu.Reset();
+            _ppu.Reset();
         }
         public void SetVolume(float volume)
         {
-            APU.MasterVolume = volume;
+            _apu.MasterVolume = volume;
         }
 
         // ---
-        public void UpdateFrame()
+        public void Update()
         {
+            // update GB frame
             if (IsRunning && Game1._Instance.IsActive)
             {
                 // compute opCodes for 1 frame (456 T-Cycles per line @ 154 lines = 70.224)
-                while (_elapsedFrameCycles < 70224)
+                while (_frameCycles < 70224)
                 {
-                    // FETCH //
-                    byte opCode = MMU.Read(CPU.PC);
-
-                    // DECODE //
-                    //  and
-                    // EXECUTE //  
-                    CPU.InstructionSet[opCode]();             // PC is pushed forward by instruction
-                    if (CPU.PC == 0x100) MMU.IsBooting = false;
-
-                    // UPDATE //
-                    _elapsedFrameCycles += CPU.InstructionCycles;
-                    MMU.UpdateTimers(CPU.InstructionCycles);  // Timers
-                    GPU.Update(CPU.InstructionCycles);        // GPU
-                    APU.Update(CPU.InstructionCycles);        // SPU
-
-                    // SYNC //
-                    if (GPU.IsDrawTime && _elapsedFrameCycles < 70224) _elapsedFrameCycles = 70224 + GPU.ModeClock;   // exits loop when screen is drawn
-
-                    // INTERRUPTS
-                    checkInterrupts();
-
+                    _cpu.Run();
+                    updateComponents();
+                    updateInterrupts();
                     if (!IsRunning) break;
                 }
-
-                _elapsedFrameCycles -= 70224;
+                _frameCycles -= 70224;
             }
         }
         // ---
 
         // Private Helper Methods
-        private void checkInterrupts()
+        private void updateInterrupts()
         {
-            checkInputRequest();
+            updateInputFlags();
 
             // On HALT-Mode: Interrupt
-            if (CPU.IsCPUHalt && (MMU.IE & MMU.IF) > 0)
+            if (_cpu.IsCPUHalt && (_mmu.IE & _mmu.IF) > 0)
             {
-                // Exit HALT-Mode
-                CPU.IsCPUHalt = false;
-                // IME not set: Continue on next opCode without serving interrrupt
-                if (!MMU.IME) CPU.PC++;                   // TODO: Implement HALT-Bug (Next Opcode handled twice)
-                                                          // IME set: Continue with standard interrupt routine below
-                if (MMU.IME) CPU.PC++;                    // incrementing for ISR not jumping back to HALT instruction
+                _cpu.Exit_HALT();
             }
 
             // Standard Interrupt Routine
-            if (MMU.IME && (MMU.IE & MMU.IF) > 0)
+            if (_mmu.IME && (_mmu.IE & _mmu.IF) > 0)
             {
-                checkInterrupt(0, 0x40);                    // VBlank
-                checkInterrupt(1, 0x48);                    // LCD
-                checkInterrupt(2, 0x50);                    // Timer
-                checkInterrupt(3, 0x58);                    // Serial
-                checkInterrupt(4, 0x60);                    // Input
+                handleInterrupt(0, 0x40);                    // VBlank
+                handleInterrupt(1, 0x48);                    // LCD
+                handleInterrupt(2, 0x50);                    // Timer
+                handleInterrupt(3, 0x58);                    // Serial
+                handleInterrupt(4, 0x60);                    // Input
             }
         }
-        private void checkInputRequest()
+        private void updateInputFlags()
         {
             // Handle Input (0 = pressed)
-            // else case:
-            MMU.P1 |= 0b11001111;
-            // INPUT interrupt
-            if (MMU.P1[4] == 0 && MMU.P1[5] == 1)
-            {
-                if (IsButton_Right) { MMU.IF[4] = 1; MMU.P1[0] = 0; }
-                if (IsButton_Left) { MMU.IF[4] = 1; MMU.P1[1] = 0; }
-                if (IsButton_Up) { MMU.IF[4] = 1; MMU.P1[2] = 0; }
-                if (IsButton_Down) { MMU.IF[4] = 1; MMU.P1[3] = 0; }
-            }
-            if (MMU.P1[4] == 1 && MMU.P1[5] == 0)
-            {
-                if (IsButton_A) { MMU.IF[4] = 1; MMU.P1[0] = 0; }
-                if (IsButton_B) { MMU.IF[4] = 1; MMU.P1[1] = 0; }
-                if (IsButton_Select) { MMU.IF[4] = 1; MMU.P1[2] = 0; }
-                if (IsButton_Start) { MMU.IF[4] = 1; MMU.P1[3] = 0; }
-            }
-        }
-        private void checkInterrupt(int index, ushort isrAddress)
-        {
-            if (MMU.IME &&
-                MMU.IE[index] == 1 &&
-                MMU.IF[index] == 1)
-            {
-                CPU.SP -= 2;                                   // save current position on stack
-                MMU.WriteWord(CPU.SP, CPU.PC);
-                CPU.PC = isrAddress;                           // set PC to ISR for next iteration
-                CPU.InstructionCycles = 16;
-                MMU.IME = false;                               // disable Interrupts
-                MMU.IF[index] = 0;                             // reset Flag
 
-                // UPDATE //
-                _elapsedFrameCycles += CPU.InstructionCycles;
-                MMU.UpdateTimers(CPU.InstructionCycles);      // Timers
-                GPU.Update(CPU.InstructionCycles);            // GPU
-                APU.Update(CPU.InstructionCycles);            // SPU
+            // else case:
+            _mmu.P1 |= 0b11001111;
+            // INPUT interrupt
+            if (_mmu.P1[4] == 0 && _mmu.P1[5] == 1)
+            {
+                if (IsButton_Right) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
+                if (IsButton_Left) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
+                if (IsButton_Up) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
+                if (IsButton_Down) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
+            }
+            if (_mmu.P1[4] == 1 && _mmu.P1[5] == 0)
+            {
+                if (IsButton_A) { _mmu.IF[4] = 1; _mmu.P1[0] = 0; }
+                if (IsButton_B) { _mmu.IF[4] = 1; _mmu.P1[1] = 0; }
+                if (IsButton_Select) { _mmu.IF[4] = 1; _mmu.P1[2] = 0; }
+                if (IsButton_Start) { _mmu.IF[4] = 1; _mmu.P1[3] = 0; }
             }
         }
+        private void handleInterrupt(int index, ushort isrAddress)
+        {
+            if (_mmu.IME &&
+                _mmu.IE[index] == 1 &&
+                _mmu.IF[index] == 1)
+            {
+                _cpu.Jump_ISR(isrAddress);                       // jump to ISR
+                _mmu.IME = false;                              // disable Interrupts
+                _mmu.IF[index] = 0;                            // reset Flag
+                updateComponents();
+            }
+        }
+        private void updateComponents()
+        {
+            _frameCycles += _cpu.InstructionCycles;
+            _mmu.Update(_cpu.InstructionCycles);            // Timers
+            _ppu.Update(_cpu.InstructionCycles);            // GPU
+            _apu.Update(_cpu.InstructionCycles);            // SPU
+        }
+
+        // public Helper Methods
         public void SaveRAM()
         {
-            MMU.Cartridge.SaveToFile();
+            Cartridge.SaveToFile();
         }
         #endregion
 

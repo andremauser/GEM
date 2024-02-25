@@ -1,13 +1,14 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.IO;
-using static GEM.Emulation.Emulator;
-using Microsoft.Xna.Framework;
+using static GEM.Emulation.Gameboy;
 
 namespace GEM.Emulation
 {
     public class MMU
     {
         #region Fields
+        private Cartridge _cartridge;
         // boot rom containers
         byte[] _dmgBootROM;
         byte[] _cgbBootROM;
@@ -39,12 +40,12 @@ namespace GEM.Emulation
         #endregion
 
         #region Constructors
-        public MMU()
+        public MMU(Cartridge cartridge)
         {
+            _cartridge = cartridge;
             _dmgBootROM = File.ReadAllBytes("boot/dmg_boot.bin");
             _cgbBootROM = File.ReadAllBytes("boot/cgb_boot.bin");
             SetBootROM(Mode.GB);
-            Cartridge = new Cartridge();
             DMG_ColorPalette = new Color[] 
             { 
                 // temporary colors - overwritten by chosen emulator palette
@@ -58,24 +59,15 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public Cartridge Cartridge { get; set; }
         public bool IsBooting { get; set; }
         public bool IsCGBMode
         {
             get
             {
-                return ((Cartridge.IsCGB || IsBooting) && _bootROM == _cgbBootROM);
+                return ((_cartridge.IsCGB || IsBooting) && _bootROM == _cgbBootROM);
             }
         }
         public bool IME { get; set; }
-
-        public bool[] IsChannelOn
-        {
-            get
-            {
-                return new bool[] { IsCH1On,  IsCH2On, IsCH3On, IsCH4On };
-            }
-        }
 
         public Color[] DMG_ColorPalette { get; set; }
         public Color[][] CGB_BG_ColorPalettes { get; private set; }
@@ -266,7 +258,7 @@ namespace GEM.Emulation
         #endregion
 
         #region Bit Properties
-        // attention: Don't put logic in here! Bit properties only bypass to IO registers above
+        // note: Don't put logic in here! Bit properties only bypass to IO registers above
 
         // NR10 (0xFF10)
         public int CH1SweepShifts
@@ -969,7 +961,7 @@ namespace GEM.Emulation
             _workRAM = new byte[0x8000];
             _oamRAM = new byte[160];
             _highRAM = new byte[0x100];
-            _BGColorRAM = new byte[64]; // 8 palettes * 4 colors/palette * 2 bytes/color
+            _BGColorRAM = new byte[64]; // 8 palettes * 4 colors per palette * 2 bytes per color
             _OBColorRAM = new byte[64];
             CGB_BG_ColorPalettes = new Color[8][]
             {
@@ -1022,8 +1014,10 @@ namespace GEM.Emulation
             IsCH3On = false;
             IsCH4On = false;
         }
-        public void UpdateTimers(int cycles)
+        public void Update(int cycles)
         {
+            // Update Timers
+
             // DIV
             _divCycleCount += cycles;
             if (_divCycleCount >= 256)          // update freq = 16.384 Hz
@@ -1074,11 +1068,11 @@ namespace GEM.Emulation
             // Boot ROM
             if ((address < 0x100 || address >= 0x200) && address < _bootROM.Length && IsBooting) return _bootROM[address];
             // Cartridge ROM
-            else if (address < 0x8000) return Cartridge.Read(address);
+            else if (address < 0x8000) return _cartridge.Read(address);
             // Video RAM
             else if (address >= 0x8000 && address < 0xA000) return _videoRAM[address - 0x8000 + VRAMBank * 0x2000];
             // Cartridge RAM
-            else if (address >= 0xA000 && address < 0xC000) return Cartridge.ReadRAM((ushort)(address - 0xA000));
+            else if (address >= 0xA000 && address < 0xC000) return _cartridge.ReadRAM((ushort)(address - 0xA000));
             // Work RAM Bank 0
             else if (address >= 0xC000 && address < 0xD000) return _workRAM[address - 0xC000];
             // Work RAM Bank 1-7
@@ -1176,7 +1170,7 @@ namespace GEM.Emulation
         }
         public byte ReadVRAM(ushort address, int bank)
         {
-            // direct VRAM access - not the 'official' read by emulation
+            // VRAM access shortcut
             int relativeAddress = address - 0x8000;
             int bankOffset = bank * 0x2000;
             int vramAddress = Math.Clamp(relativeAddress + bankOffset, 0, 0x3FFF);
@@ -1187,11 +1181,11 @@ namespace GEM.Emulation
             // Boot ROM
             if (address < _bootROM.Length && IsBooting) { }
             // Cartridge ROM
-            else if (address <= 0x7FFF) Cartridge.Write(address, value);
+            else if (address <= 0x7FFF) _cartridge.Write(address, value);
             // Video RAM
             else if (address >= 0x8000 && address < 0xA000) _videoRAM[address - 0x8000 + VRAMBank * 0x2000] = value;
             // Cartridge RAM
-            else if (address >= 0xA000 && address < 0xC000) Cartridge.WriteRAM((ushort)(address - 0xA000), value);
+            else if (address >= 0xA000 && address < 0xC000) _cartridge.WriteRAM((ushort)(address - 0xA000), value);
             // Work RAM Bank 0
             else if (address >= 0xC000 && address < 0xD000) _workRAM[address - 0xC000] = value;
             // Work RAM Bank 1-7
@@ -1273,19 +1267,20 @@ namespace GEM.Emulation
                 if (address == 0xFF69)
                 {
                     // save color RAM
-                    int RAMAddress = (BCPS_BGPI & 0b00111111);
+                    int RAMAddress = BCPS_BGPI & 0b00111111;
                     _BGColorRAM[RAMAddress] = value;
                     // extract color
                     int paletteIndex = (RAMAddress & 0b00111000) >> 3;
-                    int colorIndex = (RAMAddress & 0b00000110) >> 1;
-                    int baseAddress = (RAMAddress & 0b00111110);
+                    int colorIndex =   (RAMAddress & 0b00000110) >> 1;
+                    int baseAddress =   RAMAddress & 0b00111110;
                     int ramColor = (_BGColorRAM[baseAddress + 1] << 8) | _BGColorRAM[baseAddress];
-                    int red = ramColor & 0b0000000000011111;
+                    int red =    ramColor & 0b0000000000011111;
                     int green = (ramColor & 0b0000001111100000) >> 5;
-                    int blue = (ramColor & 0b0111110000000000) >> 10;
-                    red   = (int)(red     * 4 / 3f - 0x08);
-                    green = (int)(green   * 4 / 3f - 0x08);
-                    blue  = (int)(blue    * 4 / 3f - 0x08);
+                    int blue =  (ramColor & 0b0111110000000000) >> 10;
+                    // color correction
+                    red   = Math.Clamp((int)(red     * 4 / 3f - 0x08), 0, 31);
+                    green = Math.Clamp((int)(green   * 4 / 3f - 0x08), 0, 31);
+                    blue  = Math.Clamp((int)(blue    * 4 / 3f - 0x08), 0, 31);
                     CGB_BG_ColorPalettes[paletteIndex][colorIndex] = new Color(red / 31f, green / 31f, blue / 31f);
                     // increment address
                     int addressIncrement = (BCPS_BGPI & 0b10000000) >> 7;

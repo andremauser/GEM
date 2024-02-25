@@ -52,9 +52,6 @@ namespace GEM.Emulation
         int _bufferSize;
         byte[] _buffer;
         int _bufferIndex;
-
-        public float MasterVolume;
-        public bool[] MasterSwitch = {true, true, true, true}; // channel 1-4 master switch
         #endregion
 
         #region Constructors
@@ -75,7 +72,7 @@ namespace GEM.Emulation
             _bufferCount = 1; // target buffer count = latency
             _sampleCycles = 1f * Game1.CPU_FREQ / _sampleRate; // clock cycles for getting samples (~87)
             _bufferSize = _samplesPerBuffer * 2 * 2; // 2 = stereo, 2 = 2 byte per sample
-            _buffer = new byte[_bufferSize];
+            _buffer = new byte[_bufferSize]; 
 
             // subscribe trigger events
             _mmu.CH1TriggerEvent += ch1TriggerHandler;
@@ -86,6 +83,15 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
+        public float  MasterVolume { get; set; }
+        public bool[] MasterSwitch { get; set; } = { true, true, true, true }; // channel 1-4 master switch
+        public bool[] IsChannelOn
+        {
+            get
+            {
+                return new bool[] { _mmu.IsCH1On, _mmu.IsCH2On, _mmu.IsCH3On, _mmu.IsCH4On };
+            }
+        }
         public bool[] IsChannelOutput
         {
             get
@@ -96,16 +102,17 @@ namespace GEM.Emulation
                                     _mmu.IsCH4On && (_channelVolume[3] > 0) };
             }
         }
-        
         #endregion
 
         #region Methods
+        // ---
         public void Update(int instructionCycles)
         {
             updateFrameSequencer(instructionCycles);
             updateChannelAmplitudes(instructionCycles);
             updateSampler(instructionCycles);
         }
+        // ---
 
         private void updateFrameSequencer(int instructionCycles)
         {
@@ -488,7 +495,6 @@ namespace GEM.Emulation
                     }
                 }
             }
-
         }
 
         private int calcSweepFreq()

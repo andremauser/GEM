@@ -17,7 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\CPU.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Emulator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Gameboy.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Emulation\GPU.cs" />
+    <Compile Include="..\GEM\Emulation\PPU.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Input.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\MMU.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emulation\Tile.cs" />

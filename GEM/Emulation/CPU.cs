@@ -7,15 +7,99 @@ namespace GEM.Emulation
         public delegate void opCode();
 
         #region Fields
-        private MMU _mmu;
-        private opCode[] _cbSet;
+        MMU _mmu;
+        opCode[] _instructionSet;
+        opCode[] _cbSet;
+        ushort PC;               // Programm Counter
+        ushort SP;               // Stack Pointer
+        Register A, B, C, D, E, H, L, F;
+        ushort AF                // A, F --> AF
+        {
+            get
+            {
+                return (ushort)((A << 8) + (F & 0xF0)); // lower 4 bit of F always zero
+            }
+            set
+            {
+                A = (byte)((value & 0xFF00) >> 8);
+                F = (byte)(value & 0x00F0); // lower 4 bit of F always zero
+            }
+        }
+        ushort BC                // B, C --> BC
+        {
+            get
+            {
+                return (ushort)((B << 8) + C);
+            }
+            set
+            {
+                B = (byte)((value & 0xFF00) >> 8);
+                C = (byte)(value & 0x00FF);
+            }
+        }
+        ushort DE                // D, E --> DE
+        {
+            get
+            {
+                return (ushort)((D << 8) + E);
+            }
+            set
+            {
+                D = (byte)((value & 0xFF00) >> 8);
+                E = (byte)(value & 0x00FF);
+            }
+        }
+        ushort HL                // H, L --> HL
+        {
+            get
+            {
+                return (ushort)((H << 8) + L);
+            }
+            set
+            {
+                H = (byte)((value & 0xFF00) >> 8);
+                L = (byte)(value & 0x00FF);
+            }
+        }
+        int _flagZ               // Zero Flag
+        {
+            get { return F[7]; }
+            set { F[7] = value; }
+        }
+        int _flagN               // Subtract Flag
+        {
+            get { return F[6]; }
+            set { F[6] = value; }
+        }
+        int _flagH               // Half Carry Flag
+        {
+            get { return F[5]; }
+            set { F[5] = value; }
+        }
+        int _flagC               // Carry Flag
+        {
+            get { return F[4]; }
+            set { F[4] = value; }
+        }
+        byte _d8
+        {
+            get { return _mmu.Read((ushort)(PC + 1)); }
+        }
+        sbyte _r8
+        {
+            get { return unchecked((sbyte)_d8); }
+        }
+        ushort _d16              // AB, CD --> CDAB
+        {
+            get { return _mmu.ReadWord((ushort)(PC + 1)); }
+        }
         #endregion
 
         #region Constructors
         public CPU(MMU mmu)
         {
             _mmu = mmu;
-            InstructionSet = new opCode[]
+            _instructionSet = new opCode[]
             {
                 // 0x00
                 NOP,            LD_BC_d16,      LD__BC__A,      INC_BC,         INC_B,          DEC_B,          LD_B_d8,        RLCA,
@@ -121,102 +205,42 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public opCode[] InstructionSet { get; private set; }
-        public int InstructionCycles { get; set; }  // clock cycles @ 4 Mhz
+        public int InstructionCycles { get; private set; }  // last instruction clock cycles @ 4 Mhz
         public bool IsCPUHalt { get; set; }
-
-        public Register A, B, C, D, E, H, L, F;
-        public ushort AF                // A, F --> AF
-        {
-            get
-            {
-                return (ushort)((A << 8) + (F & 0xF0)); // lower 4 bit of F always zero
-            }
-            set
-            {
-                A = (byte)((value & 0xFF00) >> 8);
-                F = (byte)(value & 0x00F0); // lower 4 bit of F always zero
-            }
-        }
-        public ushort BC                // B, C --> BC
-        {
-            get
-            {
-                return (ushort)((B << 8) + C);
-            }
-            set
-            {
-                B = (byte)((value & 0xFF00) >> 8);
-                C = (byte)(value & 0x00FF);
-            }
-        }
-        public ushort DE                // D, E --> DE
-        {
-            get
-            {
-                return (ushort)((D << 8) + E);
-            }
-            set
-            {
-                D = (byte)((value & 0xFF00) >> 8);
-                E = (byte)(value & 0x00FF);
-            }
-        }
-        public ushort HL                // H, L --> HL
-        {
-            get
-            {
-                return (ushort)((H << 8) + L);
-            }
-            set
-            {
-                H = (byte)((value & 0xFF00) >> 8);
-                L = (byte)(value & 0x00FF);
-            }
-        }
-        public ushort SP { get; set; }  // Stack Pointer
-        public ushort PC { get; set; }  // Programm Counter
-        public int FlagZ                // Zero Flag
-        {
-            get { return F[7]; }
-            set { F[7] = value; }
-        }
-        public int FlagN                // Subtract Flag
-        {
-            get { return F[6]; }
-            set { F[6] = value; }
-        }
-        public int FlagH                // Half Carry Flag
-        {
-            get { return F[5]; }
-            set { F[5] = value; }
-        }
-        public int FlagC                // Carry Flag
-        {
-            get { return F[4]; }
-            set { F[4] = value; }
-        }
-        private byte d8
-        {
-            get { return _mmu.Read((ushort)(PC + 1)); }
-        }
-        private sbyte r8
-        {
-            get { return unchecked((sbyte)d8); }
-        }
-        private ushort d16              // AB, CD --> CDAB
-        {
-            get { return _mmu.ReadWord((ushort)(PC + 1)); }
-        }
         #endregion
 
         #region Methods
+
+        // ---
+        public void Run()
+        {
+            _instructionSet[_mmu.Read(PC)]();            // FETCH - DECODE - EXECUTE
+                                                        // note: PC is pushed forward by instruction
+            if (PC == 0x100) _mmu.IsBooting = false;
+        }
+        // ---
 
         public void Reset()
         {
             PC = 0;
         }
-
+        public void Jump_ISR(ushort isrAddress)
+        {
+            // Jump to Interrupt Service Routine
+            SP -= 2;                                    // save current position on stack
+            _mmu.WriteWord(SP, PC);
+            PC = isrAddress;                            // set PC to ISR for next iteration
+            InstructionCycles = 16;
+        }
+        public void Exit_HALT()
+        {
+            // Exit HALT-Mode
+            IsCPUHalt = false;
+            // IME not set: Continue on next opCode without serving interrrupt
+            if (!_mmu.IME) PC++;                    // TODO: Implement HALT-Bug (Next Opcode handled twice)
+                                                    // IME set: Continue with standard interrupt routine below
+            if (_mmu.IME) PC++;                     // incrementing for ISR not jumping back to HALT instruction
+        }
         private void NOT_IMPL()
         {
             InstructionCycles = 4;
@@ -243,7 +267,7 @@ namespace GEM.Emulation
         private void PREFIX()
         {
             // 0xCB
-            byte opCode = d8;
+            byte opCode = _d8;
             _cbSet[opCode]();
             PC += 2;
         }
@@ -272,22 +296,22 @@ namespace GEM.Emulation
         private void JR_NZ_r8()
         {
             // 0x20
-            JR_r8_(FlagZ == 0);
+            JR_r8_(_flagZ == 0);
         }
         private void JR_Z_r8()
         {
             // 0x28
-            JR_r8_(FlagZ == 1);
+            JR_r8_(_flagZ == 1);
         }
         private void JR_NC_r8()
         {
             // 0x30
-            JR_r8_(FlagC == 0);
+            JR_r8_(_flagC == 0);
         }
         private void JR_C_r8()
         {
             // 0x38
-            JR_r8_(FlagC == 1);
+            JR_r8_(_flagC == 1);
         }
 
         private void JP_a16()
@@ -298,22 +322,22 @@ namespace GEM.Emulation
         private void JP_NZ_a16()
         {
             // 0xC2
-            JP_a16_(FlagZ == 0);
+            JP_a16_(_flagZ == 0);
         }
         private void JP_Z_a16()
         {
             // 0xCA
-            JP_a16_(FlagZ == 1);
+            JP_a16_(_flagZ == 1);
         }
         private void JP_NC_a16()
         {
             // 0xD2
-            JP_a16_(FlagC == 0);
+            JP_a16_(_flagC == 0);
         }
         private void JP_C_a16()
         {
             // 0xDA
-            JP_a16_(FlagC == 1);
+            JP_a16_(_flagC == 1);
         }
         private void JP_HL()
         {
@@ -330,22 +354,22 @@ namespace GEM.Emulation
         private void CALL_NZ_a16()
         {
             // 0xC4
-            CALL_a16_(FlagZ == 0);
+            CALL_a16_(_flagZ == 0);
         }
         private void CALL_Z_a16()
         {
             // 0xCC
-            CALL_a16_(FlagZ == 1);
+            CALL_a16_(_flagZ == 1);
         }
         private void CALL_NC_a16()
         {
             // 0xD4
-            CALL_a16_(FlagC == 0);
+            CALL_a16_(_flagC == 0);
         }
         private void CALL_C_a16()
         {
             // 0xDC
-            CALL_a16_(FlagC == 1);
+            CALL_a16_(_flagC == 1);
         }
 
         private void RST_00H()
@@ -407,22 +431,22 @@ namespace GEM.Emulation
         private void RET_NZ()
         {
             // 0xC0
-            RET_(FlagZ == 0);
+            RET_(_flagZ == 0);
         }
         private void RET_Z()
         {
             // 0xC8
-            RET_(FlagZ == 1);
+            RET_(_flagZ == 1);
         }
         private void RET_NC()
         {
             // 0xD0
-            RET_(FlagC == 0);
+            RET_(_flagC == 0);
         }
         private void RET_C()
         {
             // 0xD8
-            RET_(FlagC == 1);
+            RET_(_flagC == 1);
         }
         #endregion
 
@@ -461,56 +485,56 @@ namespace GEM.Emulation
         private void LD_A_d8()
         {
             // 0x3E
-            A = d8;
+            A = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_B_d8()
         {
             // 0x06
-            B = d8;
+            B = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_C_d8()
         {
             // 0x0E
-            C = d8;
+            C = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_D_d8()
         {
             // 0x16
-            D = d8;
+            D = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_E_d8()
         {
             // 0x1E
-            E = d8;
+            E = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_H_d8()
         {
             // 0x26
-            H = d8;
+            H = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD_L_d8()
         {
             // 0x2E
-            L = d8;
+            L = _d8;
             PC += 2;
             InstructionCycles = 8;
         }
         private void LD__HL__d8()
         {
             // 0x36
-            _mmu.Write(HL, d8);
+            _mmu.Write(HL, _d8);
             PC += 2;
             InstructionCycles = 12;
         }
@@ -991,14 +1015,14 @@ namespace GEM.Emulation
         private void LDH__a8__A()
         {
             // 0xE0
-            _mmu.Write((ushort)(0xFF00 + d8), A);
+            _mmu.Write((ushort)(0xFF00 + _d8), A);
             PC += 2;
             InstructionCycles = 12;
         }
         private void LDH_A__a8_()
         {
             // 0xF0
-            A = _mmu.Read((ushort)(0xFF00 + d8));
+            A = _mmu.Read((ushort)(0xFF00 + _d8));
             PC += 2;
             InstructionCycles = 12;
         }
@@ -1021,14 +1045,14 @@ namespace GEM.Emulation
         private void LD__a16__A()
         {
             // 0xEA
-            _mmu.Write(d16, A);
+            _mmu.Write(_d16, A);
             PC += 3;
             InstructionCycles = 16;
         }
         private void LD_A__a16_()
         {
             // 0xFA
-            A = _mmu.Read(d16);
+            A = _mmu.Read(_d16);
             PC += 3;
             InstructionCycles = 16;
         }
@@ -1038,28 +1062,28 @@ namespace GEM.Emulation
         private void LD_BC_d16()
         {
             // 0x01
-            BC = d16;
+            BC = _d16;
             PC += 3;
             InstructionCycles = 12;
         }
         private void LD_DE_d16()
         {
             // 0x11
-            DE = d16;
+            DE = _d16;
             PC += 3;
             InstructionCycles = 12;
         }
         private void LD_HL_d16()
         {
             // 0x21
-            HL = d16;
+            HL = _d16;
             PC += 3;
             InstructionCycles = 12;
         }
         private void LD_SP_d16()
         {
             // 0x31
-            SP = d16;
+            SP = _d16;
             PC += 3;
             InstructionCycles = 12;
         }
@@ -1067,7 +1091,7 @@ namespace GEM.Emulation
         private void LD__a16__SP()
         {
             // 0x08
-            _mmu.WriteWord(d16, SP);
+            _mmu.WriteWord(_d16, SP);
             PC += 3;
             InstructionCycles = 20;
         }
@@ -1141,11 +1165,11 @@ namespace GEM.Emulation
         private void LDHL_SP_r8()
         {
             // 0xF8
-            byte b = (byte)r8;
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = flagH((byte)SP, b);
-            FlagC = flagC((byte)SP + b);
+            byte b = (byte)_r8;
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = flagH((byte)SP, b);
+            _flagC = flagC((byte)SP + b);
             HL = (ushort)(SP + (sbyte)b);
             PC += 2;
             InstructionCycles = 12;
@@ -1200,11 +1224,11 @@ namespace GEM.Emulation
         {
             // 0x34
             byte b = _mmu.Read(HL);
-            FlagN = 0;
-            FlagH = flagH(b, 1);
+            _flagN = 0;
+            _flagH = flagH(b, 1);
             b++;
             _mmu.Write(HL, b);
-            FlagZ = flagZ(b);
+            _flagZ = flagZ(b);
             PC++;
             InstructionCycles = 12;
         }
@@ -1248,11 +1272,11 @@ namespace GEM.Emulation
         {
             // 0x35
             byte b = _mmu.Read(HL);
-            FlagN = 1;
-            FlagH = flagHSub(b, 1);
+            _flagN = 1;
+            _flagH = flagHSub(b, 1);
             b--;
             _mmu.Write(HL, b);
-            FlagZ = flagZ(b);
+            _flagZ = flagZ(b);
             PC++;
             InstructionCycles = 12;
         }
@@ -1263,47 +1287,47 @@ namespace GEM.Emulation
             byte correction = 0;
 
             // Use Correction
-            if (FlagN == 0)
+            if (_flagN == 0)
             {
                 // Get Correction for Half Carry
-                if (FlagH == 1 || (A & 0x0F) > 9)
+                if (_flagH == 1 || (A & 0x0F) > 9)
                 {
                     correction += 0x06;
                 }
-                FlagH = 0;
+                _flagH = 0;
                 // Get Correction for Carry
-                if (FlagC == 1 || A > 0x99)
+                if (_flagC == 1 || A > 0x99)
                 {
                     correction += 0x60;
-                    FlagC = 1;
+                    _flagC = 1;
                 }
                 else
                 {
-                    FlagC = 0;
+                    _flagC = 0;
                 }
                 A += correction;
             }
             else
             {
                 // Get Correction for Half Carry
-                if (FlagH == 1)
+                if (_flagH == 1)
                 {
                     correction += 0x06;
                 }
-                FlagH = 0;
+                _flagH = 0;
                 // Get Correction for Carry
-                if (FlagC == 1)
+                if (_flagC == 1)
                 {
                     correction += 0x60;
-                    FlagC = 1;
+                    _flagC = 1;
                 }
                 else
                 {
-                    FlagC = 0;
+                    _flagC = 0;
                 }
                 A -= correction;
             }
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
@@ -1311,8 +1335,8 @@ namespace GEM.Emulation
         private void CPL()
         {
             // 0x2F
-            FlagN = 1;
-            FlagH = 1;
+            _flagN = 1;
+            _flagH = 1;
             /*
             byte cpl = 0;
             for (int i = 0; i < 8; i++)
@@ -1331,9 +1355,9 @@ namespace GEM.Emulation
         private void SCF()
         {
             // 0x37
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 1;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 1;
             PC++;
             InstructionCycles = 4;
         }
@@ -1341,9 +1365,9 @@ namespace GEM.Emulation
         private void CCF()
         {
             // 0x3F
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = (byte)(1 - FlagC);
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = (byte)(1 - _flagC);
             PC++;
             InstructionCycles = 4;
         }
@@ -1387,11 +1411,11 @@ namespace GEM.Emulation
         {
             // 0x86
             byte b = _mmu.Read(HL);
-            FlagN = 0;
-            FlagH = flagH(A, b);
-            FlagC = flagC(A + b);
+            _flagN = 0;
+            _flagH = flagH(A, b);
+            _flagC = flagC(A + b);
             A += b;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 8;
         }
@@ -1477,11 +1501,11 @@ namespace GEM.Emulation
         {
             //0x96
             byte b = _mmu.Read(HL);
-            FlagN = 1;
-            FlagH = flagHSub(A, b);
-            FlagC = flagC(A - b);
+            _flagN = 1;
+            _flagH = flagHSub(A, b);
+            _flagC = flagC(A - b);
             A -= b;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 8;
         }
@@ -1566,11 +1590,11 @@ namespace GEM.Emulation
         private void AND__HL_()
         {
             // 0xA6
-            FlagN = 0;
-            FlagH = 1;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 1;
+            _flagC = 0;
             A &= _mmu.Read(HL);
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 8;
         }
@@ -1613,11 +1637,11 @@ namespace GEM.Emulation
         private void XOR__HL_()
         {
             // 0xAE
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             A ^= _mmu.Read(HL);
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 8;
         }
@@ -1660,11 +1684,11 @@ namespace GEM.Emulation
         private void OR__HL_()
         {
             // 0xB6
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             A |= _mmu.Read(HL);
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 8;
         }
@@ -1708,10 +1732,10 @@ namespace GEM.Emulation
         {
             // 0xBE
             byte b = _mmu.Read(HL);
-            FlagN = 1;
-            FlagH = flagHSub(A, b);
-            FlagC = flagC(A - b);
-            FlagZ = flagZ((byte)(A - b));
+            _flagN = 1;
+            _flagH = flagHSub(A, b);
+            _flagC = flagC(A - b);
+            _flagZ = flagZ((byte)(A - b));
             PC++;
             InstructionCycles = 8;
         }
@@ -1719,82 +1743,82 @@ namespace GEM.Emulation
         private void ADD_A_d8()
         {
             // 0xC6
-            byte b = d8;
-            FlagN = 0;
-            FlagH = flagH(A, b);
-            FlagC = flagC(A + b);
+            byte b = _d8;
+            _flagN = 0;
+            _flagH = flagH(A, b);
+            _flagC = flagC(A + b);
             A += b;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC += 2;
             InstructionCycles = 8;
         }
         private void ADC_A_d8()
         {
             // 0xCE
-            ADC(d8);
+            ADC(_d8);
             PC++;
             InstructionCycles = 8;
         }
         private void SUB_d8()
         {
             //0xD6
-            byte b = d8;
-            FlagN = 1;
-            FlagH = flagHSub(A, b);
-            FlagC = flagC(A - b);
+            byte b = _d8;
+            _flagN = 1;
+            _flagH = flagHSub(A, b);
+            _flagC = flagC(A - b);
             A -= b;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC += 2;
             InstructionCycles = 8;
         }
         private void SBC_A_d8()
         {
             // 0xDE
-            SBC(d8);
+            SBC(_d8);
             PC++;
             InstructionCycles = 8;
         }
         private void AND_d8()
         {
             // 0xE6
-            FlagN = 0;
-            FlagH = 1;
-            FlagC = 0;
-            A &= d8;
-            FlagZ = flagZ(A);
+            _flagN = 0;
+            _flagH = 1;
+            _flagC = 0;
+            A &= _d8;
+            _flagZ = flagZ(A);
             PC += 2;
             InstructionCycles = 8;
         }
         private void XOR_d8()
         {
             // 0xEE
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
-            A ^= d8;
-            FlagZ = flagZ(A);
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
+            A ^= _d8;
+            _flagZ = flagZ(A);
             PC += 2;
             InstructionCycles = 8;
         }
         private void OR_d8()
         {
             // 0xF6
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
-            A |= d8;
-            FlagZ = flagZ(A);
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
+            A |= _d8;
+            _flagZ = flagZ(A);
             PC += 2;
             InstructionCycles = 8;
         }
         private void CP_d8()
         {
             // 0xFE
-            byte b = d8;
-            FlagN = 1;
-            FlagH = flagHSub(A, b);
-            FlagC = flagC(A - b);
-            FlagZ = flagZ(A - b);
+            byte b = _d8;
+            _flagN = 1;
+            _flagH = flagHSub(A, b);
+            _flagC = flagC(A - b);
+            _flagZ = flagZ(A - b);
             PC += 2;
             InstructionCycles = 8;
         }
@@ -1883,11 +1907,11 @@ namespace GEM.Emulation
         private void ADD_SP_r8()
         {
             // 0xE8
-            byte b = (byte)r8;
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = flagH((byte)SP, b);
-            FlagC = flagC((byte)SP + b);
+            byte b = (byte)_r8;
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = flagH((byte)SP, b);
+            _flagC = flagC((byte)SP + b);
             SP = (ushort)(SP + (sbyte)b);
             PC += 2;
             InstructionCycles = 16;
@@ -1898,34 +1922,34 @@ namespace GEM.Emulation
         private void RLCA()
         {
             // 0x07
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = 0;
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = 0;
             int temp = A << 1 | A >> 7;
             A = (byte)(temp & 0xFF);
-            FlagC = (byte)(temp >> 8);
+            _flagC = (byte)(temp >> 8);
             PC++;
             InstructionCycles = 4;
         }
         private void RLA()
         {
             // 0x17
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = 0;
-            int temp = A << 1 | FlagC;
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = 0;
+            int temp = A << 1 | _flagC;
             A = (byte)(temp & 0xFF);
-            FlagC = (byte)(temp >> 8);
+            _flagC = (byte)(temp >> 8);
             PC++;
             InstructionCycles = 4;
         }
         private void RRCA()
         {
             // 0x0F
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = (byte)(A & 1);
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = (byte)(A & 1);
             A = (byte)(A >> 1 | (A & 1) << 7);
             PC++;
             InstructionCycles = 4;
@@ -1933,12 +1957,12 @@ namespace GEM.Emulation
         private void RRA()
         {
             // 0x1F
-            FlagZ = 0;
-            FlagN = 0;
-            FlagH = 0;
+            _flagZ = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte newC = (byte)(A & 1);
-            A = (byte)(A >> 1 | FlagC << 7);
-            FlagC = newC;
+            A = (byte)(A >> 1 | _flagC << 7);
+            _flagC = newC;
             PC++;
             InstructionCycles = 4;
         }
@@ -1981,14 +2005,14 @@ namespace GEM.Emulation
         private void RLC__HL_()
         {
             // 0xCB 0x06
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
             int temp = b << 1 | b >> 7;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
-            FlagC = (byte)(temp >> 8);
-            FlagZ = flagZ(b);
+            _flagC = (byte)(temp >> 8);
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2030,14 +2054,14 @@ namespace GEM.Emulation
         private void RRC__HL_()
         {
             // 0xCB 0x0E
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
             b = (byte)(b >> 1 | (b & 1) << 7);
             _mmu.Write(HL, b);
-            FlagC = newC;
-            FlagZ = flagZ(b);
+            _flagC = newC;
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2079,14 +2103,14 @@ namespace GEM.Emulation
         private void RL__HL_()
         {
             // 0xCB 0x16
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
-            int temp = b << 1 | FlagC;
+            int temp = b << 1 | _flagC;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
-            FlagC = (byte)(temp >> 8);
-            FlagZ = flagZ(b);
+            _flagC = (byte)(temp >> 8);
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2128,14 +2152,14 @@ namespace GEM.Emulation
         private void RR__HL_()
         {
             // 0xCB 0x1E
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
-            b = (byte)(b >> 1 | FlagC << 7);
+            b = (byte)(b >> 1 | _flagC << 7);
             _mmu.Write(HL, b);
-            FlagC = newC;
-            FlagZ = flagZ(b);
+            _flagC = newC;
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2177,14 +2201,14 @@ namespace GEM.Emulation
         private void SLA__HL_()
         {
             // 0xCB 0x26
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
             int temp = b << 1;
             b = (byte)(temp & 0xFF);
             _mmu.Write(HL, b);
-            FlagC = (byte)(temp >> 8);
-            FlagZ = flagZ(b);
+            _flagC = (byte)(temp >> 8);
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2226,14 +2250,14 @@ namespace GEM.Emulation
         private void SRA__HL_()
         {
             // 0xCB 0x2E
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
             byte newC = (byte)(b & 1);
             b = (byte)(b >> 1 | b & 0b10000000);
             _mmu.Write(HL, b);
-            FlagC = newC;
-            FlagZ = flagZ(b);
+            _flagC = newC;
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2275,13 +2299,13 @@ namespace GEM.Emulation
         private void SWAP__HL_()
         {
             // 0xCB 0x36
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             byte b = _mmu.Read(HL);
             b = (byte)(((b & 0x0F) << 4) + ((b & 0xF0) >> 4));
             _mmu.Write(HL, b);
-            FlagZ = flagZ(b);
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -2323,13 +2347,13 @@ namespace GEM.Emulation
         private void SRL__HL_()
         {
             // 0xCB 0x3E
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             byte b = _mmu.Read(HL);
-            FlagC = (byte)(b & 1);
+            _flagC = (byte)(b & 1);
             b = (byte)(b >> 1);
             _mmu.Write(HL, b);
-            FlagZ = flagZ(b);
+            _flagZ = flagZ(b);
             InstructionCycles = 16;
         }
 
@@ -3346,109 +3370,109 @@ namespace GEM.Emulation
         #region HELPER FUNCTIONS
         private void INC(ref Register r)
         {
-            FlagN = 0;
-            FlagH = flagH(r, 1);
+            _flagN = 0;
+            _flagH = flagH(r, 1);
             r++;
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             PC++;
             InstructionCycles = 4;
         }
         private void DEC(ref Register r)
         {
-            FlagN = 1;
-            FlagH = flagHSub(r, 1);
+            _flagN = 1;
+            _flagH = flagHSub(r, 1);
             r--;
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             PC++;
             InstructionCycles = 4;
         }
         private void ADD(byte r)
         {
-            FlagN = 0;
-            FlagH = flagH(A, r);
-            FlagC = flagC(A + r);
+            _flagN = 0;
+            _flagH = flagH(A, r);
+            _flagC = flagC(A + r);
             A += r;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
         private void ADD_HL(ushort r)
         {
-            FlagN = 0;
-            FlagH = flagH(HL, r);
-            FlagC = flagC(HL + r >> 8);
+            _flagN = 0;
+            _flagH = flagH(HL, r);
+            _flagC = flagC(HL + r >> 8);
             HL += r;
             PC++;
             InstructionCycles = 8;
         }
         private void ADC(byte r)
         {
-            int result = A + r + FlagC;
-            FlagZ = flagZ((byte)result);
-            FlagN = 0;
-            FlagH = flagHCarry(A, r);
-            FlagC = flagC(result);
+            int result = A + r + _flagC;
+            _flagZ = flagZ((byte)result);
+            _flagN = 0;
+            _flagH = flagHCarry(A, r);
+            _flagC = flagC(result);
             A = (byte)result;
             PC++;
             InstructionCycles = 4;
         }
         private void SUB(byte r)
         {
-            FlagN = 1;
-            FlagH = flagHSub(A, r);
-            FlagC = flagC(A - r);
+            _flagN = 1;
+            _flagH = flagHSub(A, r);
+            _flagC = flagC(A - r);
             A -= r;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
         private void SBC(byte r)
         {
-            int result = A - r - FlagC;
-            FlagZ = flagZ((byte)result);
-            FlagN = 1;
-            FlagH = flagHSubCarry(A, r);
-            FlagC = flagC(result);
+            int result = A - r - _flagC;
+            _flagZ = flagZ((byte)result);
+            _flagN = 1;
+            _flagH = flagHSubCarry(A, r);
+            _flagC = flagC(result);
             A = (byte)result;
             PC++;
             InstructionCycles = 4;
         }
         private void AND(byte r)
         {
-            FlagN = 0;
-            FlagH = 1;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 1;
+            _flagC = 0;
             A &= r;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
         private void OR(byte r)
         {
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             A |= r;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
         private void XOR(byte r)
         {
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             A ^= r;
-            FlagZ = flagZ(A);
+            _flagZ = flagZ(A);
             PC++;
             InstructionCycles = 4;
         }
         private void CP(byte r)
         {
-            FlagN = 1;
-            FlagH = flagHSub(A, r);
-            FlagC = flagC(A - r);
-            FlagZ = flagZ(A - r);
+            _flagN = 1;
+            _flagH = flagHSub(A, r);
+            _flagC = flagC(A - r);
+            _flagZ = flagZ(A - r);
             PC++;
             InstructionCycles = 4;
         }
@@ -3457,7 +3481,7 @@ namespace GEM.Emulation
             InstructionCycles = 8;
             if (condition)
             {
-                PC = (ushort)(PC + 2 + r8);
+                PC = (ushort)(PC + 2 + _r8);
                 InstructionCycles = 12;
             }
             else
@@ -3470,7 +3494,7 @@ namespace GEM.Emulation
             InstructionCycles = 12;
             if (condition)
             {
-                PC = d16;
+                PC = _d16;
                 InstructionCycles = 16;
             }
             else
@@ -3481,7 +3505,7 @@ namespace GEM.Emulation
         private void CALL_a16_(bool condition)
         {
             InstructionCycles = 12;
-            ushort address = d16;
+            ushort address = _d16;
             PC += 3;
             if (condition)
             {
@@ -3516,94 +3540,94 @@ namespace GEM.Emulation
         private void RLC(ref Register r)
         {
             // Rotate Left: 7 -> C, 7 -> 0
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = r[7];
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = r[7];
             r = (byte)((r << 1 | r[7]) & 0xFF);
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void RRC(ref Register r)
         {
             // Rotate Right: 0 -> C, 0 -> 7
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             int newC = r[0];
             r = (byte)(r >> 1 | r[0] << 7);
-            FlagC = newC;
-            FlagZ = flagZ(r);
+            _flagC = newC;
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void RL(ref Register r)
         {
             // Rotate Left: 7 -> C, C -> 0
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             int newC = r[7];
-            r = (byte)((r << 1 | FlagC) & 0xFF);
-            FlagC = newC;
-            FlagZ = flagZ(r);
+            r = (byte)((r << 1 | _flagC) & 0xFF);
+            _flagC = newC;
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void RR(ref Register r)
         {
             // Rotate Right: 0 -> C, C -> 7
-            FlagN = 0;
-            FlagH = 0;
+            _flagN = 0;
+            _flagH = 0;
             int newC = r[0];
-            r = (byte)(r >> 1 | FlagC << 7);
-            FlagC = newC;
-            FlagZ = flagZ(r);
+            r = (byte)(r >> 1 | _flagC << 7);
+            _flagC = newC;
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void SLA(ref Register r)
         {
             // Shift Left: 7 -> C, "0" -> 0
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = r[7];
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = r[7];
             int temp = r << 1;
             r = (byte)(temp & 0xFF);
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void SRA(ref Register r)
         {
             // Shift Right: 0 -> C, 7 -> 7
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = r[0];
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = r[0];
             r = (byte)(r >> 1 | r[7] << 7);
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void SWAP(ref Register r)
         {
             // Swap upper & lower nibbles
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = 0;
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = 0;
             r = (byte)(((r & 0x0F) << 4) + ((r & 0xF0) >> 4));
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void SRL(ref Register r)
         {
             // Shift Right: 0 -> C, "0" -> 7
-            FlagN = 0;
-            FlagH = 0;
-            FlagC = r[0];
+            _flagN = 0;
+            _flagH = 0;
+            _flagC = r[0];
             r = (byte)(r >> 1);
-            FlagZ = flagZ(r);
+            _flagZ = flagZ(r);
             InstructionCycles = 8;
         }
         private void BIT(int num, Register r)
         {
             // Test Bit
             InstructionCycles = 8;
-            FlagN = 0;
-            FlagH = 1;
-            FlagZ = flagZ(r[num]);
+            _flagN = 0;
+            _flagH = 1;
+            _flagZ = flagZ(r[num]);
         }
         private void RES(int num, ref Register r)
         {
@@ -3620,8 +3644,6 @@ namespace GEM.Emulation
         #endregion
 
         #region FLAG FUNCTIONS
-        // with help of https://github.com/BluestormDNA/ProjectDMG/blob/master/ProjectDMG/DMG/CPU.cs
-
         // Z = Zero Flag
         private int flagZ(int value)
         {
@@ -3640,7 +3662,7 @@ namespace GEM.Emulation
         }
         private int flagHCarry(byte a, byte b)
         {
-            return (a & 0xF) + (b & 0xF) + FlagC >> 4 & 1;
+            return (a & 0xF) + (b & 0xF) + _flagC >> 4 & 1;
         }
         private int flagHSub(byte a, byte b)
         {
@@ -3649,7 +3671,7 @@ namespace GEM.Emulation
         }
         private int flagHSubCarry(byte a, byte b)
         {
-            if ((a & 0xF) < (b & 0xF) + FlagC) { return 1; } else { return 0; }
+            if ((a & 0xF) < (b & 0xF) + _flagC) { return 1; } else { return 0; }
         }
 
         // C = Carry Flag

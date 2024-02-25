@@ -16,10 +16,6 @@ namespace GEM.Emulation
     /// </summary>
     public class Emulator
     {
-        public enum Mode
-        {
-            GB, GBC
-        }
 
         #region Fields
         static public Texture2D _Pixel;
@@ -40,7 +36,6 @@ namespace GEM.Emulation
         Color _gridColorDark;
         Color _gridColorLight;
         Color _pixelMarkerTextColor;
-        Color _pixelMarkerColor;
 
         // styles
         Style _menuStyle;
@@ -83,7 +78,6 @@ namespace GEM.Emulation
         bool _saveRamToFile;
         DateTime _saveTime;
         Settings _settings;
-        Mode _gbMode;
         #endregion
 
         #region Constructors
@@ -101,23 +95,11 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public Mode GbMode 
-        {
-            get 
-            {
-                return _gbMode;
-            }
-            set
-            {
-                _gbMode = value;
-                _gameboy.MMU.SetBootROM(_gbMode);
-            }
-        }
         public string CartridgeTitle
         {
             get
             {
-                string title = _gameboy.MMU.Cartridge.Title;
+                string title = _gameboy.Cartridge.Title;
                 return title != "" ? title : "N/A";
             }
         }
@@ -240,7 +222,6 @@ namespace GEM.Emulation
             _gridColorDark = new Color(0, 0, 0, 128);
             _gridColorLight = new Color(0, 0, 0, 32);
             _pixelMarkerTextColor = new Color(255, 0, 255, 255);
-            _pixelMarkerColor = new Color(255, 0, 255, 255);
 
             // initial call to rom search - updated by click on "Open ROM"
             updateRomList();
@@ -332,7 +313,7 @@ namespace GEM.Emulation
             _audioBar.Panel.Visible = _settings.IsAudioPanelVisible;
             _onScreenButtonsBase.Visible = _settings.IsOnScreenButtonsVisible;
             _notifications.Visible = _settings.IsNotificationsVisible;
-            _gameboy.APU.MasterSwitch = _settings.AudioChannels;
+            _gameboy.AudioMasterSwitch = _settings.AudioChannels;
         }
 
         public void Update(GameTime gameTime)
@@ -357,22 +338,12 @@ namespace GEM.Emulation
             DateTime start = DateTime.Now;
 
             // update emulator
-            _gameboy.UpdateFrame();
+            _gameboy.Update();
             DateTime afterEmulation = DateTime.Now;
 
             // draw emulator
             _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.PointClamp);
             drawEmulator(viewport);
-            /*
-            for (int y = 0; y < 8; y++)
-            {
-                for (int x = 0; x < 4; x++)
-                {
-                    _spriteBatch.Draw(_Pixel, new Rectangle(x * 20, y * 20, 20, 20), _gameboy.MMU.CGB_BG_ColorPalettes[y][x]);
-                    _spriteBatch.Draw(_Pixel, new Rectangle(x * 20 + 100, y * 20, 20, 20), _gameboy.MMU.CGB_OB_ColorPalettes[y][x]);
-                }
-            }
-            */
             _spriteBatch.End();
 
             // draw controls
@@ -755,7 +726,7 @@ namespace GEM.Emulation
             {
                 temp = audio.AddSubMenu("CH" + (i + 1).ToString());
                 temp.ButtonData = i;
-                temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_gameboy.APU.MasterSwitch[((MenuButton)((SwitchControl)o).ParentControl).ButtonData]); };
+                temp.AddSwitch().OnDraw += (o, e) => { ((SwitchControl)o).UpdateSwitch(_gameboy.AudioMasterSwitch[((MenuButton)((SwitchControl)o).ParentControl).ButtonData]); };
                 temp.OnClick += audioSwitchHandler;
             }
             audio["CH1"].ToolTip = "Channel 1: Square wave 1";
@@ -1057,15 +1028,15 @@ namespace GEM.Emulation
             // Draw Screen
             if (_settings.IsBackgroundLayerVisible)
             {
-                _spriteBatch.Draw(_gameboy.GPU.BGTexture, screenRectangle, _settings.IsBackgroundLayerHighlighted ? _pixelMarkerTextColor : Color.White);
+                _spriteBatch.Draw(_gameboy.BGTexture, screenRectangle, _settings.IsBackgroundLayerHighlighted ? _pixelMarkerTextColor : Color.White);
             }
             if (_settings.IsWindowLayerVisible)
             {
-                _spriteBatch.Draw(_gameboy.GPU.WDTexture, screenRectangle, _settings.IsWindowLayerHighlighted ? _pixelMarkerTextColor : Color.White);
+                _spriteBatch.Draw(_gameboy.WDTexture, screenRectangle, _settings.IsWindowLayerHighlighted ? _pixelMarkerTextColor : Color.White);
             }
             if (_settings.IsSpritesLayerVisible)
             {
-                _spriteBatch.Draw(_gameboy.GPU.OBTexture, screenRectangle, _settings.IsSpritesLayerHighlighted ? _pixelMarkerTextColor : Color.White);
+                _spriteBatch.Draw(_gameboy.OBTexture, screenRectangle, _settings.IsSpritesLayerHighlighted ? _pixelMarkerTextColor : Color.White);
             }
 
             // Draw Grid
@@ -1110,11 +1081,6 @@ namespace GEM.Emulation
             Game1._Graphics.ToggleFullScreen();
             _settings.IsFullScreen = Game1._Graphics.IsFullScreen;
         }
-        private void vsyncHandler(object sender, EventArgs e)
-        {
-            Game1._Graphics.SynchronizeWithVerticalRetrace = !Game1._Graphics.SynchronizeWithVerticalRetrace;
-            Game1._Graphics.ApplyChanges();
-        }
         private void exitHandler(object sender, EventArgs e)
         {
             Game1._Instance.Exit();
@@ -1132,7 +1098,6 @@ namespace GEM.Emulation
             if (index < _romList.Count) // error check
             {
                 _gameboy.InsertCartridge(_romList[index]);
-                GbMode = _gameboy.MMU.Cartridge.FileType == "gbc" ? Mode.GBC : Mode.GB;
                 _gameboy.PowerOn();
             }
             _menu.Close(null, EventArgs.Empty);
@@ -1140,18 +1105,18 @@ namespace GEM.Emulation
         private void audioSwitchHandler(Object sender, EventArgs e)
         {
             MenuButton btn = (MenuButton)sender;
-            _gameboy.APU.MasterSwitch[btn.ButtonData] = !_gameboy.APU.MasterSwitch[btn.ButtonData];
-            _settings.AudioChannels = _gameboy.APU.MasterSwitch;
+            _gameboy.AudioMasterSwitch[btn.ButtonData] = !_gameboy.AudioMasterSwitch[btn.ButtonData];
+            _settings.AudioChannels = _gameboy.AudioMasterSwitch;
         }
         private void audioIconsHandler(object sender, EventArgs e)
         {
             int i = ((MenuButton)sender).ButtonData;
-            if (_gameboy.APU.MasterSwitch[i])
+            if (_gameboy.AudioMasterSwitch[i])
             {
                 // MasterSwitch ON
-                ((MenuButton)sender).Image.ImageIndex = _gameboy.APU.IsChannelOutput[i] ? 2 : 1;
+                ((MenuButton)sender).Image.ImageIndex = _gameboy.IsAudioChannelOutput[i] ? 2 : 1;
 
-                if (_gameboy.MMU.IsChannelOn[i])
+                if (_gameboy.IsAudioChannelOn[i])
                 {
                     ((MenuButton)sender).Style.SetColor(Element.Foreground, State.Idle, _emuPalette[EmuColorIndex][1]);
                     ((MenuButton)sender).Style.SetColor(Element.Foreground, State.Disabled, _emuPalette[EmuColorIndex][1]);

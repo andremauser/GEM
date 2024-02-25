@@ -42,7 +42,7 @@ namespace GEM.Emulation
             _ramBank = 0;
             Title = "";
         }
-        public void Load(string file)
+        public void LoadFromFile(string file)
         {
             if (file == null) return;
 

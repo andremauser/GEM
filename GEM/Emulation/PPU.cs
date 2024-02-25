@@ -5,11 +5,12 @@ using System.Linq;
 
 namespace GEM.Emulation
 {
-    public class GPU
+    public class PPU
     {
         #region Fields
         MMU _mmu;
         Sprite[] _obList;
+        int _modeClock;
 
         Tile[,] _bgMap;
         Tile[,] _wdMap;
@@ -20,10 +21,10 @@ namespace GEM.Emulation
         #endregion
 
         #region Constructors
-        public GPU(MMU mmu, GraphicsDevice graphicsDevice)
+        public PPU(MMU mmu, GraphicsDevice graphicsDevice)
         {
             _mmu = mmu;
-            ModeClock = 0;
+            _modeClock = 0;
             _mmu.LCDMode = 2;
 
             // initialize tilesets
@@ -56,8 +57,6 @@ namespace GEM.Emulation
         #endregion
 
         #region Properties
-        public int ModeClock { get; private set; }
-
         public Texture2D BGTexture { get; private set; }
         public Texture2D WDTexture { get; private set; }
         public Texture2D OBTexture { get; private set; }
@@ -66,7 +65,7 @@ namespace GEM.Emulation
         #region Methods
         public void Reset()
         {
-            ModeClock = 0;
+            _modeClock = 0;
             _mmu.LCDMode = 2;
         }
 
@@ -78,30 +77,30 @@ namespace GEM.Emulation
             // skip if LCD is off
             if (!_mmu.IsLCDOn)
             {
-                ModeClock = 0;
+                _modeClock = 0;
                 _mmu.LCDMode = 2;
                 _mmu.LY = 0;
                 return;
             }
 
-            ModeClock += instructionCycles;
+            _modeClock += instructionCycles;
 
             switch (_mmu.LCDMode)
             {
                 case 2: // Scanline: OAM Search
-                    if (ModeClock >= 80)
+                    if (_modeClock >= 80)
                         afterOAMSearch();
                     break;
                 case 3: // Scanline: VRAM Read
-                    if (ModeClock >= 172)
+                    if (_modeClock >= 172)
                         afterVRAMRead();    // <-- renderScanline() incl. OAM search
                     break;
                 case 0: // Horizontal Blank
-                    if (ModeClock >= 204)
+                    if (_modeClock >= 204)
                         afterHBlank();      // <-- Draw screen after last Line
                     break;
                 case 1: // Vertical Blank (10 lines)
-                    if (ModeClock >= 456)
+                    if (_modeClock >= 456)
                         afterVBlank();      // <-- build tileMaps for next frame
                     break;
             }
@@ -122,14 +121,14 @@ namespace GEM.Emulation
 
         private void afterOAMSearch()
         {
-            ModeClock -= 80;
+            _modeClock -= 80;
             _mmu.LCDMode = 3;
         }
         private void afterVRAMRead()
         {
 
             // End of Scanline
-            ModeClock -= 172;
+            _modeClock -= 172;
             _mmu.LCDMode = 0;                                               // Enter Mode 0 => HBlank
             if (_mmu.Mode0IE == 1) { _mmu.IF |= 0b00000010; }               // Request LCD STAT Interrupt
             // ---------- //
@@ -138,7 +137,7 @@ namespace GEM.Emulation
         }
         private void afterHBlank()
         {
-            ModeClock -= 204;
+            _modeClock -= 204;
             _mmu.LY++;
             if (_mmu.LY <= 143)
             {
@@ -160,7 +159,7 @@ namespace GEM.Emulation
         }
         private void afterVBlank()
         {
-            ModeClock -= 456;
+            _modeClock -= 456;
             _mmu.LY++;
             if (_mmu.LY > 153)
             {
