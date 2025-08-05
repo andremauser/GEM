@@ -94,10 +94,10 @@ namespace GEM.Menu
                 {
                     if (EmbeddedControls[i].Visible)
                     {
-                        EmbeddedControls[i].Top = top;
+                        EmbeddedControls[i].OffsetY = top;
                         top += EmbeddedControls[i].Height;
 
-                        EmbeddedControls[i].Left = 0;
+                        EmbeddedControls[i].OffsetX = 0;
                     }
                 }
             }
@@ -110,10 +110,10 @@ namespace GEM.Menu
                 {
                     if (EmbeddedControls[i].Visible)
                     {
-                        EmbeddedControls[i].Left = left;
+                        EmbeddedControls[i].OffsetX = left;
                         left += EmbeddedControls[i].Width;
 
-                        EmbeddedControls[i].Top = 0;
+                        EmbeddedControls[i].OffsetY = 0;
                     }
                 }
             }

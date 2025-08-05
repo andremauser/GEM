@@ -28,7 +28,7 @@ namespace GEM.Menu
             foreach (Notification notification in _notifications)
             {
                 notification.Update(gameTime);
-                notification.Top = top;
+                notification.OffsetY = top;
                 top -= Notification.HEIGHT;
             }
             foreach (Notification delete in _delete)

@@ -36,8 +36,8 @@ namespace GEM.Menu
             roundWidth += roundValue;
             _button.Width = roundWidth;
             _button.Height = HEIGHT;
-            _button.Left = -_button.Width;
-            _button.Top = -HEIGHT;
+            _button.OffsetX = -_button.Width;
+            _button.OffsetY = -HEIGHT;
             _button.Enabled = false;
             EmbeddedControls.Add(_button);
 
@@ -72,14 +72,14 @@ namespace GEM.Menu
             Label counter = _button.AddLabel("");
             counter.HorizontalAlign = Align.Left;
             counter.VerticalAlign = Align.Top;
-            counter.Left = 5;
+            counter.OffsetX = 5;
             counter.OnDraw += (o, e) => {
                 ((Label)o).Caption = string.Format("{0}", Math.Ceiling(Timer).ToString());
                 ((Label)o).ForeColor = Color.DarkGray;
             };
             counter.Visible = false; // Hide Countdown
 
-            Left = _button.Width;
+            OffsetX = _button.Width;
             MoveTo(0, 0, MOVETIME);
         }
         #endregion

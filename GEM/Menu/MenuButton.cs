@@ -352,7 +352,7 @@ namespace GEM.Menu
                 if (Image != null) Image.ForeColor = Style.ForeColor(State.Hover);
             }
             // draw box
-            spriteBatch.Draw(_pixel, new Rectangle(LocationX, LocationY, Width, Height), color);
+            spriteBatch.Draw(_pixel, new Rectangle(Left, Top, Width, Height), color);
             base.Draw(spriteBatch);
         }
 
@@ -603,7 +603,7 @@ namespace GEM.Menu
             int x = Input.MousePosX;
             int y = Input.MousePosY;
             bool hover = false;
-            if (x > LocationX && x < (LocationX + Width) && y > LocationY && y < (LocationY + Height))
+            if (x > Left && x < (Left + Width) && y > Top && y < (Top + Height))
             {
                 hover = true;
             }
@@ -703,7 +703,7 @@ namespace GEM.Menu
             int x = (int)touch.Position.X;
             int y = (int)touch.Position.Y;
             bool hover = false;
-            if (x > LocationX && x < (LocationX + Width) && y > LocationY && y < (LocationY + Height))
+            if (x > Left && x < (Left + Width) && y > Top && y < (Top + Height))
             {
                 hover = true;
             }

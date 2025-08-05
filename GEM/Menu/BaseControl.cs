@@ -63,28 +63,28 @@ namespace GEM.Menu
 
         #region Properties
         // location (top left corner)
-        public int LocationX
+        public int Left
         {
             get
             {
-                int locX = Left;
+                int locX = OffsetX;
                 if (ParentControl != null)
                 {
                     if (HorizontalAlign == Align.Left)
                     {
-                        locX += ParentControl.LocationX
+                        locX += ParentControl.Left
                                 + ParentControl.Padding.Left
                                 + Margin.Left;
                     }
                     if (HorizontalAlign == Align.Center)
                     {
-                        locX += ParentControl.LocationX
+                        locX += ParentControl.Left
                                 + (ParentControl.Width / 2)
                                 - (Width / 2);
                     }
                     if (HorizontalAlign == Align.Right)
                     {
-                        locX += ParentControl.LocationX
+                        locX += ParentControl.Left
                                 + ParentControl.Width
                                 - ParentControl.Padding.Right
                                 - Margin.Right
@@ -94,28 +94,28 @@ namespace GEM.Menu
                 return locX;
             }
         }
-        public int LocationY
+        public int Top
         {
             get
             {
-                int locY = Top;
+                int locY = OffsetY;
                 if (ParentControl != null)
                 {
                     if (VerticalAlign == Align.Top)
                     {
-                        locY += ParentControl.LocationY
+                        locY += ParentControl.Top
                                 + ParentControl.Padding.Top
                                 + Margin.Top;
                     }
                     if (VerticalAlign == Align.Center)
                     {
-                        locY += ParentControl.LocationY
+                        locY += ParentControl.Top
                                 + (ParentControl.Height / 2)
                                 - (Height / 2);
                     }
                     if (VerticalAlign == Align.Bottom)
                     {
-                        locY += ParentControl.LocationY
+                        locY += ParentControl.Top
                                 + ParentControl.Height
                                 - ParentControl.Padding.Bottom
                                 - Margin.Bottom
@@ -125,8 +125,8 @@ namespace GEM.Menu
                 return locY;
             }
         }
-        public int Left { get; set; }
-        public int Top { get; set; }
+        public int OffsetX { get; set; }
+        public int OffsetY { get; set; }
         public Offset Padding { get; set; }
         public Offset Margin { get; set; }
         public Align HorizontalAlign { get; set; }
@@ -219,8 +219,8 @@ namespace GEM.Menu
                 {
                     case BlendType.Linear:
                     default:
-                        Left = (int)(_moveFromLeft + (_moveToLeft - _moveFromLeft) * percentage);
-                        Top = (int)(_moveFromTop + (_moveToTop - _moveFromTop) * percentage);
+                        OffsetX = (int)(_moveFromLeft + (_moveToLeft - _moveFromLeft) * percentage);
+                        OffsetY = (int)(_moveFromTop + (_moveToTop - _moveFromTop) * percentage);
                         break;
                 }
             }
@@ -270,8 +270,8 @@ namespace GEM.Menu
 
         public void MoveTo(int newLeft, int newTop, float seconds, BlendType blendType = BlendType.Linear)
         {
-            _moveFromLeft = Left;
-            _moveFromTop = Top;
+            _moveFromLeft = OffsetX;
+            _moveFromTop = OffsetY;
             _moveToLeft = newLeft;
             _moveToTop = newTop;
             _moveTimeBegin = DateTime.Now;

@@ -51,7 +51,7 @@ namespace GEM.Menu
         public override void Draw(SpriteBatch spriteBatch)
         {
             if (!Visible) return;
-            Rectangle destinationRectangle = new Rectangle(LocationX + Width / 2, LocationY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
+            Rectangle destinationRectangle = new Rectangle(Left + Width / 2, Top + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
             int drawWidth = (int)(Texture.Height * TextureAspectRatio);
             int drawLeft = (drawWidth * ImageIndex) % Texture.Width;
             Rectangle sourceRectangle = new Rectangle(drawLeft, 0, drawWidth, Texture.Height); // use full texture

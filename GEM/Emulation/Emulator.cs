@@ -258,8 +258,8 @@ namespace GEM.Emulation
             _audioBar = audioMenu();
             _audioBar.OnClose += setFocusToNull;
             _audioBar.OnDraw += (o, e) => {
-                _audioBar.Top = _screenTop + _screenHeight / 2 - (7 * 60 / 2);
-                _audioBar.Left = -_audioBar.Width;
+                _audioBar.OffsetY = _screenTop + _screenHeight / 2 - (7 * 60 / 2);
+                _audioBar.OffsetX = -_audioBar.Width;
             };
             _controls.Add(_audioBar);
 
@@ -278,8 +278,8 @@ namespace GEM.Emulation
             // notifications
             _notifications = new NotificationPanel(null);
             _notifications.OnDraw += (o, e) => {
-                _notifications.Left = Game1._Graphics.GraphicsDevice.Viewport.Width;
-                _notifications.Top = Game1._Graphics.GraphicsDevice.Viewport.Height;
+                _notifications.OffsetX = Game1._Graphics.GraphicsDevice.Viewport.Width;
+                _notifications.OffsetY = Game1._Graphics.GraphicsDevice.Viewport.Height;
             };
             _controls.Add(_notifications);
 
@@ -347,7 +347,9 @@ namespace GEM.Emulation
             _spriteBatch.End();
 
             // draw controls
-            _spriteBatch.Begin(SpriteSortMode.Deferred, null, SamplerState.LinearClamp);
+            RasterizerState rasterizerState = new RasterizerState() { ScissorTestEnable = true };
+            _spriteBatch.Begin(SpriteSortMode.Immediate, null, SamplerState.LinearClamp, null, rasterizerState);
+            _spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle(0, 0, _spriteBatch.GraphicsDevice.Viewport.Width, _spriteBatch.GraphicsDevice.Viewport.Height);
             foreach (BaseControl control in _controls)
             {
                 control.Draw(_spriteBatch);
@@ -405,7 +407,8 @@ namespace GEM.Emulation
                     {
                         if (_Font.MeasureString(fileName.Substring(0, j)).X <= maxWidth) maxChars = j;
                     }
-                    lbl.Caption = fileName.Substring(0, maxChars);
+                    //lbl.Caption = fileName.Substring(0, maxChars);
+                    lbl.Caption = fileName;
                 }
                 else
                 {
@@ -773,8 +776,8 @@ namespace GEM.Emulation
             fpsMenu.Label.HorizontalAlign = Align.Center;
             fpsMenu.OnDraw += (o, e) => {
                 ((MenuButton)o).Label.Caption = Game1._Instance.FPS.ToString();
-                ((BaseControl)o).Left = Game1._Graphics.GraphicsDevice.Viewport.Width - ((BaseControl)o).Width;
-                ((BaseControl)o).Top = 0;
+                ((BaseControl)o).OffsetX = Game1._Graphics.GraphicsDevice.Viewport.Width - ((BaseControl)o).Width;
+                ((BaseControl)o).OffsetY = 0;
             };
             fpsMenu.PanelAnchorPoint.HorizontalAlign = Align.Right;
             fpsMenu.PanelAnchorPoint.VerticalAlign = Align.Bottom;
@@ -874,7 +877,7 @@ namespace GEM.Emulation
                 // update tooltip line
                 toolTip.Label.Caption = MenuButton.Focus != null ? MenuButton.Focus.ToolTip : "";
                 toolTip.Width = toolTip.Label.Caption == "" ? 0 : toolTip.Label.Width + 2 * toolTip.Label.Padding.Left;
-                toolTip.Top = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
+                toolTip.OffsetY = Game1._Graphics.GraphicsDevice.Viewport.Height - _toolTip.Height;
             };
 
             return toolTip;
@@ -889,15 +892,15 @@ namespace GEM.Emulation
             onScreenButtons.Add(dpad);
             dpad.OnDraw += (o, e) =>
             {
-                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
-                ((BaseControl)o).Left = Math.Max(_screenLeft / 2, 120);
+                ((BaseControl)o).OffsetY = _screenTop + _screenHeight / 2;
+                ((BaseControl)o).OffsetX = Math.Max(_screenLeft / 2, 120);
             };
 
             // up
             MenuButton dpadUp;
             dpadUp = new MenuButton(dpad, null, "up", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
-            dpadUp.Left = -50;
-            dpadUp.Top = -120;
+            dpadUp.OffsetX = -50;
+            dpadUp.OffsetY = -120;
             dpadUp.Image.Rotation = 90;
             dpadUp.KeyBinding = _settings.KeyBindings["Up"];
             dpadUp.BtnBinding = _settings.ButtonBindings["Up"];
@@ -908,8 +911,8 @@ namespace GEM.Emulation
             // down
             MenuButton dpadDown;
             dpadDown = new MenuButton(dpad, null, "down", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
-            dpadDown.Left = -50;
-            dpadDown.Top = 20;
+            dpadDown.OffsetX = -50;
+            dpadDown.OffsetY = 20;
             dpadDown.Image.Rotation = 270;
             dpadDown.KeyBinding = _settings.KeyBindings["Down"];
             dpadDown.BtnBinding = _settings.ButtonBindings["Down"];
@@ -920,8 +923,8 @@ namespace GEM.Emulation
             // right
             MenuButton dpadRight;
             dpadRight = new MenuButton(dpad, null, "->", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
-            dpadRight.Left = 20;
-            dpadRight.Top = -50;
+            dpadRight.OffsetX = 20;
+            dpadRight.OffsetY = -50;
             dpadRight.KeyBinding = _settings.KeyBindings["Right"];
             dpadRight.BtnBinding = _settings.ButtonBindings["Right"];
             dpadRight.OnPress += (o, e) => _gameboy.IsButton_Right = true;
@@ -931,8 +934,8 @@ namespace GEM.Emulation
             // left
             MenuButton dpadLeft;
             dpadLeft = new MenuButton(dpad, null, "<-", _onScreenStyle, MenuType.StandAlone, "dpad", 4, 100, 100);
-            dpadLeft.Left = -120;
-            dpadLeft.Top = -50;
+            dpadLeft.OffsetX = -120;
+            dpadLeft.OffsetY = -50;
             dpadLeft.Image.Rotation = 180;
             dpadLeft.KeyBinding = _settings.KeyBindings["Left"];
             dpadLeft.BtnBinding = _settings.ButtonBindings["Left"];
@@ -942,19 +945,19 @@ namespace GEM.Emulation
 
 
             // buttons A, B
-            BaseControl btns = new BaseControl(null) { Left = 1150, Top = 400 };
+            BaseControl btns = new BaseControl(null) { OffsetX = 1150, OffsetY = 400 };
             onScreenButtons.Add(btns);
             btns.OnDraw += (o, e) =>
             {
-                ((BaseControl)o).Top = _screenTop + _screenHeight / 2;
-                ((BaseControl)o).Left = Math.Min(_screenWidth + (int)(_screenLeft * 1.5f), _screenWidth + _screenLeft * 2 - 120);
+                ((BaseControl)o).OffsetY = _screenTop + _screenHeight / 2;
+                ((BaseControl)o).OffsetX = Math.Min(_screenWidth + (int)(_screenLeft * 1.5f), _screenWidth + _screenLeft * 2 - 120);
             };
 
             // A
             MenuButton btnA;
             btnA = new MenuButton(btns, null, "A", _onScreenStyle, MenuType.StandAlone, "btna", 4, 100, 100);
-            btnA.Left = 0;
-            btnA.Top = -70;
+            btnA.OffsetX = 0;
+            btnA.OffsetY = -70;
             btnA.Image.Rotation = 20;
             btnA.KeyBinding = _settings.KeyBindings["A"];
             btnA.BtnBinding = _settings.ButtonBindings["A"];
@@ -965,8 +968,8 @@ namespace GEM.Emulation
             // B
             MenuButton btnB;
             btnB = new MenuButton(btns, null, "B", _onScreenStyle, MenuType.StandAlone, "btnb", 4, 100, 100);
-            btnB.Left = -120;
-            btnB.Top = -30;
+            btnB.OffsetX = -120;
+            btnB.OffsetY = -30;
             btnB.Image.Rotation = 20;
             btnB.KeyBinding = _settings.KeyBindings["B"];
             btnB.BtnBinding = _settings.ButtonBindings["B"];
@@ -984,8 +987,8 @@ namespace GEM.Emulation
             btnStart.OnRelease += (o, e) => _gameboy.IsButton_Start = false;
             btnStart.OnDraw += (o, e) =>
             {
-                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
-                ((BaseControl)o).Left = Math.Min(_screenLeft + _screenWidth + 20, btnB.LocationX);
+                ((BaseControl)o).OffsetY = _screenTop + _screenHeight - ((BaseControl)o).Height;
+                ((BaseControl)o).OffsetX = Math.Min(_screenLeft + _screenWidth + 20, btnB.Left);
             };
             onScreenButtons.Add(btnStart);
 
@@ -999,8 +1002,8 @@ namespace GEM.Emulation
             btnSelect.OnRelease += (o, e) => _gameboy.IsButton_Select = false;
             btnSelect.OnDraw += (o, e) =>
             {
-                ((BaseControl)o).Top = _screenTop + _screenHeight - ((BaseControl)o).Height;
-                ((BaseControl)o).Left = Math.Max(_screenLeft - ((BaseControl)o).Width - 20, dpadRight.LocationX);
+                ((BaseControl)o).OffsetY = _screenTop + _screenHeight - ((BaseControl)o).Height;
+                ((BaseControl)o).OffsetX = Math.Max(_screenLeft - ((BaseControl)o).Width - 20, dpadRight.Left);
             };
             onScreenButtons.Add(btnSelect);
 

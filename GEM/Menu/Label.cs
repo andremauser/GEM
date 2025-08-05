@@ -47,15 +47,18 @@ namespace GEM.Menu
         {
             if (!Visible) return;
             // text marking
-            Rectangle   destinationRectangle =  new Rectangle(LocationX + Width / 2, LocationY + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
+            Rectangle   destinationRectangle =  new Rectangle(Left + Width / 2, Top + Height / 2, Width, Height); // offset position to compensate rotation behaviour (position refers to image origin)
             Rectangle   sourceRectangle =       new Rectangle(0, 0, _pixel.Width, _pixel.Height); // use full texture
             Vector2     origin =                new Vector2(0.5f, 0.5f); // rotation around center of texture
             spriteBatch.Draw(_pixel, destinationRectangle, sourceRectangle, MarkColor, -_rotation, origin, SpriteEffects.None, 1.0f);
 
             // text
-            Vector2     position =              new Vector2(LocationX + Width / 2, LocationY + Height / 2);
+            Vector2     position =              new Vector2(Left + Width / 2, Top + Height / 2);
                         origin =                new Vector2(Width / 2, Height / 2);
+            Rectangle tempRectangle = spriteBatch.GraphicsDevice.ScissorRectangle;
+            spriteBatch.GraphicsDevice.ScissorRectangle = new Rectangle(ParentControl.Left, ParentControl.Top, ParentControl.Width, ParentControl.Height);
             spriteBatch.DrawString(_font, _caption, position, ForeColor, -_rotation, origin, 1.0f, SpriteEffects.None, 1.0f);
+            spriteBatch.GraphicsDevice.ScissorRectangle = tempRectangle;
 
             base.Draw(spriteBatch);
         }
